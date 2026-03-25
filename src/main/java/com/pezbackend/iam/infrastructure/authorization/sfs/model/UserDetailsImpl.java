@@ -1,7 +1,7 @@
-package io.github.rafaviv.panther.pantherbackend.iam.infrastructure.authorization.sfs.model;
+package com.pezbackend.iam.infrastructure.authorization.sfs.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import io.github.rafaviv.panther.pantherbackend.iam.domain.model.aggregates.User;
+import com.pezbackend.iam.domain.model.aggregates.User;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import org.springframework.security.core.GrantedAuthority;

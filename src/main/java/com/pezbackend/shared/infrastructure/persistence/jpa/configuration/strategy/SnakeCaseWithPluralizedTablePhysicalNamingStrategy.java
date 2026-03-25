@@ -1,4 +1,4 @@
-package io.github.rafaviv.panther.pantherbackend.shared.infrastructure.persistence.jpa.configuration.strategy;
+package com.pezbackend.shared.infrastructure.persistence.jpa.configuration.strategy;
 
 import org.hibernate.boot.model.naming.Identifier;
 import org.hibernate.boot.model.naming.PhysicalNamingStrategy;

@@ -1,8 +1,8 @@
-package io.github.rafaviv.panther.pantherbackend.iam.interfaces.rest.transform;
+package com.pezbackend.iam.interfaces.rest.transform;
 
 
-import io.github.rafaviv.panther.pantherbackend.iam.domain.model.commands.SignInCommand;
-import io.github.rafaviv.panther.pantherbackend.iam.interfaces.rest.resources.SignInResource;
+import com.pezbackend.iam.domain.model.commands.SignInCommand;
+import com.pezbackend.iam.interfaces.rest.resources.SignInResource;
 
 public class SignInCommandFromResourceAssembler {
     public static SignInCommand toCommandfromResource(SignInResource resource) {

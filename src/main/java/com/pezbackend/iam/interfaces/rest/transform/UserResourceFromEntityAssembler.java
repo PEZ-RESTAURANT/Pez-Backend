@@ -1,7 +1,7 @@
-package io.github.rafaviv.panther.pantherbackend.iam.interfaces.rest.transform;
+package com.pezbackend.iam.interfaces.rest.transform;
 
-import io.github.rafaviv.panther.pantherbackend.iam.domain.model.aggregates.User;
-import io.github.rafaviv.panther.pantherbackend.iam.interfaces.rest.resources.UserResource;
+import com.pezbackend.iam.domain.model.aggregates.User;
+import com.pezbackend.iam.interfaces.rest.resources.UserResource;
 
 import java.util.List;
 import java.util.stream.Collectors;

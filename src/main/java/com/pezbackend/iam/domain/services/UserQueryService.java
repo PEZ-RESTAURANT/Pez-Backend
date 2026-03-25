@@ -1,9 +1,8 @@
-package io.github.rafaviv.panther.pantherbackend.iam.domain.services;
+package com.pezbackend.iam.domain.services;
 
-import io.github.rafaviv.panther.pantherbackend.iam.domain.model.aggregates.User;
-import io.github.rafaviv.panther.pantherbackend.iam.domain.model.queries.GetAllUsersQuery;
-import io.github.rafaviv.panther.pantherbackend.iam.domain.model.queries.GetUserByEmailQuery;
-
+import com.pezbackend.iam.domain.model.aggregates.User;
+import com.pezbackend.iam.domain.model.queries.GetAllUsersQuery;
+import com.pezbackend.iam.domain.model.queries.GetUserByEmailQuery;
 
 import java.util.List;
 import java.util.Optional;

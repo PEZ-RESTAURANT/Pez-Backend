@@ -1,7 +1,7 @@
-package io.github.rafaviv.panther.pantherbackend.iam.infrastructure.persistence.jpa.repositories;
+package com.pezbackend.iam.infrastructure.persistence.jpa.repositories;
 
-import io.github.rafaviv.panther.pantherbackend.iam.domain.model.entities.Role;
-import io.github.rafaviv.panther.pantherbackend.iam.domain.model.valueobjects.Roles;
+import com.pezbackend.iam.domain.model.entities.Role;
+import com.pezbackend.iam.domain.model.valueobjects.Roles;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

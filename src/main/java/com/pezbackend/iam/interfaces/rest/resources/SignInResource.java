@@ -1,4 +1,4 @@
-package io.github.rafaviv.panther.pantherbackend.iam.interfaces.rest.resources;
+package com.pezbackend.iam.interfaces.rest.resources;
 
 public record SignInResource(
     String email,

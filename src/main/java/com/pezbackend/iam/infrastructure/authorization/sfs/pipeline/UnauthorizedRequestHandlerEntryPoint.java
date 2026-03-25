@@ -1,4 +1,4 @@
-package io.github.rafaviv.panther.pantherbackend.iam.infrastructure.authorization.sfs.pipeline;
+package com.pezbackend.iam.infrastructure.authorization.sfs.pipeline;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;

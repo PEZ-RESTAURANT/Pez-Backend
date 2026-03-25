@@ -1,7 +1,7 @@
-package io.github.rafaviv.panther.pantherbackend.iam.domain.model.aggregates;
+package com.pezbackend.iam.domain.model.aggregates;
 
-import io.github.rafaviv.panther.pantherbackend.iam.domain.model.entities.Role;
-import io.github.rafaviv.panther.pantherbackend.shared.domain.model.aggregates.AuditableAbstractAggregateRoot;
+import com.pezbackend.iam.domain.model.entities.Role;
+import com.pezbackend.shared.domain.model.aggregates.AuditableAbstractAggregateRoot;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;

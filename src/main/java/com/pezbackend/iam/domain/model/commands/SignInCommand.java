@@ -1,4 +1,4 @@
-package io.github.rafaviv.panther.pantherbackend.iam.domain.model.commands;
+package com.pezbackend.iam.domain.model.commands;
 
 /**
  * Command to sign in a user in the system.
