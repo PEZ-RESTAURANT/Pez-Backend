@@ -1,7 +1,7 @@
-package io.github.rafaviv.panther.pantherbackend.iam.interfaces.rest.transform;
+package com.pezbackend.iam.interfaces.rest.transform;
 
-import io.github.rafaviv.panther.pantherbackend.iam.domain.model.commands.SignUpCommand;
-import io.github.rafaviv.panther.pantherbackend.iam.interfaces.rest.resources.SignUpResource;
+import com.pezbackend.iam.domain.model.commands.SignUpCommand;
+import com.pezbackend.iam.interfaces.rest.resources.SignUpResource;
 
 /**
  * Assembler for converting SignUpResource to SignUpCommand

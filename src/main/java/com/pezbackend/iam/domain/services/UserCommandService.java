@@ -1,7 +1,7 @@
-package io.github.rafaviv.panther.pantherbackend.iam.domain.services;
+package com.pezbackend.iam.domain.services;
 
-import io.github.rafaviv.panther.pantherbackend.iam.domain.model.commands.SignInCommand;
-import io.github.rafaviv.panther.pantherbackend.iam.domain.model.commands.SignUpCommand;
+import com.pezbackend.iam.domain.model.commands.SignInCommand;
+import com.pezbackend.iam.domain.model.commands.SignUpCommand;
 
 public interface UserCommandService {
     void handle(SignUpCommand command);

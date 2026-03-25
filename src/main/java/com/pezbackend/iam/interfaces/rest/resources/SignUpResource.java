@@ -1,6 +1,6 @@
-package io.github.rafaviv.panther.pantherbackend.iam.interfaces.rest.resources;
+package com.pezbackend.iam.interfaces.rest.resources;
 
-import io.github.rafaviv.panther.pantherbackend.iam.domain.model.valueobjects.Roles;
+import com.pezbackend.iam.domain.model.valueobjects.Roles;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;

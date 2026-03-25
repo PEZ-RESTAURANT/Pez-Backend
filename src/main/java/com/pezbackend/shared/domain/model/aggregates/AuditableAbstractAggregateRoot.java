@@ -1,4 +1,4 @@
-package io.github.rafaviv.panther.pantherbackend.shared.domain.model.aggregates;
+package com.pezbackend.shared.domain.model.aggregates;
 
 import jakarta.persistence.*;
 import lombok.Getter;

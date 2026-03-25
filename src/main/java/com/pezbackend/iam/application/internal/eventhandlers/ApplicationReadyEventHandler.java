@@ -1,8 +1,8 @@
-package io.github.rafaviv.panther.pantherbackend.iam.application.internal.eventhandlers;
+package com.pezbackend.iam.application.internal.eventhandlers;
 
-import io.github.rafaviv.panther.pantherbackend.iam.domain.model.entities.Role;
-import io.github.rafaviv.panther.pantherbackend.iam.domain.model.valueobjects.Roles;
-import io.github.rafaviv.panther.pantherbackend.iam.infrastructure.persistence.jpa.repositories.RoleRepository;
+import com.pezbackend.iam.domain.model.entities.Role;
+import com.pezbackend.iam.domain.model.valueobjects.Roles;
+import com.pezbackend.iam.infrastructure.persistence.jpa.repositories.RoleRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.event.ApplicationReadyEvent;

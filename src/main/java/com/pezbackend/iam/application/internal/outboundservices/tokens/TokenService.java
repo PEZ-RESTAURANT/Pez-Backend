@@ -1,4 +1,4 @@
-package io.github.rafaviv.panther.pantherbackend.iam.application.internal.outboundservices.tokens;
+package com.pezbackend.iam.application.internal.outboundservices.tokens;
 
 
 

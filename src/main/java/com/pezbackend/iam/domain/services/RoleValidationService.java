@@ -1,6 +1,6 @@
-package io.github.rafaviv.panther.pantherbackend.iam.domain.services;
+package com.pezbackend.iam.domain.services;
 
-import io.github.rafaviv.panther.pantherbackend.iam.domain.model.valueobjects.Roles;
+import com.pezbackend.iam.domain.model.valueobjects.Roles;
 /**
  * Service for role validation operations
  * This service provides business logic for validating role-related operations

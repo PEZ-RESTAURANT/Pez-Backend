@@ -1,14 +1,13 @@
-package io.github.rafaviv.panther.pantherbackend.iam.infrastructure.authorization.sfs.configuration;
+package com.pezbackend.iam.infrastructure.authorization.sfs.configuration;
 
-import io.github.rafaviv.panther.pantherbackend.iam.infrastructure.authorization.sfs.model.UserDetailsServiceExtension;
-import io.github.rafaviv.panther.pantherbackend.iam.infrastructure.authorization.sfs.pipeline.BearerAuthorizationRequestFilter;
-import io.github.rafaviv.panther.pantherbackend.iam.infrastructure.hashing.bcrypt.BCryptHashingService;
-import io.github.rafaviv.panther.pantherbackend.iam.infrastructure.tokens.jwt.BearerTokenService;
+import com.pezbackend.iam.infrastructure.authorization.sfs.model.UserDetailsServiceExtension;
+import com.pezbackend.iam.infrastructure.authorization.sfs.pipeline.BearerAuthorizationRequestFilter;
+import com.pezbackend.iam.infrastructure.hashing.bcrypt.BCryptHashingService;
+import com.pezbackend.iam.infrastructure.tokens.jwt.BearerTokenService;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;

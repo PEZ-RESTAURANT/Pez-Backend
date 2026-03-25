@@ -1,4 +1,4 @@
-package io.github.rafaviv.panther.pantherbackend.shared.infrastructure.documentation.openapi.configuration;
+package com.pezbackend.shared.infrastructure.documentation.openapi.configuration;
 
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.ExternalDocumentation;

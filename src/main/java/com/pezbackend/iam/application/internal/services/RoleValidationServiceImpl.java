@@ -1,7 +1,7 @@
-package io.github.rafaviv.panther.pantherbackend.iam.application.internal.services;
+package com.pezbackend.iam.application.internal.services;
 
-import io.github.rafaviv.panther.pantherbackend.iam.domain.model.valueobjects.Roles;
-import io.github.rafaviv.panther.pantherbackend.iam.domain.services.RoleValidationService;
+import com.pezbackend.iam.domain.model.valueobjects.Roles;
+import com.pezbackend.iam.domain.services.RoleValidationService;
 import org.springframework.stereotype.Service;
 
 /**

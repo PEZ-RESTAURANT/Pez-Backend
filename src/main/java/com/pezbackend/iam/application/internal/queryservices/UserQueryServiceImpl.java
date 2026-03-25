@@ -1,10 +1,10 @@
-package io.github.rafaviv.panther.pantherbackend.iam.application.internal.queryservices;
+package com.pezbackend.iam.application.internal.queryservices;
 
-import io.github.rafaviv.panther.pantherbackend.iam.domain.model.aggregates.User;
-import io.github.rafaviv.panther.pantherbackend.iam.domain.model.queries.GetAllUsersQuery;
-import io.github.rafaviv.panther.pantherbackend.iam.domain.model.queries.GetUserByEmailQuery;
-import io.github.rafaviv.panther.pantherbackend.iam.domain.services.UserQueryService;
-import io.github.rafaviv.panther.pantherbackend.iam.infrastructure.persistence.jpa.repositories.UserRepository;
+import com.pezbackend.iam.domain.model.aggregates.User;
+import com.pezbackend.iam.domain.model.queries.GetAllUsersQuery;
+import com.pezbackend.iam.domain.model.queries.GetUserByEmailQuery;
+import com.pezbackend.iam.domain.services.UserQueryService;
+import com.pezbackend.iam.infrastructure.persistence.jpa.repositories.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;

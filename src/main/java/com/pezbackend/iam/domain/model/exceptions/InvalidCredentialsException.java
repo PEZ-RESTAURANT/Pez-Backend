@@ -1,4 +1,4 @@
-package io.github.rafaviv.panther.pantherbackend.iam.domain.model.exceptions;
+package com.pezbackend.iam.domain.model.exceptions;
 
 /**
  * Exception thrown when authentication credentials are invalid

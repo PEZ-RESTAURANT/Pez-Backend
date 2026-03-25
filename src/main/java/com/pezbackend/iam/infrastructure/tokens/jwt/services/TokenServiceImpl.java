@@ -1,6 +1,6 @@
-package io.github.rafaviv.panther.pantherbackend.iam.infrastructure.tokens.jwt.services;
+package com.pezbackend.iam.infrastructure.tokens.jwt.services;
 
-import io.github.rafaviv.panther.pantherbackend.iam.infrastructure.tokens.jwt.BearerTokenService;
+import com.pezbackend.iam.infrastructure.tokens.jwt.BearerTokenService;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;

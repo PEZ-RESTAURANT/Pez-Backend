@@ -1,9 +1,9 @@
-package io.github.rafaviv.panther.pantherbackend.iam.infrastructure.authorization.sfs.services;
+package com.pezbackend.iam.infrastructure.authorization.sfs.services;
 
-import io.github.rafaviv.panther.pantherbackend.iam.domain.model.aggregates.User;
-import io.github.rafaviv.panther.pantherbackend.iam.infrastructure.authorization.sfs.model.UserDetailsImpl;
-import io.github.rafaviv.panther.pantherbackend.iam.infrastructure.authorization.sfs.model.UserDetailsServiceExtension;
-import io.github.rafaviv.panther.pantherbackend.iam.infrastructure.persistence.jpa.repositories.UserRepository;
+import com.pezbackend.iam.domain.model.aggregates.User;
+import com.pezbackend.iam.infrastructure.authorization.sfs.model.UserDetailsImpl;
+import com.pezbackend.iam.infrastructure.authorization.sfs.model.UserDetailsServiceExtension;
+import com.pezbackend.iam.infrastructure.persistence.jpa.repositories.UserRepository;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
