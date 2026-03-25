@@ -1,7 +1,7 @@
-package io.github.rafaviv.panther.pantherbackend.iam.domain.model.entities;
+package com.pezbackend.iam.domain.model.entities;
 
-import io.github.rafaviv.panther.pantherbackend.iam.domain.model.valueobjects.Roles;
-import io.github.rafaviv.panther.pantherbackend.shared.domain.model.entities.AuditableModel;
+import com.pezbackend.iam.domain.model.valueobjects.Roles;
+import com.pezbackend.shared.domain.model.entities.AuditableModel;
 import jakarta.persistence.*;
 import lombok.Getter;
 

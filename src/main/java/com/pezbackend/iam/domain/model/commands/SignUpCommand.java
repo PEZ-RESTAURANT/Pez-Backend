@@ -1,6 +1,6 @@
-package io.github.rafaviv.panther.pantherbackend.iam.domain.model.commands;
+package com.pezbackend.iam.domain.model.commands;
 
-import io.github.rafaviv.panther.pantherbackend.iam.domain.model.valueobjects.Roles;
+import com.pezbackend.iam.domain.model.valueobjects.Roles;
 
 /**
  * Comando para registrar un nuevo usuario en el sistema.

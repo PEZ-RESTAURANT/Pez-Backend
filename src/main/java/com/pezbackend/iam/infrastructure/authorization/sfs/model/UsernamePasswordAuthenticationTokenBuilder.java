@@ -1,4 +1,4 @@
-package io.github.rafaviv.panther.pantherbackend.iam.infrastructure.authorization.sfs.model;
+package com.pezbackend.iam.infrastructure.authorization.sfs.model;
 
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;

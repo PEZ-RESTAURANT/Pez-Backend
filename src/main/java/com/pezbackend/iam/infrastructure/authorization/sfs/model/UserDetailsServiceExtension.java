@@ -1,4 +1,4 @@
-package io.github.rafaviv.panther.pantherbackend.iam.infrastructure.authorization.sfs.model;
+package com.pezbackend.iam.infrastructure.authorization.sfs.model;
 
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;

@@ -1,6 +1,6 @@
-package io.github.rafaviv.panther.pantherbackend.iam.infrastructure.hashing.services;
+package com.pezbackend.iam.infrastructure.hashing.services;
 
-import io.github.rafaviv.panther.pantherbackend.iam.infrastructure.hashing.bcrypt.BCryptHashingService;
+import com.pezbackend.iam.infrastructure.hashing.bcrypt.BCryptHashingService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 

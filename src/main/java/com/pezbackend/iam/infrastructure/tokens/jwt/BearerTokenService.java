@@ -1,6 +1,6 @@
-package io.github.rafaviv.panther.pantherbackend.iam.infrastructure.tokens.jwt;
+package com.pezbackend.iam.infrastructure.tokens.jwt;
 
-import io.github.rafaviv.panther.pantherbackend.iam.application.internal.outboundservices.tokens.TokenService;
+import com.pezbackend.iam.application.internal.outboundservices.tokens.TokenService;
 import jakarta.servlet.http.HttpServletRequest;
 
 

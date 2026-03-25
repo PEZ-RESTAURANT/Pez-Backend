@@ -1,8 +1,8 @@
-package io.github.rafaviv.panther.pantherbackend.iam.infrastructure.authorization.sfs.pipeline;
+package com.pezbackend.iam.infrastructure.authorization.sfs.pipeline;
 
-import io.github.rafaviv.panther.pantherbackend.iam.infrastructure.authorization.sfs.model.UserDetailsServiceExtension;
-import io.github.rafaviv.panther.pantherbackend.iam.infrastructure.authorization.sfs.model.UsernamePasswordAuthenticationTokenBuilder;
-import io.github.rafaviv.panther.pantherbackend.iam.infrastructure.tokens.jwt.BearerTokenService;
+import com.pezbackend.iam.infrastructure.authorization.sfs.model.UserDetailsServiceExtension;
+import com.pezbackend.iam.infrastructure.authorization.sfs.model.UsernamePasswordAuthenticationTokenBuilder;
+import com.pezbackend.iam.infrastructure.tokens.jwt.BearerTokenService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
