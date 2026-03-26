@@ -2,6 +2,7 @@ package com.pezbackend.ordering.domain.model.aggregates;
 
 import com.pezbackend.ordering.domain.model.entities.AccountItem;
 import com.pezbackend.ordering.domain.model.exceptions.AccountAlreadyClosedException;
+import com.pezbackend.ordering.domain.model.exceptions.AccountItemNotFoundException;
 import com.pezbackend.ordering.domain.model.exceptions.EmptyAccountException;
 import com.pezbackend.ordering.domain.model.valueobjects.AccountStatus;
 import com.pezbackend.shared.domain.model.aggregates.AuditableAbstractAggregateRoot;
@@ -36,7 +37,12 @@ public class Account extends AuditableAbstractAggregateRoot<Account> {
     @Column(nullable = false)
     private BigDecimal total;
 
-    @OneToMany(mappedBy = "account", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(
+            mappedBy = "account",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true,
+            fetch = FetchType.EAGER
+    )
     private List<AccountItem> items;
 
     protected Account() {}
@@ -54,8 +60,18 @@ public class Account extends AuditableAbstractAggregateRoot<Account> {
         if (this.status == AccountStatus.CLOSED)
             throw new AccountAlreadyClosedException();
 
-        AccountItem item = new AccountItem(this, productName, unitPrice, quantity, note);
-        this.items.add(item);
+        Optional<AccountItem> existingItem = this.items.stream()
+                .filter(i -> i.isSameItem(productName, unitPrice, note))
+                .findFirst();
+
+        if (existingItem.isPresent()) {
+            AccountItem item = existingItem.get();
+            item.updateQuantity(item.getQuantity() + quantity);
+        } else {
+            AccountItem item = new AccountItem(this, productName, unitPrice, quantity, note);
+            this.items.add(item);
+        }
+
         calculateTotal();
     }
 
@@ -63,11 +79,12 @@ public class Account extends AuditableAbstractAggregateRoot<Account> {
         if (this.status == AccountStatus.CLOSED)
             throw new AccountAlreadyClosedException();
 
-        Optional<AccountItem> item = this.items.stream()
+        AccountItem item = this.items.stream()
                 .filter(i -> i.getId().equals(itemId))
-                .findFirst();
+                .findFirst()
+                .orElseThrow(() -> new AccountItemNotFoundException(itemId));
 
-        item.ifPresent(this.items::remove);
+        this.items.remove(item);
         calculateTotal();
     }
 
@@ -75,12 +92,45 @@ public class Account extends AuditableAbstractAggregateRoot<Account> {
         if (this.status == AccountStatus.CLOSED)
             throw new AccountAlreadyClosedException();
 
-        for (AccountItem item : items) {
-            if (item.getId().equals(itemId)) {
-                item.updateQuantity(quantity);
-                break;
-            }
+        AccountItem item = this.items.stream()
+                .filter(i -> i.getId().equals(itemId))
+                .findFirst()
+                .orElseThrow(() -> new AccountItemNotFoundException(itemId));
+
+        item.updateQuantity(quantity);
+        calculateTotal();
+    }
+
+    public void increaseItemQuantity(Long itemId) {
+        if (this.status == AccountStatus.CLOSED)
+            throw new AccountAlreadyClosedException();
+
+        AccountItem item = this.items.stream()
+                .filter(i -> i.getId().equals(itemId))
+                .findFirst()
+                .orElseThrow(() -> new AccountItemNotFoundException(itemId));
+
+        item.updateQuantity(item.getQuantity() + 1);
+        calculateTotal();
+    }
+
+    public void decreaseItemQuantity(Long itemId) {
+        if (this.status == AccountStatus.CLOSED)
+            throw new AccountAlreadyClosedException();
+
+        AccountItem item = this.items.stream()
+                .filter(i -> i.getId().equals(itemId))
+                .findFirst()
+                .orElseThrow(() -> new AccountItemNotFoundException(itemId));
+
+        int newQuantity = item.getQuantity() - 1;
+
+        if (newQuantity <= 0) {
+            this.items.remove(item);
+        } else {
+            item.updateQuantity(newQuantity);
         }
+
         calculateTotal();
     }
 
@@ -101,6 +151,9 @@ public class Account extends AuditableAbstractAggregateRoot<Account> {
     }
 
     public void closeAccount() {
+        if (this.status == AccountStatus.CLOSED)
+            throw new AccountAlreadyClosedException();
+
         if (this.items.isEmpty())
             throw new EmptyAccountException();
 
