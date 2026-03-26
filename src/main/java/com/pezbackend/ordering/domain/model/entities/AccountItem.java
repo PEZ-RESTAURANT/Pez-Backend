@@ -1,6 +1,8 @@
 package com.pezbackend.ordering.domain.model.entities;
 
 import com.pezbackend.ordering.domain.model.aggregates.Account;
+import com.pezbackend.ordering.domain.model.exceptions.InvalidItemPriceException;
+import com.pezbackend.ordering.domain.model.exceptions.InvalidItemQuantityException;
 import jakarta.persistence.*;
 import lombok.Getter;
 
@@ -28,6 +30,19 @@ public class AccountItem {
 
     public AccountItem(Account account, String productName,
                        BigDecimal unitPrice, Integer quantity, String note) {
+
+        if (account == null)
+            throw new IllegalArgumentException("Account cannot be null");
+
+        if (productName == null || productName.isBlank())
+            throw new IllegalArgumentException("Product name cannot be empty");
+
+        if (unitPrice.compareTo(BigDecimal.ZERO) <= 0)
+            throw new InvalidItemPriceException(unitPrice);
+
+        if (quantity <= 0)
+            throw new InvalidItemQuantityException(quantity);
+
         this.account = account;
         this.productName = productName;
         this.unitPrice = unitPrice;
@@ -37,11 +52,23 @@ public class AccountItem {
     }
 
     public void updateQuantity(Integer quantity) {
+        if (quantity <= 0)
+            throw new InvalidItemQuantityException(quantity);
+
         this.quantity = quantity;
         calculateTotal();
     }
 
     private void calculateTotal() {
         this.totalPrice = unitPrice.multiply(BigDecimal.valueOf(quantity));
+    }
+
+    public boolean isSameItem(String productName, BigDecimal unitPrice, String note) {
+        boolean sameNote = (this.note == null && note == null) ||
+                (this.note != null && this.note.equals(note));
+
+        return this.productName.equals(productName)
+                && this.unitPrice.compareTo(unitPrice) == 0
+                && sameNote;
     }
 }
