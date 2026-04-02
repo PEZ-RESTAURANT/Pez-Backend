@@ -81,7 +81,7 @@ public class CashRegisterCommandServiceImpl implements CashRegisterCommandServic
                 .orElseThrow(() -> new IllegalArgumentException("Account not found"));
 
         // 🧠 Validación
-        if (!account.getStatus().equals(AccountStatus.CLOSED)) {
+        if (!account.getStatus().equals(AccountStatus.PAYMENT_PENDING)) {
             throw new IllegalStateException("Account must be closed to register income");
         }
 
