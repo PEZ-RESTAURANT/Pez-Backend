@@ -10,9 +10,7 @@ public class ProductResourceFromEntityAssembler {
                 entity.getId(),
                 entity.getName(),
                 entity.getPrice(),
-                entity.getCategory(),
-                entity.getCreatedAt(),
-                entity.getUpdatedAt()
+                entity.getCategory()
         );
     }
 }

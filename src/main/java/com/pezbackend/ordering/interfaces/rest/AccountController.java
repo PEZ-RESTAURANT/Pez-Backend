@@ -94,6 +94,19 @@ public class AccountController {
         return ResponseEntity.ok().build();
     }
 
+    // ➕ ADD PRODUCT
+    @PostMapping("/{id}/items/product/{productId}")
+    public ResponseEntity<Void> addProductToAccount(
+            @PathVariable Long id,
+            @PathVariable Long productId) {
+
+        commandService.handle(
+                new AddProductToAccountCommand(id, productId)
+        );
+
+        return ResponseEntity.ok().build();
+    }
+
     @DeleteMapping("/{accountId}/items/{itemId}")
     public ResponseEntity<?> removeItem(
             @PathVariable Long accountId,
@@ -183,6 +196,14 @@ public class AccountController {
     public ResponseEntity<Void> closeAccount(@PathVariable Long id) {
 
         commandService.handle(new CloseAccountCommand(id));
+        return ResponseEntity.ok().build();
+    }
+
+    // ❌ DELETE
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
+
+        commandService.handle(new DeleteAccountCommand(id));
         return ResponseEntity.ok().build();
     }
 }

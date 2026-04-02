@@ -1,5 +1,7 @@
 package com.pezbackend.ordering.application.internal.commandservices;
 
+import com.pezbackend.catalog.domain.model.queries.GetProductByIdQuery;
+import com.pezbackend.catalog.domain.services.ProductQueryService;
 import com.pezbackend.ordering.domain.model.aggregates.Account;
 import com.pezbackend.ordering.domain.model.commands.*;
 import com.pezbackend.ordering.domain.model.exceptions.AccountNotFoundException;
@@ -12,9 +14,11 @@ import org.springframework.transaction.annotation.Transactional;
 public class AccountCommandServiceImpl implements AccountCommandService {
 
     private final AccountRepository accountRepository;
+    private final ProductQueryService productQueryService;
 
-    public AccountCommandServiceImpl(AccountRepository accountRepository) {
+    public AccountCommandServiceImpl(AccountRepository accountRepository, ProductQueryService productQueryService) {
         this.accountRepository = accountRepository;
+        this.productQueryService = productQueryService;
     }
 
     @Override
@@ -113,6 +117,45 @@ public class AccountCommandServiceImpl implements AccountCommandService {
                 .orElseThrow(() -> new AccountNotFoundException(command.accountId()));
 
         account.decreaseItemQuantity(command.itemId());
+
+        accountRepository.save(account);
+    }
+
+    @Override
+    public void handle(DeleteAccountCommand command) {
+
+        Account account = accountRepository.findById(command.accountId())
+                .orElseThrow(() -> new AccountNotFoundException(command.accountId()));
+
+        accountRepository.delete(account);
+    }
+
+    @Override
+    public void handle(AddProductToAccountCommand command) {
+
+        Account account = accountRepository.findById(command.accountId())
+                .orElseThrow(() -> new AccountNotFoundException(command.accountId()));
+
+        var product = productQueryService.handle(
+                new GetProductByIdQuery(command.productId())
+        );
+
+        account.addItem(
+                product.getName(),
+                product.getPrice(),
+                1,
+                ""
+        );
+
+        accountRepository.save(account);
+    }
+
+    @Override
+    public void handle(MarkAccountAsPaidCommand command) {
+        Account account = accountRepository.findById(command.accountId())
+                .orElseThrow(() -> new AccountNotFoundException(command.accountId()));
+
+        account.markAsPaid();
 
         accountRepository.save(account);
     }

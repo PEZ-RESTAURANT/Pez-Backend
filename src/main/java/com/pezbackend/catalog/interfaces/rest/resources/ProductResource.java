@@ -9,7 +9,5 @@ public record ProductResource(
         Long id,
         String name,
         BigDecimal price,
-        ProductCategory category,
-        Date createdAt,
-        Date updatedAt
+        ProductCategory category
 ) {}
