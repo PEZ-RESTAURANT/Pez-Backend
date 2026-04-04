@@ -18,6 +18,5 @@ public record SaleResource(
         PaymentMethod paymentMethod,
         BigDecimal total,
         Date createdAt,
-        Date updatedAt,
         List<SaleDetailResource> details
 ) {}

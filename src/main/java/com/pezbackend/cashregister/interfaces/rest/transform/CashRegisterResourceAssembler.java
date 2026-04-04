@@ -51,7 +51,8 @@ public class CashRegisterResourceAssembler {
                 cashRegister.getCurrentBalance(),
                 cashRegister.getStatus().name(),
                 movements,
-                summary
+                summary,
+                cashRegister.getCreatedAt()
         );
     }
 }
