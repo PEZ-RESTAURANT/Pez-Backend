@@ -1,10 +1,13 @@
 package com.pezbackend.billing.domain.model.commands;
 
 import com.pezbackend.billing.domain.model.valueobjects.DocumentType;
+import com.pezbackend.billing.domain.model.valueobjects.PaymentDetail;
 import com.pezbackend.billing.domain.model.valueobjects.PaymentMethod;
 
+import java.util.List;
+
 public record CreateSaleCommand(
-        Long accountId,           // para transformar la cuenta cerrada en venta
+        Long accountId,
         DocumentType documentType,
-        PaymentMethod paymentMethod
+        List<PaymentDetail> payments
 ) {}
