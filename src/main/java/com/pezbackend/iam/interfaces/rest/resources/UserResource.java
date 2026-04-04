@@ -1,5 +1,6 @@
 package com.pezbackend.iam.interfaces.rest.resources;
 
+import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
 
@@ -24,8 +25,8 @@ public record UserResource(
     boolean isVerified,
     boolean active,
     List<String> roles,
-    Date createdAt,
-    Date updatedAt
+    LocalDateTime createdAt,
+    LocalDateTime updatedAt
 ) {
     
 }
