@@ -21,7 +21,6 @@ public class SaleResourceFromEntityAssembler {
                 sale.getPaymentMethod(),
                 sale.getTotal(),
                 sale.getCreatedAt(),
-                sale.getUpdatedAt(),
                 sale.getDetails().stream()
                         .map(SaleResourceFromEntityAssembler::toDetailResource)
                         .collect(Collectors.toList())
