@@ -4,17 +4,26 @@ import com.pezbackend.catalog.domain.model.queries.GetProductByIdQuery;
 import com.pezbackend.catalog.domain.services.ProductQueryService;
 import com.pezbackend.ordering.domain.model.aggregates.Account;
 import com.pezbackend.ordering.domain.model.commands.*;
+import com.pezbackend.ordering.domain.model.exceptions.AccountNameAlreadyExistsException;
 import com.pezbackend.ordering.domain.model.exceptions.AccountNotFoundException;
+import com.pezbackend.ordering.domain.model.valueobjects.AccountStatus;
 import com.pezbackend.ordering.domain.services.AccountCommandService;
 import com.pezbackend.ordering.infrastructure.persistence.jpa.repositories.AccountRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 @Service
 public class AccountCommandServiceImpl implements AccountCommandService {
 
     private final AccountRepository accountRepository;
     private final ProductQueryService productQueryService;
+
+    private static final List<AccountStatus> ACTIVE_STATUSES = List.of(
+            AccountStatus.OPEN,
+            AccountStatus.IN_PROGRESS
+    );
 
     public AccountCommandServiceImpl(AccountRepository accountRepository, ProductQueryService productQueryService) {
         this.accountRepository = accountRepository;
@@ -87,7 +96,22 @@ public class AccountCommandServiceImpl implements AccountCommandService {
         Account account = accountRepository.findById(command.accountId())
                 .orElseThrow(() -> new AccountNotFoundException(command.accountId()));
 
-        account.assignName(command.name());
+        // 🔥 Validar nombres duplicados en cuentas activas
+        boolean exists = accountRepository.existsByNameIgnoreCaseAndStatusIn(
+                command.name(),
+                ACTIVE_STATUSES
+        );
+
+        // VERIFY
+        if (exists && (account.getName() == null ||
+                !account.getName().equalsIgnoreCase(command.name()))) {
+
+            throw new AccountNameAlreadyExistsException(command.name());
+        }
+
+        String normalizedName = command.name().trim();
+
+        account.assignName(normalizedName);
         accountRepository.save(account);
     }
 
