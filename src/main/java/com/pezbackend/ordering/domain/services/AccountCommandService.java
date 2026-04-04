@@ -22,7 +22,7 @@ public interface AccountCommandService {
 
     void handle(DecreaseItemQuantityCommand command);
 
-    void handle(DeleteAccountCommand command);
+    void handle(CancelAccountCommand command);
 
     void handle(AddProductToAccountCommand command);
 

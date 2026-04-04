@@ -171,4 +171,14 @@ public class Account extends AuditableAbstractAggregateRoot<Account> {
 
         this.status = AccountStatus.PAID;
     }
+
+    public void cancelAccount() {
+        if (this.status == AccountStatus.PAID)
+            throw new IllegalStateException("Cannot cancel a paid account");
+
+        if (this.status == AccountStatus.CANCELLED)
+            return;
+
+        this.status = AccountStatus.CANCELLED;
+    }
 }
