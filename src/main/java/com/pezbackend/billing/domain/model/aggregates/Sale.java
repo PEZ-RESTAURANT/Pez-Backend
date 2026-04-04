@@ -1,6 +1,7 @@
 package com.pezbackend.billing.domain.model.aggregates;
 
 import com.pezbackend.billing.domain.model.entities.SaleDetail;
+import com.pezbackend.billing.domain.model.entities.SalePayment;
 import com.pezbackend.billing.domain.model.valueobjects.DocumentType;
 import com.pezbackend.billing.domain.model.valueobjects.PaymentMethod;
 import com.pezbackend.shared.domain.model.aggregates.AuditableAbstractAggregateRoot;
@@ -17,29 +18,22 @@ import java.util.List;
 public class Sale extends AuditableAbstractAggregateRoot<Sale> {
 
     private Long staffId;
-
     private String name;
 
     private String customerName;
     private String customerDni;
     private String customerRuc;
 
-    @NotNull
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
     private DocumentType documentType;
 
-    @NotNull
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private PaymentMethod paymentMethod;
-
-    @NotNull
-    @Column(nullable = false)
     private BigDecimal total;
 
     @OneToMany(mappedBy = "sale", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<SaleDetail> details = new ArrayList<>();
+
+    @OneToMany(mappedBy = "sale", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<SalePayment> payments = new ArrayList<>();
 
     protected Sale() {}
 
@@ -48,17 +42,16 @@ public class Sale extends AuditableAbstractAggregateRoot<Sale> {
                 String customerName,
                 String customerDni,
                 String customerRuc,
-                DocumentType documentType,
-                PaymentMethod paymentMethod) {
+                DocumentType documentType) {
         this.name = name;
         this.staffId = staffId;
         this.customerName = customerName;
         this.customerDni = customerDni;
         this.customerRuc = customerRuc;
         this.documentType = documentType;
-        this.paymentMethod = paymentMethod;
         this.total = BigDecimal.ZERO;
         this.details = new ArrayList<>();
+        this.payments = new ArrayList<>();
     }
 
     // DOMAIN METHODS
@@ -72,5 +65,20 @@ public class Sale extends AuditableAbstractAggregateRoot<Sale> {
         this.total = details.stream()
                 .map(SaleDetail::getTotalPrice)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    public void addPayment(PaymentMethod method, BigDecimal amount) {
+        SalePayment payment = new SalePayment(this, method, amount);
+        this.payments.add(payment);
+    }
+
+    public void validatePayments() {
+        BigDecimal paymentTotal = payments.stream()
+                .map(SalePayment::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        if (paymentTotal.compareTo(this.total) != 0) {
+            throw new IllegalStateException("Payment total must equal sale total");
+        }
     }
 }
