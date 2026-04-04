@@ -4,6 +4,7 @@ import com.pezbackend.cashregister.domain.model.commands.*;
 import com.pezbackend.cashregister.domain.model.entities.CashMovement;
 import com.pezbackend.cashregister.domain.model.aggregates.CashRegister;
 import com.pezbackend.cashregister.domain.model.queries.GetCashRegisterByIdQuery;
+import com.pezbackend.cashregister.domain.model.queries.GetCashRegistersByDateRangeQuery;
 import com.pezbackend.cashregister.domain.model.queries.GetCurrentCashRegisterQuery;
 import com.pezbackend.cashregister.domain.services.CashRegisterCommandService;
 import com.pezbackend.cashregister.domain.services.CashRegisterQueryService;
@@ -13,6 +14,7 @@ import com.pezbackend.cashregister.interfaces.rest.transform.CashRegisterResourc
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Date;
 import java.util.List;
 
 @RestController
@@ -96,6 +98,21 @@ public class CashRegisterController {
 
         return ResponseEntity.ok(
                 movements.stream().map(CashMovementResourceAssembler::toResource).toList()
+        );
+    }
+
+    @GetMapping
+    public ResponseEntity<List<CashRegisterResource>> getCashRegisters(
+            @RequestParam(required = false) Date startDate,
+            @RequestParam(required = false) Date endDate) {
+
+        List<CashRegister> cashRegisters =
+                queryService.handle(new GetCashRegistersByDateRangeQuery(startDate, endDate));
+
+        return ResponseEntity.ok(
+                cashRegisters.stream()
+                        .map(CashRegisterResourceAssembler::toResource)
+                        .toList()
         );
     }
 }
