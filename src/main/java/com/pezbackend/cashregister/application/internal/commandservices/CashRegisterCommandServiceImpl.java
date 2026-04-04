@@ -74,23 +74,14 @@ public class CashRegisterCommandServiceImpl implements CashRegisterCommandServic
     @Override
     public Long handle(AddSaleIncomeCommand command) {
 
-        // 🔍 Obtener caja abierta
-        CashRegister cashRegister = cashRegisterRepository.findByStatus(CashRegisterStatus.OPEN)
+        CashRegister cashRegister = cashRegisterRepository
+                .findByStatus(CashRegisterStatus.OPEN)
                 .orElseThrow(CashRegisterNotOpenException::new);
-
-        // 🔍 Obtener cuenta
-        var account = accountQueryService.handle(
-                new GetAccountByIdQuery(command.accountId())
-        );
-
-
-        // 💰 Crear movimiento automáticamente
-        String note = "Ingreso por venta: " + account.getName() + " (ID " + account.getId() + ")";
 
         CashMovement movement = new CashMovement(
                 CashMovementType.INCOME,
-                account.getTotal(),
-                note
+                command.amount(),
+                command.note()
         );
 
         cashRegister.addMovement(movement);
