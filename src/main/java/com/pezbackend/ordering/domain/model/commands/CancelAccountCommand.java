@@ -1,6 +1,6 @@
 package com.pezbackend.ordering.domain.model.commands;
 
-public record DeleteAccountCommand(
+public record CancelAccountCommand(
         Long accountId
 ) {
 }

@@ -122,12 +122,14 @@ public class AccountCommandServiceImpl implements AccountCommandService {
     }
 
     @Override
-    public void handle(DeleteAccountCommand command) {
+    public void handle(CancelAccountCommand command) {
 
         Account account = accountRepository.findById(command.accountId())
                 .orElseThrow(() -> new AccountNotFoundException(command.accountId()));
 
-        accountRepository.delete(account);
+        account.cancelAccount();
+
+        accountRepository.save(account);
     }
 
     @Override

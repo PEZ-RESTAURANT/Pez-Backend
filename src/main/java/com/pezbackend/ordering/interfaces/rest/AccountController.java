@@ -199,11 +199,10 @@ public class AccountController {
         return ResponseEntity.ok().build();
     }
 
-    // ❌ DELETE
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
-
-        commandService.handle(new DeleteAccountCommand(id));
+    // ❌ CANCEL
+    @PutMapping("/{id}/cancel")
+    public ResponseEntity<Void> cancelAccount(@PathVariable Long id) {
+        commandService.handle(new CancelAccountCommand(id));
         return ResponseEntity.ok().build();
     }
 }
