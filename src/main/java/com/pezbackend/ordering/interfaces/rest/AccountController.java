@@ -1,5 +1,6 @@
 package com.pezbackend.ordering.interfaces.rest;
 
+import com.pezbackend.iam.infrastructure.authorization.sfs.annotations.AuthorizeRoles;
 import com.pezbackend.ordering.domain.model.aggregates.Account;
 import com.pezbackend.ordering.domain.model.commands.*;
 import com.pezbackend.ordering.domain.model.queries.GetAccountByIdQuery;
@@ -11,6 +12,7 @@ import com.pezbackend.ordering.interfaces.rest.resources.*;
 import com.pezbackend.ordering.interfaces.rest.transform.*;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -107,6 +109,7 @@ public class AccountController {
         return ResponseEntity.ok().build();
     }
 
+    @PreAuthorize(AuthorizeRoles.CASHIER_OR_ADMIN)
     @DeleteMapping("/{accountId}/items/{itemId}")
     public ResponseEntity<?> removeItem(
             @PathVariable Long accountId,
@@ -148,6 +151,7 @@ public class AccountController {
         return ResponseEntity.ok().build();
     }
 
+    @PreAuthorize(AuthorizeRoles.CASHIER_OR_ADMIN)
     @PostMapping("/{accountId}/items/{itemId}/decrease")
     public ResponseEntity<?> decreaseItemQuantity(
             @PathVariable Long accountId,
@@ -200,6 +204,7 @@ public class AccountController {
     }
 
     // ❌ CANCEL
+    @PreAuthorize(AuthorizeRoles.CASHIER_OR_ADMIN)
     @PutMapping("/{id}/cancel")
     public ResponseEntity<Void> cancelAccount(@PathVariable Long id) {
         commandService.handle(new CancelAccountCommand(id));

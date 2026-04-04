@@ -10,13 +10,16 @@ import com.pezbackend.cashregister.domain.services.CashRegisterQueryService;
 import com.pezbackend.cashregister.interfaces.rest.resources.*;
 import com.pezbackend.cashregister.interfaces.rest.transform.CashMovementResourceAssembler;
 import com.pezbackend.cashregister.interfaces.rest.transform.CashRegisterResourceAssembler;
+import com.pezbackend.iam.infrastructure.authorization.sfs.annotations.AuthorizeRoles;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/cash-registers")
+@PreAuthorize(AuthorizeRoles.CASHIER_OR_ADMIN)
 public class CashRegisterController {
 
     private final CashRegisterCommandService commandService;
