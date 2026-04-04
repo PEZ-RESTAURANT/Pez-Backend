@@ -57,8 +57,7 @@ public class Account extends AuditableAbstractAggregateRoot<Account> {
     // DOMAIN METHODS
 
     public void addItem(String productName, BigDecimal unitPrice, int quantity, String note) {
-        if (this.status == AccountStatus.PAYMENT_PENDING || this.status == AccountStatus.PAID)
-            throw new AccountAlreadyClosedException();
+        ensureAccountIsModifiable();
 
         Optional<AccountItem> existingItem = this.items.stream()
                 .filter(i -> i.isSameItem(productName, unitPrice, note))
@@ -81,8 +80,7 @@ public class Account extends AuditableAbstractAggregateRoot<Account> {
     }
 
     public void removeItem(Long itemId) {
-        if (this.status == AccountStatus.PAYMENT_PENDING)
-            throw new AccountAlreadyClosedException();
+        ensureAccountIsModifiable();
 
         AccountItem item = this.items.stream()
                 .filter(i -> i.getId().equals(itemId))
@@ -94,8 +92,7 @@ public class Account extends AuditableAbstractAggregateRoot<Account> {
     }
 
     public void updateItemQuantity(Long itemId, int quantity) {
-        if (this.status == AccountStatus.PAYMENT_PENDING)
-            throw new AccountAlreadyClosedException();
+        ensureAccountIsModifiable();
 
         AccountItem item = this.items.stream()
                 .filter(i -> i.getId().equals(itemId))
@@ -107,8 +104,7 @@ public class Account extends AuditableAbstractAggregateRoot<Account> {
     }
 
     public void increaseItemQuantity(Long itemId) {
-        if (this.status == AccountStatus.PAYMENT_PENDING)
-            throw new AccountAlreadyClosedException();
+        ensureAccountIsModifiable();
 
         AccountItem item = this.items.stream()
                 .filter(i -> i.getId().equals(itemId))
@@ -120,8 +116,7 @@ public class Account extends AuditableAbstractAggregateRoot<Account> {
     }
 
     public void decreaseItemQuantity(Long itemId) {
-        if (this.status == AccountStatus.PAYMENT_PENDING)
-            throw new AccountAlreadyClosedException();
+        ensureAccountIsModifiable();
 
         AccountItem item = this.items.stream()
                 .filter(i -> i.getId().equals(itemId))
@@ -146,18 +141,21 @@ public class Account extends AuditableAbstractAggregateRoot<Account> {
     }
 
     public void assignCustomer(String name, String dni, String ruc) {
+        ensureAccountIsModifiable();
         this.customerName = name;
         this.customerDni = dni;
         this.customerRuc = ruc;
     }
 
     public void assignName(String name) {
+        ensureAccountIsModifiable();
         this.name = name;
     }
 
     public void closeAccount() {
-        if (this.status == AccountStatus.PAYMENT_PENDING || this.status == AccountStatus.PAID)
-            throw new AccountAlreadyClosedException();
+        if (!canBeClosed()) {
+            throw new IllegalStateException("Account cannot be closed in current state");
+        }
 
         if (this.items.isEmpty())
             throw new EmptyAccountException();
@@ -166,9 +164,9 @@ public class Account extends AuditableAbstractAggregateRoot<Account> {
     }
 
     public void markAsPaid() {
-        if (this.status != AccountStatus.PAYMENT_PENDING)
+        if (!canBePaid()) {
             throw new IllegalStateException("Account must be payment pending");
-
+        }
         this.status = AccountStatus.PAID;
     }
 
@@ -176,9 +174,31 @@ public class Account extends AuditableAbstractAggregateRoot<Account> {
         if (this.status == AccountStatus.PAID)
             throw new IllegalStateException("Cannot cancel a paid account");
 
+        if (this.status == AccountStatus.PAYMENT_PENDING)
+            throw new IllegalStateException("Cannot cancel a closed account");
+
         if (this.status == AccountStatus.CANCELLED)
             return;
 
         this.status = AccountStatus.CANCELLED;
+    }
+
+    private void ensureAccountIsModifiable() {
+        if (!isActive()) {
+            throw new AccountAlreadyClosedException();
+        }
+    }
+
+    public boolean isActive() {
+        return this.status == AccountStatus.OPEN
+                || this.status == AccountStatus.IN_PROGRESS;
+    }
+
+    public boolean canBeClosed() {
+        return this.status == AccountStatus.IN_PROGRESS;
+    }
+
+    public boolean canBePaid() {
+        return this.status == AccountStatus.PAYMENT_PENDING;
     }
 }
