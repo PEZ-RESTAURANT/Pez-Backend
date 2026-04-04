@@ -10,7 +10,8 @@ public class CashMovementResourceAssembler {
                 movement.getId(),
                 movement.getType(),
                 movement.getAmount(),
-                movement.getNote()
+                movement.getNote(),
+                movement.getCreatedAt()
         );
     }
 }
