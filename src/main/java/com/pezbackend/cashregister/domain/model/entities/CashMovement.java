@@ -2,6 +2,7 @@ package com.pezbackend.cashregister.domain.model.entities;
 
 import com.pezbackend.cashregister.domain.model.aggregates.CashRegister;
 import com.pezbackend.cashregister.domain.model.valueobjects.CashMovementType;
+import com.pezbackend.shared.domain.model.entities.AuditableModel;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
@@ -12,11 +13,7 @@ import java.math.BigDecimal;
 @Getter
 @Setter
 @Entity
-public class CashMovement {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+public class CashMovement extends AuditableModel {
 
     @ManyToOne(fetch = FetchType.LAZY)
     private CashRegister cashRegister;

@@ -17,4 +17,6 @@ public interface AccountRepository extends JpaRepository<Account, Long> {
     List<Account> findByCustomerDni(String customerDni);
 
     List<Account> findByCustomerRuc(String customerRuc);
+
+    boolean existsByNameIgnoreCaseAndStatusIn(String name, List<AccountStatus> statuses);
 }
