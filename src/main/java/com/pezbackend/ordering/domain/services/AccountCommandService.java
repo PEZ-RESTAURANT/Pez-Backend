@@ -21,4 +21,10 @@ public interface AccountCommandService {
     void handle(IncreaseItemQuantityCommand command);
 
     void handle(DecreaseItemQuantityCommand command);
+
+    void handle(CancelAccountCommand command);
+
+    void handle(AddProductToAccountCommand command);
+
+    void handle(MarkAccountAsPaidCommand command);
 }
