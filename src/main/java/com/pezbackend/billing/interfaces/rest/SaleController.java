@@ -14,6 +14,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
@@ -39,8 +41,23 @@ public class SaleController {
 
     // 🔍 GET ALL
     @GetMapping
-    public ResponseEntity<List<SaleResource>> getAll() {
-        List<Sale> sales = queryService.handle(new GetAllSalesQuery());
+    public ResponseEntity<List<SaleResource>> getSales(
+            @RequestParam(required = false) String from,
+            @RequestParam(required = false) String to
+    ) {
+        List<Sale> sales;
+
+        if (from == null && to == null) {
+            sales = queryService.handle(new GetCurrentSalesQuery());
+        } else {
+            LocalDateTime startDate = LocalDate.parse(from).atStartOfDay();
+            LocalDateTime endDate = LocalDate.parse(to).atTime(23, 59, 59);
+
+            sales = queryService.handle(
+                    new GetSalesBetweenDatesQuery(startDate, endDate)
+            );
+        }
+
         return ResponseEntity.ok(
                 sales.stream()
                         .map(SaleResourceFromEntityAssembler::toResourceFromEntity)
