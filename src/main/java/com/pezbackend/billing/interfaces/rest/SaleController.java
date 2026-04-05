@@ -9,13 +9,16 @@ import com.pezbackend.billing.interfaces.rest.resources.CreateSaleResource;
 import com.pezbackend.billing.interfaces.rest.resources.SaleResource;
 import com.pezbackend.billing.interfaces.rest.transform.CreateSaleCommandFromResourceAssembler;
 import com.pezbackend.billing.interfaces.rest.transform.SaleResourceFromEntityAssembler;
+import com.pezbackend.iam.infrastructure.authorization.sfs.annotations.AuthorizeRoles;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/sales")
+@PreAuthorize(AuthorizeRoles.CASHIER_OR_ADMIN)
 public class SaleController {
 
     private final SaleCommandService commandService;
