@@ -50,9 +50,10 @@ public class CashRegisterResourceAssembler {
                 cashRegister.getOpeningBalance(),
                 cashRegister.getCurrentBalance(),
                 cashRegister.getStatus().name(),
-                movements,
                 summary,
-                cashRegister.getCreatedAt()
+                cashRegister.getCreatedAt(),
+                cashRegister.getClosedAt(),
+                movements
         );
     }
 }
