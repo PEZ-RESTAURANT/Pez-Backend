@@ -5,6 +5,7 @@ import com.pezbackend.cashregister.domain.model.valueobjects.CashRegisterStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -15,5 +16,5 @@ public interface CashRegisterRepository extends JpaRepository<CashRegister, Long
     // Busca el turno abierto actual
     Optional<CashRegister> findByStatus(CashRegisterStatus status);
 
-    List<CashRegister> findByCreatedAtBetween(Date startDate, Date endDate);
+    List<CashRegister> findByCreatedAtBetween(LocalDateTime startDate, LocalDateTime endDate);
 }

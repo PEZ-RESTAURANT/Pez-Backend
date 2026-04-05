@@ -12,6 +12,7 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -31,6 +32,9 @@ public class CashRegister extends AuditableAbstractAggregateRoot<CashRegister> {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private CashRegisterStatus status;
+
+    @Column
+    private LocalDateTime closedAt;
 
     @OneToMany(mappedBy = "cashRegister", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<CashMovement> movements = new ArrayList<>();
@@ -64,5 +68,6 @@ public class CashRegister extends AuditableAbstractAggregateRoot<CashRegister> {
     public void close() {
         if (status == CashRegisterStatus.CLOSED) throw new CashRegisterAlreadyClosedException();
         status = CashRegisterStatus.CLOSED;
+        this.closedAt = LocalDateTime.now();
     }
 }

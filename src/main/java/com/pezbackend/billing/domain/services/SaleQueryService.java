@@ -16,4 +16,8 @@ public interface SaleQueryService {
     List<Sale> handle(GetSalesByPaymentMethodQuery query);
 
     List<Sale> handle(GetSalesByStaffQuery query);
+
+    List<Sale> handle(GetSalesBetweenDatesQuery query);
+
+    List<Sale> handle(GetCurrentSalesQuery query);
 }

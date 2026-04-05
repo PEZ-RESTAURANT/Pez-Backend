@@ -1,8 +1,8 @@
 package com.pezbackend.cashregister.domain.model.queries;
 
-import java.util.Date;
+import java.time.LocalDateTime;
 
 public record GetCashRegistersByDateRangeQuery(
-        Date startDate,
-        Date endDate
+        LocalDateTime startDate,
+        LocalDateTime endDate
 ) {}
