@@ -3,7 +3,7 @@ package com.pezbackend.ordering.interfaces.rest.resources;
 import com.pezbackend.ordering.domain.model.valueobjects.AccountStatus;
 
 import java.math.BigDecimal;
-import java.util.Date;
+import java.time.LocalDateTime;
 import java.util.List;
 
 public record AccountResource(
@@ -20,6 +20,6 @@ public record AccountResource(
 
         List<AccountItemResource> items,
 
-        Date createdAt,
-        Date updatedAt
+        LocalDateTime createdAt,
+        LocalDateTime updatedAt
 ) {}

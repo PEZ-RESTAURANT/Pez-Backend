@@ -13,7 +13,9 @@ import com.pezbackend.catalog.interfaces.rest.resources.ProductResource;
 import com.pezbackend.catalog.interfaces.rest.resources.UpdateProductResource;
 import com.pezbackend.catalog.interfaces.rest.transform.CreateProductCommandFromResourceAssembler;
 import com.pezbackend.catalog.interfaces.rest.transform.ProductResourceFromEntityAssembler;
+import com.pezbackend.iam.infrastructure.authorization.sfs.annotations.AuthorizeRoles;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -33,6 +35,7 @@ public class ProductController {
     }
 
     // 🔥 CREATE
+    @PreAuthorize(AuthorizeRoles.ADMIN)
     @PostMapping
     public ResponseEntity<Void> create(@RequestBody CreateProductResource resource) {
 
@@ -112,6 +115,7 @@ public class ProductController {
     }
 
     // ✏️ UPDATE
+    @PreAuthorize(AuthorizeRoles.ADMIN)
     @PutMapping("/{id}")
     public ResponseEntity<Void> update(
             @PathVariable Long id,
@@ -130,6 +134,7 @@ public class ProductController {
     }
 
     // ❌ DELETE
+    @PreAuthorize(AuthorizeRoles.ADMIN)
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
 
