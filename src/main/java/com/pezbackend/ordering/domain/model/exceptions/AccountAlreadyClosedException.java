@@ -1,7 +1,9 @@
 package com.pezbackend.ordering.domain.model.exceptions;
 
-public class AccountAlreadyClosedException extends RuntimeException {
+import com.pezbackend.shared.domain.model.exceptions.BusinessRuleException;
+
+public class AccountAlreadyClosedException extends BusinessRuleException {
     public AccountAlreadyClosedException() {
-        super("Account is already closed");
+        super("Account is not modifiable, is closed");
     }
 }

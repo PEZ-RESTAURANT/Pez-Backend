@@ -1,6 +1,8 @@
 package com.pezbackend.ordering.domain.model.exceptions;
 
-public class EmptyAccountException extends RuntimeException {
+import com.pezbackend.shared.domain.model.exceptions.BusinessRuleException;
+
+public class EmptyAccountException extends BusinessRuleException {
     public EmptyAccountException() {
         super("Cannot close an empty account");
     }

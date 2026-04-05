@@ -1,16 +1,13 @@
 package com.pezbackend.iam.domain.model.exceptions;
 
+import com.pezbackend.shared.domain.model.exceptions.ConflictException;
+
 /**
  * Exception thrown when attempting to create a user that already exists
  */
-public class UserAlreadyExistsException extends RuntimeException {
-    
+public class UserAlreadyExistsException extends ConflictException {
+
     public UserAlreadyExistsException(String email) {
         super("User with email " + email + " already exists");
     }
-    
-    public UserAlreadyExistsException(String email, Throwable cause) {
-        super("User with email " + email + " already exists", cause);
-    }
 }
-

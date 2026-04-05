@@ -1,5 +1,7 @@
 package com.pezbackend.ordering.domain.model.commands;
 
+import com.pezbackend.shared.domain.model.exceptions.BadRequestException;
+
 import java.math.BigDecimal;
 
 public record AddItemToAccountCommand(
@@ -11,15 +13,15 @@ public record AddItemToAccountCommand(
 ) {
     public AddItemToAccountCommand {
         if (accountId == null || accountId <= 0)
-            throw new IllegalArgumentException("AccountId is required.");
+            throw new BadRequestException("AccountId is required.");
 
         if (productName == null || productName.isBlank())
-            throw new IllegalArgumentException("Product name is required.");
+            throw new BadRequestException("Product name is required.");
 
         if (unitPrice == null || unitPrice.doubleValue() <= 0)
-            throw new IllegalArgumentException("Unit price must be greater than zero.");
+            throw new BadRequestException("Unit price must be greater than zero.");
 
         if (quantity == null || quantity <= 0)
-            throw new IllegalArgumentException("Quantity must be greater than zero.");
+            throw new BadRequestException("Quantity must be greater than zero.");
     }
 }

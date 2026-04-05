@@ -2,6 +2,8 @@ package com.pezbackend.billing.domain.model.aggregates;
 
 import com.pezbackend.billing.domain.model.entities.SaleDetail;
 import com.pezbackend.billing.domain.model.entities.SalePayment;
+import com.pezbackend.billing.domain.model.exceptions.EmptySaleException;
+import com.pezbackend.billing.domain.model.exceptions.PaymentMismatchException;
 import com.pezbackend.billing.domain.model.valueobjects.DocumentType;
 import com.pezbackend.billing.domain.model.valueobjects.PaymentMethod;
 import com.pezbackend.shared.domain.model.aggregates.AuditableAbstractAggregateRoot;
@@ -77,8 +79,10 @@ public class Sale extends AuditableAbstractAggregateRoot<Sale> {
                 .map(SalePayment::getAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        if (paymentTotal.compareTo(this.total) != 0) {
-            throw new IllegalStateException("Payment total must equal sale total");
-        }
+        if (payments.isEmpty())
+            throw new EmptySaleException();
+
+        if (paymentTotal.compareTo(this.total) != 0)
+            throw new PaymentMismatchException();
     }
 }
