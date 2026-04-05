@@ -2,7 +2,7 @@ package com.pezbackend.billing.interfaces.rest.resources;
 
 import com.pezbackend.billing.domain.model.valueobjects.DocumentType;
 import java.math.BigDecimal;
-import java.util.Date;
+import java.time.LocalDateTime;
 import java.util.List;
 
 public record SaleResource(
@@ -14,7 +14,7 @@ public record SaleResource(
         String customerRuc,
         DocumentType documentType,
         BigDecimal total,
-        Date createdAt,
+        LocalDateTime createdAt,
         List<SaleDetailResource> details,
         List<SalePaymentResource> payments
 ) {}
