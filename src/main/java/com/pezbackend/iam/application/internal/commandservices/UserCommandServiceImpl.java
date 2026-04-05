@@ -7,12 +7,14 @@ import com.pezbackend.iam.domain.model.commands.SignInCommand;
 import com.pezbackend.iam.domain.model.commands.SignUpCommand;
 import com.pezbackend.iam.domain.model.entities.Role;
 import com.pezbackend.iam.domain.model.exceptions.InvalidCredentialsException;
+import com.pezbackend.iam.domain.model.exceptions.RoleNotFoundException;
 import com.pezbackend.iam.domain.model.exceptions.UserAccountDeactivatedException;
 import com.pezbackend.iam.domain.model.exceptions.UserAlreadyExistsException;
 import com.pezbackend.iam.domain.services.RoleValidationService;
 import com.pezbackend.iam.domain.services.UserCommandService;
 import com.pezbackend.iam.infrastructure.persistence.jpa.repositories.RoleRepository;
 import com.pezbackend.iam.infrastructure.persistence.jpa.repositories.UserRepository;
+import com.pezbackend.shared.domain.model.exceptions.BusinessRuleException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -66,7 +68,9 @@ public class UserCommandServiceImpl implements UserCommandService {
 
         // Validate requested role
         if (!roleValidationService.canRequestRole(command.requestedRole())) {
-            throw new IllegalArgumentException("Cannot request role: " + command.requestedRole());
+            throw new BusinessRuleException(
+                    "Cannot request role: " + command.requestedRole()
+            );
         }
 
         // Hash the password
@@ -83,8 +87,8 @@ public class UserCommandServiceImpl implements UserCommandService {
 
         // Assign requested role
         Role requestedRole = roleRepository.findByName(command.requestedRole())
-                .orElseThrow(() -> new IllegalStateException("Requested role " + command.requestedRole() + " not found"));
-        
+                .orElseThrow(() -> new RoleNotFoundException(command.requestedRole()));
+
         user.addRole(requestedRole);
 
         // Save user

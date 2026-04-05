@@ -1,9 +1,7 @@
 package com.pezbackend.cashregister.domain.model.aggregates;
 
 import com.pezbackend.cashregister.domain.model.entities.CashMovement;
-import com.pezbackend.cashregister.domain.model.exceptions.CashMovementInvalidAmountException;
-import com.pezbackend.cashregister.domain.model.exceptions.CashRegisterAlreadyClosedException;
-import com.pezbackend.cashregister.domain.model.exceptions.CashRegisterNotOpenException;
+import com.pezbackend.cashregister.domain.model.exceptions.*;
 import com.pezbackend.cashregister.domain.model.valueobjects.CashMovementType;
 import com.pezbackend.cashregister.domain.model.valueobjects.CashRegisterStatus;
 import com.pezbackend.shared.domain.model.aggregates.AuditableAbstractAggregateRoot;
@@ -43,6 +41,10 @@ public class CashRegister extends AuditableAbstractAggregateRoot<CashRegister> {
 
     // Abrir caja
     public CashRegister(BigDecimal openingBalance) {
+
+        if (openingBalance == null || openingBalance.compareTo(BigDecimal.ZERO) <= 0)
+            throw new CashRegisterInvalidOpeningBalanceException(openingBalance);
+
         this.openingBalance = openingBalance;
         this.currentBalance = openingBalance;
         this.status = CashRegisterStatus.OPEN;
@@ -50,7 +52,13 @@ public class CashRegister extends AuditableAbstractAggregateRoot<CashRegister> {
 
     // Agregar movimiento manual o por venta
     public void addMovement(CashMovement movement) {
-        if (status != CashRegisterStatus.OPEN) throw new CashRegisterNotOpenException();
+
+        if (movement == null)
+            throw new CashMovementNullException();
+
+        if (status != CashRegisterStatus.OPEN)
+            throw new CashRegisterNotOpenException();
+
         if (movement.getAmount().compareTo(BigDecimal.ZERO) <= 0)
             throw new CashMovementInvalidAmountException(movement.getAmount());
 
@@ -66,8 +74,14 @@ public class CashRegister extends AuditableAbstractAggregateRoot<CashRegister> {
 
     // Cerrar caja
     public void close() {
-        if (status == CashRegisterStatus.CLOSED) throw new CashRegisterAlreadyClosedException();
-        status = CashRegisterStatus.CLOSED;
+
+        if (status == CashRegisterStatus.CLOSED)
+            throw new CashRegisterAlreadyClosedException();
+
+        if (movements.isEmpty())
+            throw new CashRegisterHasNoMovementsException(this.getId());
+
+        this.status = CashRegisterStatus.CLOSED;
         this.closedAt = LocalDateTime.now();
     }
 }

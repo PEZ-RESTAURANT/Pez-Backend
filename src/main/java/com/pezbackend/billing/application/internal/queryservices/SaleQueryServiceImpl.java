@@ -1,6 +1,7 @@
 package com.pezbackend.billing.application.internal.queryservices;
 
 import com.pezbackend.billing.domain.model.aggregates.Sale;
+import com.pezbackend.billing.domain.model.exceptions.SaleNotFoundException;
 import com.pezbackend.billing.domain.model.queries.*;
 import com.pezbackend.billing.domain.services.SaleQueryService;
 import com.pezbackend.billing.infrastructure.persistence.jpa.repositories.SaleRepository;
@@ -27,7 +28,7 @@ public class SaleQueryServiceImpl implements SaleQueryService {
     @Override
     public Sale handle(GetSaleByIdQuery query) {
         return saleRepository.findById(query.id())
-                .orElseThrow(() -> new RuntimeException("Sale not found"));
+                .orElseThrow(() -> new SaleNotFoundException(query.id()));
     }
 
     @Override

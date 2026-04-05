@@ -4,6 +4,7 @@ import com.pezbackend.ordering.domain.model.entities.AccountItem;
 import com.pezbackend.ordering.domain.model.exceptions.AccountAlreadyClosedException;
 import com.pezbackend.ordering.domain.model.exceptions.AccountItemNotFoundException;
 import com.pezbackend.ordering.domain.model.exceptions.EmptyAccountException;
+import com.pezbackend.ordering.domain.model.exceptions.InvalidAccountStateException;
 import com.pezbackend.ordering.domain.model.valueobjects.AccountStatus;
 import com.pezbackend.shared.domain.model.aggregates.AuditableAbstractAggregateRoot;
 import jakarta.persistence.*;
@@ -154,7 +155,7 @@ public class Account extends AuditableAbstractAggregateRoot<Account> {
 
     public void closeAccount() {
         if (!canBeClosed()) {
-            throw new IllegalStateException("Account cannot be closed in current state");
+            throw new InvalidAccountStateException("Account cannot be closed in current state");
         }
 
         if (this.items.isEmpty())
@@ -165,17 +166,17 @@ public class Account extends AuditableAbstractAggregateRoot<Account> {
 
     public void markAsPaid() {
         if (!canBePaid()) {
-            throw new IllegalStateException("Account must be payment pending");
+            throw new InvalidAccountStateException("Account must be payment pending");
         }
         this.status = AccountStatus.PAID;
     }
 
     public void cancelAccount() {
         if (this.status == AccountStatus.PAID)
-            throw new IllegalStateException("Cannot cancel a paid account");
+            throw new InvalidAccountStateException("Cannot cancel a paid account");
 
         if (this.status == AccountStatus.PAYMENT_PENDING)
-            throw new IllegalStateException("Cannot cancel a closed account");
+            throw new InvalidAccountStateException("Cannot cancel a closed account");
 
         if (this.status == AccountStatus.CANCELLED)
             return;

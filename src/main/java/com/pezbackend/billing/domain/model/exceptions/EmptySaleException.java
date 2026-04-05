@@ -1,6 +1,8 @@
 package com.pezbackend.billing.domain.model.exceptions;
 
-public class EmptySaleException extends RuntimeException {
+import com.pezbackend.shared.domain.model.exceptions.BusinessRuleException;
+
+public class EmptySaleException extends BusinessRuleException {
     public EmptySaleException() {
         super("Cannot close a sale without items");
     }
