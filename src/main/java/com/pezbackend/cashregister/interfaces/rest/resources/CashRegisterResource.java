@@ -11,7 +11,8 @@ public record CashRegisterResource(
         BigDecimal openingBalance,
         BigDecimal currentBalance,
         String status,
-        List<CashMovementResource> movements,
         MovementsSummary summary,
-        LocalDateTime createdAt
+        LocalDateTime createdAt,
+        LocalDateTime closedAt,
+        List<CashMovementResource> movements
 ) {}

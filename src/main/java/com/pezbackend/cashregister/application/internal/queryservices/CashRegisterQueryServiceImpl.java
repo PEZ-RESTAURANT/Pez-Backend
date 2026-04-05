@@ -82,4 +82,15 @@ public class CashRegisterQueryServiceImpl implements CashRegisterQueryService {
                 cashRegister.getCurrentBalance()
         );
     }
+
+    @Override
+    public List<CashRegister> handle(GetCashRegistersByDateRangeQuery query) {
+
+        if (query.startDate() != null && query.endDate() != null) {
+            return cashRegisterRepository
+                    .findByCreatedAtBetween(query.startDate(), query.endDate());
+        }
+
+        return cashRegisterRepository.findAll();
+    }
 }
