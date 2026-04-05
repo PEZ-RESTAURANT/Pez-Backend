@@ -70,6 +70,9 @@ public class SaleCommandServiceImpl implements SaleCommandService {
                 sale.addPayment(p.method(), p.amount())
         );
 
+        // 🔥 validar que pagos == total
+        sale.validatePayments();
+
         saleRepository.save(sale);
 
         // 🔥 cambiar estado cuenta usando command service

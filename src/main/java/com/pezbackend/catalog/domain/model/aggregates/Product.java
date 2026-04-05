@@ -1,5 +1,7 @@
 package com.pezbackend.catalog.domain.model.aggregates;
 
+import com.pezbackend.catalog.domain.model.exceptions.InvalidProductCategoryException;
+import com.pezbackend.catalog.domain.model.exceptions.InvalidProductNameException;
 import com.pezbackend.catalog.domain.model.exceptions.InvalidProductPriceException;
 import com.pezbackend.catalog.domain.model.valueobjects.ProductCategory;
 import com.pezbackend.shared.domain.model.aggregates.AuditableAbstractAggregateRoot;
@@ -38,29 +40,29 @@ public class Product extends AuditableAbstractAggregateRoot<Product> {
     }
 
     public void update(String name, BigDecimal price, ProductCategory category) {
-        if (name != null && !name.isBlank()) {
-            this.name = name;
-        }
 
-        if (price != null) {
-            if (price.compareTo(BigDecimal.ZERO) <= 0)
-                throw new InvalidProductPriceException(price);
-            this.price = price;
-        }
-
-        if (category != null) {
-            this.category = category;
-        }
-    }
-
-    private void validate(String name, BigDecimal price, ProductCategory category) {
         if (name == null || name.isBlank())
-            throw new IllegalArgumentException("Product name cannot be empty");
+            throw new InvalidProductNameException();
 
         if (price == null || price.compareTo(BigDecimal.ZERO) <= 0)
             throw new InvalidProductPriceException(price);
 
         if (category == null)
-            throw new IllegalArgumentException("Category cannot be null");
+            throw new InvalidProductCategoryException();
+
+        this.name = name;
+        this.price = price;
+        this.category = category;
+    }
+
+    private void validate(String name, BigDecimal price, ProductCategory category) {
+        if (name == null || name.isBlank())
+            throw new InvalidProductNameException();
+
+        if (price == null || price.compareTo(BigDecimal.ZERO) <= 0)
+            throw new InvalidProductPriceException(price);
+
+        if (category == null)
+            throw new InvalidProductCategoryException();
     }
 }

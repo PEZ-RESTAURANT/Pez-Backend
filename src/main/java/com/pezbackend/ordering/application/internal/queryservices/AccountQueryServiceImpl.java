@@ -1,6 +1,7 @@
 package com.pezbackend.ordering.application.internal.queryservices;
 
 import com.pezbackend.ordering.domain.model.aggregates.Account;
+import com.pezbackend.ordering.domain.model.exceptions.AccountNotFoundException;
 import com.pezbackend.ordering.domain.model.queries.*;
 import com.pezbackend.ordering.domain.services.AccountQueryService;
 import com.pezbackend.ordering.infrastructure.persistence.jpa.repositories.AccountRepository;
@@ -20,7 +21,7 @@ public class AccountQueryServiceImpl implements AccountQueryService {
     @Override
     public Account handle(GetAccountByIdQuery query) {
         return accountRepository.findById(query.accountId())
-                .orElseThrow(() -> new RuntimeException("Account not found"));
+                .orElseThrow(() -> new AccountNotFoundException(query.accountId()));
     }
 
     @Override
