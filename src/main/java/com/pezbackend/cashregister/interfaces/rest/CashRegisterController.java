@@ -12,10 +12,13 @@ import com.pezbackend.cashregister.interfaces.rest.resources.*;
 import com.pezbackend.cashregister.interfaces.rest.transform.CashMovementResourceAssembler;
 import com.pezbackend.cashregister.interfaces.rest.transform.CashRegisterResourceAssembler;
 import com.pezbackend.iam.infrastructure.authorization.sfs.annotations.AuthorizeRoles;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
 
@@ -106,11 +109,24 @@ public class CashRegisterController {
 
     @GetMapping
     public ResponseEntity<List<CashRegisterResource>> getCashRegisters(
-            @RequestParam(required = false) Date startDate,
-            @RequestParam(required = false) Date endDate) {
+
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+            LocalDate startDate,
+
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+            LocalDate endDate
+    ) {
+
+        LocalDateTime start = null;
+        LocalDateTime end = null;
+
+        if (startDate != null) start = startDate.atStartOfDay();
+        if (endDate != null) end = endDate.atTime(23,59,59);
 
         List<CashRegister> cashRegisters =
-                queryService.handle(new GetCashRegistersByDateRangeQuery(startDate, endDate));
+                queryService.handle(new GetCashRegistersByDateRangeQuery(start, end));
 
         return ResponseEntity.ok(
                 cashRegisters.stream()
