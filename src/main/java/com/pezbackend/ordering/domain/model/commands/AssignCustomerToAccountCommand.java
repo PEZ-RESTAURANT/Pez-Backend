@@ -1,5 +1,7 @@
 package com.pezbackend.ordering.domain.model.commands;
 
+import com.pezbackend.shared.domain.model.exceptions.BadRequestException;
+
 public record AssignCustomerToAccountCommand(
         Long accountId,
         String customerName,
@@ -8,6 +10,6 @@ public record AssignCustomerToAccountCommand(
 ) {
     public AssignCustomerToAccountCommand {
         if (accountId == null || accountId <= 0)
-            throw new IllegalArgumentException("AccountId is required.");
+            throw new BadRequestException("AccountId is required.");
     }
 }

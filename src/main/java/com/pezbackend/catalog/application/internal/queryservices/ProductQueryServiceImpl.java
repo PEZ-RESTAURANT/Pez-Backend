@@ -1,6 +1,7 @@
 package com.pezbackend.catalog.application.internal.queryservices;
 
 import com.pezbackend.catalog.domain.model.aggregates.Product;
+import com.pezbackend.catalog.domain.model.exceptions.ProductNotFoundException;
 import com.pezbackend.catalog.domain.model.queries.*;
 import com.pezbackend.catalog.domain.model.valueobjects.ProductCategory;
 import com.pezbackend.catalog.domain.services.ProductQueryService;
@@ -54,7 +55,7 @@ public class ProductQueryServiceImpl implements ProductQueryService {
     @Override
     public Product handle(GetProductByIdQuery query) {
         return productRepository.findById(query.productId())
-                .orElseThrow(() -> new RuntimeException("Product not found"));
+                .orElseThrow(() -> new ProductNotFoundException(query.productId()));
     }
 
     @Override

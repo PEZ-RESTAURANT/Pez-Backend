@@ -8,11 +8,6 @@ import com.pezbackend.cashregister.domain.model.valueobjects.CashRegisterStatus;
 import com.pezbackend.cashregister.domain.services.CashRegisterCommandService;
 import com.pezbackend.cashregister.domain.model.exceptions.*;
 import com.pezbackend.cashregister.infrastructure.persistence.jpa.repositories.CashRegisterRepository;
-import com.pezbackend.ordering.domain.model.aggregates.Account;
-import com.pezbackend.ordering.domain.model.queries.GetAccountByIdQuery;
-import com.pezbackend.ordering.domain.model.valueobjects.AccountStatus;
-import com.pezbackend.ordering.domain.services.AccountQueryService;
-import com.pezbackend.ordering.infrastructure.persistence.jpa.repositories.AccountRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,12 +16,9 @@ import org.springframework.transaction.annotation.Transactional;
 public class CashRegisterCommandServiceImpl implements CashRegisterCommandService {
 
     private final CashRegisterRepository cashRegisterRepository;
-    private final AccountQueryService accountQueryService;
 
-    public CashRegisterCommandServiceImpl(CashRegisterRepository cashRegisterRepository,
-                                          AccountQueryService accountQueryService) {
+    public CashRegisterCommandServiceImpl(CashRegisterRepository cashRegisterRepository) {
         this.cashRegisterRepository = cashRegisterRepository;
-        this.accountQueryService = accountQueryService;
     }
 
     @Override

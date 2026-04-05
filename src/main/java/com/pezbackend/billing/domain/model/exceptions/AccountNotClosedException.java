@@ -1,7 +1,9 @@
 package com.pezbackend.billing.domain.model.exceptions;
 
-public class AccountNotClosedException extends RuntimeException {
+import com.pezbackend.shared.domain.model.exceptions.BusinessRuleException;
+
+public class AccountNotClosedException extends BusinessRuleException {
     public AccountNotClosedException(Long id) {
-        super("The account "+ id +" hasn't been closed");
+        super("The account " + id + " hasn't been closed");
     }
 }
