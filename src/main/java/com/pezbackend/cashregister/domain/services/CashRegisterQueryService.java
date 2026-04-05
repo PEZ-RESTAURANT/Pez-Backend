@@ -17,4 +17,5 @@ public interface CashRegisterQueryService {
 
     MovementsSummary handle(GetMovementsSummaryQuery query);
 
+    List<CashRegister> handle(GetCashRegistersByDateRangeQuery query);
 }
