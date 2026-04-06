@@ -310,6 +310,9 @@ GET     /api/v1/cash-registers/current
 
 ![General](docs/swagger-general.png)
 
+## Swagger - Users
+![Products](docs/swagger-users.png)
+
 ## Swagger - Products
 ![Products](docs/swagger-products.png)
 
