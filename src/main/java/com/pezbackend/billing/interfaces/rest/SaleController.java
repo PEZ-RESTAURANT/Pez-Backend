@@ -3,24 +3,28 @@ package com.pezbackend.billing.interfaces.rest;
 import com.pezbackend.billing.domain.model.aggregates.Sale;
 import com.pezbackend.billing.domain.model.commands.CreateSaleCommand;
 import com.pezbackend.billing.domain.model.queries.*;
+import com.pezbackend.billing.domain.model.valueobjects.PaymentDetail;
 import com.pezbackend.billing.domain.services.SaleCommandService;
 import com.pezbackend.billing.domain.services.SaleQueryService;
 import com.pezbackend.billing.interfaces.rest.resources.CreateSaleResource;
+import com.pezbackend.billing.interfaces.rest.resources.RegisterPaymentsResource;
 import com.pezbackend.billing.interfaces.rest.resources.SaleResource;
 import com.pezbackend.billing.interfaces.rest.transform.CreateSaleCommandFromResourceAssembler;
 import com.pezbackend.billing.interfaces.rest.transform.SaleResourceFromEntityAssembler;
-import com.pezbackend.iam.infrastructure.authorization.sfs.annotations.AuthorizeRoles;
+import com.pezbackend.iam.infrastructure.authorization.sfs.annotations.RequiresPermission;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
+/**
+ * Controlador REST para el módulo de facturación y ventas.
+ */
 @RestController
 @RequestMapping("/api/v1/sales")
-@PreAuthorize(AuthorizeRoles.CASHIER_OR_ADMIN)
 public class SaleController {
 
     private final SaleCommandService commandService;
@@ -31,16 +35,34 @@ public class SaleController {
         this.queryService = queryService;
     }
 
-    // 🔥 CREATE
+    // Emitir comprobante
     @PostMapping
+    @RequiresPermission("orders.issue_receipt")
     public ResponseEntity<Long> create(@RequestBody CreateSaleResource resource) {
         CreateSaleCommand command = CreateSaleCommandFromResourceAssembler.toCommandFromResource(resource);
         Long saleId = commandService.handle(command);
         return ResponseEntity.ok(saleId);
     }
 
-    // 🔍 GET ALL
+    // Registrar pagos de una venta
+    @PostMapping("/{id}/payments")
+    @RequiresPermission("orders.issue_receipt")
+    public ResponseEntity<Void> registerPayments(
+            @PathVariable Long id,
+            @RequestBody RegisterPaymentsResource resource
+    ) {
+        List<PaymentDetail> payments = resource.payments().stream()
+                .map(p -> new PaymentDetail(p.method(), p.amount()))
+                .toList();
+
+        String executor = SecurityContextHolder.getContext().getAuthentication().getName();
+        commandService.registerPayments(id, payments, executor);
+        return ResponseEntity.ok().build();
+    }
+
+    // Obtener todos
     @GetMapping
+    @RequiresPermission("inventory.view") // Reutiliza permiso de ver inventario/shift o similar
     public ResponseEntity<List<SaleResource>> getSales(
             @RequestParam(required = false) String from,
             @RequestParam(required = false) String to
@@ -65,15 +87,17 @@ public class SaleController {
         );
     }
 
-    // 🔍 GET BY ID
+    // Obtener por id
     @GetMapping("/{id}")
+    @RequiresPermission("inventory.view")
     public ResponseEntity<SaleResource> getById(@PathVariable Long id) {
         Sale sale = queryService.handle(new GetSaleByIdQuery(id));
         return ResponseEntity.ok(SaleResourceFromEntityAssembler.toResourceFromEntity(sale));
     }
 
-    // 🔍 GET BY DOCUMENT TYPE
+    // Obtener por tipo de documento
     @GetMapping("/document-type/{documentType}")
+    @RequiresPermission("inventory.view")
     public ResponseEntity<List<SaleResource>> getByDocumentType(@PathVariable String documentType) {
         List<Sale> sales = queryService.handle(new GetSalesByDocumentTypeQuery(
                 Enum.valueOf(com.pezbackend.billing.domain.model.valueobjects.DocumentType.class, documentType)
@@ -85,8 +109,9 @@ public class SaleController {
         );
     }
 
-    // 🔍 GET BY PAYMENT METHOD
+    // Obtener por medio de pago
     @GetMapping("/payment-method/{paymentMethod}")
+    @RequiresPermission("inventory.view")
     public ResponseEntity<List<SaleResource>> getByPaymentMethod(@PathVariable String paymentMethod) {
         List<Sale> sales = queryService.handle(new GetSalesByPaymentMethodQuery(
                 Enum.valueOf(com.pezbackend.billing.domain.model.valueobjects.PaymentMethod.class, paymentMethod)
@@ -98,8 +123,9 @@ public class SaleController {
         );
     }
 
-    // 🔍 GET BY STAFF
+    // Obtener por personal
     @GetMapping("/staff/{staffId}")
+    @RequiresPermission("inventory.view")
     public ResponseEntity<List<SaleResource>> getByStaff(@PathVariable Long staffId) {
         List<Sale> sales = queryService.handle(new GetSalesByStaffQuery(staffId));
         return ResponseEntity.ok(

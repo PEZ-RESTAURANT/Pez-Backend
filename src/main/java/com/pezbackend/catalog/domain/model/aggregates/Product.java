@@ -29,6 +29,12 @@ public class Product extends AuditableAbstractAggregateRoot<Product> {
     @Column(nullable = false)
     private ProductCategory category;
 
+    @Column(name = "estimated_prep_time_minutes")
+    private Integer estimatedPrepTimeMinutes;
+
+    @Column(nullable = false)
+    private boolean active = true;
+
     protected Product() {}
 
     public Product(String name, BigDecimal price, ProductCategory category) {
@@ -37,10 +43,21 @@ public class Product extends AuditableAbstractAggregateRoot<Product> {
         this.name = name;
         this.price = price;
         this.category = category;
+        this.active = true;
+        this.estimatedPrepTimeMinutes = null;
     }
 
-    public void update(String name, BigDecimal price, ProductCategory category) {
+    public Product(String name, BigDecimal price, ProductCategory category, Integer estimatedPrepTimeMinutes, Boolean active) {
+        validate(name, price, category);
 
+        this.name = name;
+        this.price = price;
+        this.category = category;
+        this.estimatedPrepTimeMinutes = estimatedPrepTimeMinutes;
+        this.active = active != null ? active : true;
+    }
+
+    public void update(String name, BigDecimal price, ProductCategory category, Integer estimatedPrepTimeMinutes, Boolean active) {
         if (name == null || name.isBlank())
             throw new InvalidProductNameException();
 
@@ -53,6 +70,12 @@ public class Product extends AuditableAbstractAggregateRoot<Product> {
         this.name = name;
         this.price = price;
         this.category = category;
+        this.estimatedPrepTimeMinutes = estimatedPrepTimeMinutes;
+        this.active = active != null ? active : true;
+    }
+
+    public void update(String name, BigDecimal price, ProductCategory category) {
+        update(name, price, category, this.estimatedPrepTimeMinutes, this.active);
     }
 
     private void validate(String name, BigDecimal price, ProductCategory category) {

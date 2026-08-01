@@ -8,6 +8,9 @@ import com.pezbackend.billing.interfaces.rest.resources.SalePaymentResource;
 import com.pezbackend.billing.interfaces.rest.resources.SaleResource;
 import java.util.stream.Collectors;
 
+/**
+ * Ensamblador para convertir la entidad Sale a su recurso DTO SaleResource.
+ */
 public class SaleResourceFromEntityAssembler {
 
     public static SaleResource toResourceFromEntity(Sale sale) {
@@ -16,9 +19,10 @@ public class SaleResourceFromEntityAssembler {
                 sale.getName(),
                 sale.getStaffId(),
                 sale.getCustomerName(),
-                sale.getCustomerDni(),
-                sale.getCustomerRuc(),
+                sale.getCustomerDocumentNumber(),
                 sale.getDocumentType(),
+                sale.getSaleStatus() != null ? sale.getSaleStatus().name() : null,
+                sale.getOrderId(),
                 sale.getTotal(),
                 sale.getCreatedAt(),
                 sale.getDetails().stream()

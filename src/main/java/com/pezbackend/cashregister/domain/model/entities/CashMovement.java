@@ -3,6 +3,7 @@ package com.pezbackend.cashregister.domain.model.entities;
 import com.pezbackend.cashregister.domain.model.aggregates.CashRegister;
 import com.pezbackend.cashregister.domain.model.exceptions.CashMovementInvalidAmountException;
 import com.pezbackend.cashregister.domain.model.exceptions.CashMovementTypeMismatchException;
+import com.pezbackend.cashregister.domain.model.valueobjects.CashMovementReason;
 import com.pezbackend.cashregister.domain.model.valueobjects.CashMovementType;
 import com.pezbackend.shared.domain.model.entities.AuditableModel;
 import jakarta.persistence.*;
@@ -12,6 +13,9 @@ import lombok.Setter;
 
 import java.math.BigDecimal;
 
+/**
+ * Entidad que representa un movimiento (ingreso o egreso) en una caja registradora.
+ */
 @Getter
 @Setter
 @Entity
@@ -28,11 +32,14 @@ public class CashMovement extends AuditableModel {
     @Column(nullable = false)
     private BigDecimal amount;
 
+    @Enumerated(EnumType.STRING)
+    private CashMovementReason reason;
+
     private String note;
 
     protected CashMovement() {}
 
-    public CashMovement(CashMovementType type, BigDecimal amount, String note) {
+    public CashMovement(CashMovementType type, BigDecimal amount, CashMovementReason reason, String note) {
 
         if (type == null)
             throw new CashMovementTypeMismatchException(null, null);
@@ -42,6 +49,11 @@ public class CashMovement extends AuditableModel {
 
         this.type = type;
         this.amount = amount;
+        this.reason = reason;
         this.note = note;
+    }
+
+    public CashMovement(CashMovementType type, BigDecimal amount, String note) {
+        this(type, amount, null, note);
     }
 }

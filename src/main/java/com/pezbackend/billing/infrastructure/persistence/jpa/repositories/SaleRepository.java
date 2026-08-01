@@ -26,4 +26,6 @@ public interface SaleRepository extends JpaRepository<Sale, Long> {
     List<Sale> findByStaffId(Long staffId);
 
     List<Sale> findByCreatedAtBetween(LocalDateTime startDate, LocalDateTime endDate);
+
+    List<Sale> findByCustomerDocumentNumber(String customerDocumentNumber);
 }

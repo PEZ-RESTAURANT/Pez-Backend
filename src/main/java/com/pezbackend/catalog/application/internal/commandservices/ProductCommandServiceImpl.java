@@ -46,7 +46,9 @@ public class ProductCommandServiceImpl implements ProductCommandService {
         product.update(
                 command.name(),
                 command.price(),
-                command.category()
+                command.category(),
+                command.estimatedPrepTimeMinutes(),
+                command.active()
         );
 
         productRepository.save(product);

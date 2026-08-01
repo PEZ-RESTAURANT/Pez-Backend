@@ -1,25 +1,31 @@
 package com.pezbackend.billing.domain.model.commands;
 
 import com.pezbackend.billing.domain.model.valueobjects.DocumentType;
-import com.pezbackend.billing.domain.model.valueobjects.PaymentDetail;
-import com.pezbackend.billing.domain.model.valueobjects.PaymentMethod;
 import com.pezbackend.shared.domain.model.exceptions.BadRequestException;
 
-import java.util.List;
-
+/**
+ * Comando para emitir un documento de venta.
+ *
+ * @param orderId                ID de la comanda
+ * @param documentType           tipo de documento (Boleta/Factura)
+ * @param customerDocumentNumber número de documento fiscal
+ * @param customerName           nombre del cliente (opcional)
+ */
 public record CreateSaleCommand(
-        Long accountId,
+        Long orderId,
         DocumentType documentType,
-        List<PaymentDetail> payments
+        String customerDocumentNumber,
+        String customerName
 ) {
     public CreateSaleCommand {
-        if (accountId == null || accountId <= 0)
-            throw new BadRequestException("AccountId is required");
-
-        if (documentType == null)
+        if (orderId == null || orderId <= 0) {
+            throw new BadRequestException("OrderId is required");
+        }
+        if (documentType == null) {
             throw new BadRequestException("Document type is required");
-
-        if (payments == null || payments.isEmpty())
-            throw new BadRequestException("Payments are required");
+        }
+        if (customerDocumentNumber == null || customerDocumentNumber.isBlank()) {
+            throw new BadRequestException("Customer document number is required");
+        }
     }
 }

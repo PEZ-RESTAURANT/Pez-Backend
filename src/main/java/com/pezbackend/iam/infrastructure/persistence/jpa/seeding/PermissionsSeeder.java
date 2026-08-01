@@ -81,17 +81,23 @@ public class PermissionsSeeder {
             new PermissionSeed("staff.view", "staff", "Ver listado de personal y contratos", true, true, false, false),
             new PermissionSeed("staff.register_manual_attendance", "staff", "Registrar marcas de asistencia manuales", true, false, false, false),
             new PermissionSeed("staff.register_advance", "staff", "Registrar adelantos de sueldo a empleados", true, true, false, false),
-            new PermissionSeed("staff.register_sanction", "staff", "Registrar sanciones o amonestaciones de empleados", true, true, false, false),
-            new PermissionSeed("staff.register_overtime", "staff", "Registrar horas extras autorizadas", true, true, false, false),
+            new PermissionSeed("staff.register_sanction", "staff", "Registrar sanciones o amonestaciones de empleados", true, false, false, false),
+            new PermissionSeed("staff.register_overtime", "staff", "Registrar horas extras autorizadas", true, false, false, false),
             new PermissionSeed("staff.edit_profile", "staff", "Gestionar perfiles de empleados de la plantilla", true, false, false, false),
+            new PermissionSeed("staff.manage_employees", "staff", "Gestionar perfiles, huellas y consultas del personal", true, false, false, false),
+            new PermissionSeed("staff.register_attendance", "staff", "Registrar marca de asistencia", true, true, true, true),
 
             // --- Loyalty ---
             new PermissionSeed("loyalty.register_customer", "loyalty", "Registrar nuevos clientes en el programa de fidelización", true, true, false, false),
             new PermissionSeed("loyalty.view_analytics", "loyalty", "Visualizar métricas de consumo de clientes frecuentes", true, false, false, false),
+            new PermissionSeed("loyalty.view", "loyalty", "Visualizar perfiles de clientes y su historial de puntos", true, true, false, false),
+            new PermissionSeed("loyalty.redeem_points", "loyalty", "Registrar canjes de puntos de clientes", true, true, false, false),
+            new PermissionSeed("loyalty.manage_config", "loyalty", "Gestionar la configuración del programa de fidelización", true, false, false, false),
 
             // --- Analytics & Shared Infrastructure ---
             new PermissionSeed("analytics.view", "analytics", "Visualizar métricas generales de venta e indicadores", true, false, false, false),
             new PermissionSeed("analytics.export", "analytics", "Exportar reportes de negocio a PDF o Excel", true, false, false, false),
+            new PermissionSeed("analytics.manage_config", "analytics", "Gestionar la configuración del módulo de analítica", true, false, false, false),
             new PermissionSeed("audit.view", "audit", "Visualizar historial y traza de eventos de auditoría", true, false, false, false),
             new PermissionSeed("permissions.manage", "permissions", "Administrar permisos y overrides de usuarios", true, false, false, false)
     );

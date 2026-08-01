@@ -12,7 +12,9 @@ public record UpdateProductCommand(
         Long productId,
         String name,
         BigDecimal price,
-        ProductCategory category
+        ProductCategory category,
+        Integer estimatedPrepTimeMinutes,
+        Boolean active
 ) {
     public UpdateProductCommand {
         if (productId == null || productId <= 0)

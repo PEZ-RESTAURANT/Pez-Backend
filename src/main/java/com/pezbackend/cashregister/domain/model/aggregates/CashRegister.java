@@ -84,4 +84,13 @@ public class CashRegister extends AuditableAbstractAggregateRoot<CashRegister> {
         this.status = CashRegisterStatus.CLOSED;
         this.closedAt = LocalDateTime.now();
     }
+
+    // Cierre forzado por horario
+    public void forceClose() {
+        if (status == CashRegisterStatus.CLOSED)
+            throw new CashRegisterAlreadyClosedException();
+
+        this.status = CashRegisterStatus.CLOSED;
+        this.closedAt = LocalDateTime.now();
+    }
 }

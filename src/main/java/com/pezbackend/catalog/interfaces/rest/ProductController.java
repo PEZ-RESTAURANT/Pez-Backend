@@ -21,17 +21,37 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Map;
 
+import com.pezbackend.catalog.domain.services.ProductKitchenZoneCommandService;
+import com.pezbackend.catalog.interfaces.rest.resources.AssignProductToZoneResource;
+import com.pezbackend.iam.infrastructure.authorization.sfs.annotations.RequiresPermission;
+
+import com.pezbackend.catalog.domain.services.RecipeCommandService;
+import com.pezbackend.catalog.domain.services.RecipeQueryService;
+import com.pezbackend.catalog.domain.model.entities.Recipe;
+import com.pezbackend.catalog.interfaces.rest.resources.AddRecipeItemResource;
+import com.pezbackend.catalog.interfaces.rest.resources.RecipeResource;
+import com.pezbackend.catalog.interfaces.rest.transform.RecipeResourceFromEntityAssembler;
+
 @RestController
 @RequestMapping("/api/v1/products")
 public class ProductController {
 
     private final ProductCommandService commandService;
     private final ProductQueryService queryService;
+    private final ProductKitchenZoneCommandService productKitchenZoneCommandService;
+    private final RecipeCommandService recipeCommandService;
+    private final RecipeQueryService recipeQueryService;
 
     public ProductController(ProductCommandService commandService,
-                             ProductQueryService queryService) {
+                             ProductQueryService queryService,
+                             ProductKitchenZoneCommandService productKitchenZoneCommandService,
+                             RecipeCommandService recipeCommandService,
+                             RecipeQueryService recipeQueryService) {
         this.commandService = commandService;
         this.queryService = queryService;
+        this.productKitchenZoneCommandService = productKitchenZoneCommandService;
+        this.recipeCommandService = recipeCommandService;
+        this.recipeQueryService = recipeQueryService;
     }
 
     // 🔥 CREATE
@@ -115,8 +135,8 @@ public class ProductController {
     }
 
     // ✏️ UPDATE
-    @PreAuthorize(AuthorizeRoles.ADMIN)
     @PutMapping("/{id}")
+    @RequiresPermission("catalog.edit_products_categories")
     public ResponseEntity<Void> update(
             @PathVariable Long id,
             @RequestBody UpdateProductResource resource
@@ -126,7 +146,9 @@ public class ProductController {
                 id,
                 resource.name(),
                 resource.price(),
-                resource.category()
+                resource.category(),
+                resource.estimatedPrepTimeMinutes(),
+                resource.active()
         );
 
         commandService.handle(command);
@@ -139,6 +161,59 @@ public class ProductController {
     public ResponseEntity<Void> delete(@PathVariable Long id) {
 
         commandService.handle(new DeleteProductCommand(id));
+        return ResponseEntity.ok().build();
+    }
+
+    // 🏷️ ASSIGN KITCHEN ZONE
+    @PutMapping("/{id}/kitchen-zone")
+    @RequiresPermission("catalog.edit_kitchen_zones")
+    public ResponseEntity<Void> assignKitchenZone(
+            @PathVariable Long id,
+            @RequestBody AssignProductToZoneResource resource
+    ) {
+        productKitchenZoneCommandService.assignProductToZone(id, resource.zoneId());
+        return ResponseEntity.ok().build();
+    }
+
+    // 📖 RECIPES ENDPOINTS
+    @GetMapping("/{id}/recipe")
+    @RequiresPermission("catalog.edit_supplies_recipes")
+    public ResponseEntity<List<RecipeResource>> getRecipe(@PathVariable Long id) {
+        List<Recipe> recipe = recipeQueryService.getRecipeForProduct(id);
+        return ResponseEntity.ok(
+                recipe.stream()
+                        .map(RecipeResourceFromEntityAssembler::toResourceFromEntity)
+                        .toList()
+        );
+    }
+
+    @PostMapping("/{id}/recipe")
+    @RequiresPermission("catalog.edit_supplies_recipes")
+    public ResponseEntity<Void> addRecipeItem(
+            @PathVariable Long id,
+            @RequestBody AddRecipeItemResource resource
+    ) {
+        recipeCommandService.addOrUpdateRecipeItem(id, resource.supplyId(), resource.quantityUsed());
+        return ResponseEntity.ok().build();
+    }
+
+    @PutMapping("/{id}/recipe")
+    @RequiresPermission("catalog.edit_supplies_recipes")
+    public ResponseEntity<Void> updateRecipeItem(
+            @PathVariable Long id,
+            @RequestBody AddRecipeItemResource resource
+    ) {
+        recipeCommandService.addOrUpdateRecipeItem(id, resource.supplyId(), resource.quantityUsed());
+        return ResponseEntity.ok().build();
+    }
+
+    @DeleteMapping("/{id}/recipe")
+    @RequiresPermission("catalog.edit_supplies_recipes")
+    public ResponseEntity<Void> deleteRecipeItem(
+            @PathVariable Long id,
+            @RequestParam Long supplyId
+    ) {
+        recipeCommandService.deleteRecipeItem(id, supplyId);
         return ResponseEntity.ok().build();
     }
 }

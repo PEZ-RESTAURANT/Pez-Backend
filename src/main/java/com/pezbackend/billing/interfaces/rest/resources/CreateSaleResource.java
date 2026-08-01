@@ -2,10 +2,17 @@ package com.pezbackend.billing.interfaces.rest.resources;
 
 import com.pezbackend.billing.domain.model.valueobjects.DocumentType;
 
-import java.util.List;
-
+/**
+ * Recurso DTO para recibir el request de emisión de comprobante de pago.
+ *
+ * @param orderId                ID de la comanda
+ * @param documentType           tipo de documento (Boleta/Factura)
+ * @param customerDocumentNumber número de documento fiscal
+ * @param customerName           nombre del cliente (opcional)
+ */
 public record CreateSaleResource(
-        Long accountId,
+        Long orderId,
         DocumentType documentType,
-        List<PaymentDetailResource> payments
+        String customerDocumentNumber,
+        String customerName
 ) {}

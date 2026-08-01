@@ -9,5 +9,7 @@ public record ProductResource(
         Long id,
         String name,
         BigDecimal price,
-        ProductCategory category
+        ProductCategory category,
+        Integer estimatedPrepTimeMinutes,
+        Boolean active
 ) {}

@@ -11,14 +11,16 @@ import java.util.Map;
 public record ItemStatusChangedEvent(
         Long orderId,
         Long itemId,
+        Long productId,
+        Integer quantity,
         String oldStatus,
         String newStatus,
         String executorUsername,
         LocalDateTime timestamp
 ) implements DomainEvent {
 
-    public ItemStatusChangedEvent(Long orderId, Long itemId, String oldStatus, String newStatus, String executorUsername) {
-        this(orderId, itemId, oldStatus, newStatus, executorUsername, LocalDateTime.now());
+    public ItemStatusChangedEvent(Long orderId, Long itemId, Long productId, Integer quantity, String oldStatus, String newStatus, String executorUsername) {
+        this(orderId, itemId, productId, quantity, oldStatus, newStatus, executorUsername, LocalDateTime.now());
     }
 
     @Override
@@ -41,6 +43,8 @@ public record ItemStatusChangedEvent(
         return Map.of(
                 "orderId", orderId,
                 "itemId", itemId,
+                "productId", productId,
+                "quantity", quantity,
                 "oldStatus", oldStatus,
                 "newStatus", newStatus
         );

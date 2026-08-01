@@ -1,5 +1,5 @@
 package com.pezbackend.billing.domain.model.valueobjects;
 
 public enum DocumentType {
-    NOTE, RECEIPT, INVOICE
+    NOTE, RECEIPT, INVOICE, BOLETA, FACTURA_ELECTRONICA
 }

@@ -5,14 +5,18 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
+/**
+ * Representación DTO para el recurso Sale.
+ */
 public record SaleResource(
         Long id,
         String name,
         Long staffId,
         String customerName,
-        String customerDni,
-        String customerRuc,
+        String customerDocumentNumber,
         DocumentType documentType,
+        String saleStatus,
+        Long orderId,
         BigDecimal total,
         LocalDateTime createdAt,
         List<SaleDetailResource> details,

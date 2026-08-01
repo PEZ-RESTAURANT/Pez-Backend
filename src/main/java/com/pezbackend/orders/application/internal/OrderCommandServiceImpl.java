@@ -336,7 +336,15 @@ public class OrderCommandServiceImpl implements OrderCommandService {
         }
 
         orderRepository.save(order);
-        eventPublisher.publishEvent(new ItemStatusChangedEvent(order.getId(), item.getId(), oldStatus.name(), newStatus.name(), executorUsername));
+        eventPublisher.publishEvent(new ItemStatusChangedEvent(
+                order.getId(),
+                item.getId(),
+                item.getProductId(),
+                item.getQuantity(),
+                oldStatus.name(),
+                newStatus.name(),
+                executorUsername
+        ));
     }
 
     private void checkAndTriggerAllDelivered(Order order) {

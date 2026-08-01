@@ -11,86 +11,94 @@ import com.pezbackend.cashregister.domain.services.CashRegisterQueryService;
 import com.pezbackend.cashregister.interfaces.rest.resources.*;
 import com.pezbackend.cashregister.interfaces.rest.transform.CashMovementResourceAssembler;
 import com.pezbackend.cashregister.interfaces.rest.transform.CashRegisterResourceAssembler;
-import com.pezbackend.iam.infrastructure.authorization.sfs.annotations.AuthorizeRoles;
+import com.pezbackend.iam.infrastructure.authorization.sfs.annotations.RequiresPermission;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.Date;
 import java.util.List;
 
+/**
+ * Controlador REST para la gestión de cajas registradoras y arqueos.
+ */
 @RestController
 @RequestMapping("/api/v1/cash-registers")
-@PreAuthorize(AuthorizeRoles.CASHIER_OR_ADMIN)
 public class CashRegisterController {
 
     private final CashRegisterCommandService commandService;
     private final CashRegisterQueryService queryService;
 
     public CashRegisterController(CashRegisterCommandService commandService,
-                                  CashRegisterQueryService queryService) {
+                                   CashRegisterQueryService queryService) {
         this.commandService = commandService;
         this.queryService = queryService;
     }
 
     // Abrir caja
     @PostMapping("/open")
+    @RequiresPermission("cashregister.open_close_shift")
     public ResponseEntity<Void> open(@RequestBody OpenCashRegisterResource resource) {
         commandService.handle(new OpenCashRegisterCommand(resource.openingBalance()));
         return ResponseEntity.ok().build();
     }
 
-    // Cerrar caja
+    // Cerrar caja manual estándar
     @PostMapping("/close")
+    @RequiresPermission("cashregister.open_close_shift")
     public ResponseEntity<Void> closeCashRegister() {
         commandService.handle(new CloseCashRegisterCommand());
         return ResponseEntity.ok().build();
     }
 
+    // Cerrar caja con declaración de efectivo
+    @PostMapping("/{id}/close-with-declaration")
+    @RequiresPermission("cashregister.open_close_shift")
+    public ResponseEntity<Void> closeWithDeclaration(
+            @PathVariable Long id,
+            @RequestBody CloseCashRegisterWithDeclarationResource resource
+    ) {
+        commandService.handle(new CloseCashRegisterWithDeclarationCommand(id, resource.declaredAmount()));
+        return ResponseEntity.ok().build();
+    }
+
     // Agregar movimiento manual
     @PostMapping("/movements")
+    @RequiresPermission("cashregister.register_movement")
     public ResponseEntity<Void> addMovement(@RequestBody AddCashMovementResource resource) {
-
         commandService.handle(new AddCashMovementCommand(
                 resource.type(),
                 resource.amount(),
+                resource.reason(),
                 resource.note()
         ));
-
         return ResponseEntity.ok().build();
     }
 
     // Obtener caja actual
     @GetMapping("/current")
+    @RequiresPermission("cashregister.view")
     public ResponseEntity<CashRegisterResource> getCurrentCashRegister() {
-
-        CashRegister cashRegister =
-                queryService.handle(new GetCurrentCashRegisterQuery());
-
-        return ResponseEntity.ok(
-                CashRegisterResourceAssembler.toResource(cashRegister)
-        );
+        CashRegister cashRegister = queryService.handle(new GetCurrentCashRegisterQuery());
+        return ResponseEntity.ok(CashRegisterResourceAssembler.toResource(cashRegister));
     }
 
     // Obtener caja por id
     @GetMapping("/{id}")
+    @RequiresPermission("cashregister.view")
     public ResponseEntity<CashRegisterResource> getCashRegisterById(@PathVariable Long id) {
-
-        CashRegister cashRegister =
-                queryService.handle(new GetCashRegisterByIdQuery(id));
-
-        return ResponseEntity.ok(
-                CashRegisterResourceAssembler.toResource(cashRegister)
-        );
+        CashRegister cashRegister = queryService.handle(new GetCashRegisterByIdQuery(id));
+        return ResponseEntity.ok(CashRegisterResourceAssembler.toResource(cashRegister));
     }
 
     // Movimientos filtrados por tipo
     @GetMapping("/{id}/movements")
-    public ResponseEntity<List<CashMovementResource>> getMovementsByType(@PathVariable Long id,
-                                                                         @RequestParam(required = false) String type) {
+    @RequiresPermission("cashregister.view")
+    public ResponseEntity<List<CashMovementResource>> getMovementsByType(
+            @PathVariable Long id,
+            @RequestParam(required = false) String type
+    ) {
         List<CashMovement> movements;
         if (type != null) {
             movements = queryService.handle(new com.pezbackend.cashregister.domain.model.queries.GetMovementsByTypeQuery(
@@ -107,9 +115,10 @@ public class CashRegisterController {
         );
     }
 
+    // Listar cajas por rango de fechas
     @GetMapping
+    @RequiresPermission("cashregister.view")
     public ResponseEntity<List<CashRegisterResource>> getCashRegisters(
-
             @RequestParam(required = false)
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
             LocalDate startDate,
@@ -118,15 +127,13 @@ public class CashRegisterController {
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
             LocalDate endDate
     ) {
-
         LocalDateTime start = null;
         LocalDateTime end = null;
 
         if (startDate != null) start = startDate.atStartOfDay();
-        if (endDate != null) end = endDate.atTime(23,59,59);
+        if (endDate != null) end = endDate.atTime(23, 59, 59);
 
-        List<CashRegister> cashRegisters =
-                queryService.handle(new GetCashRegistersByDateRangeQuery(start, end));
+        List<CashRegister> cashRegisters = queryService.handle(new GetCashRegistersByDateRangeQuery(start, end));
 
         return ResponseEntity.ok(
                 cashRegisters.stream()

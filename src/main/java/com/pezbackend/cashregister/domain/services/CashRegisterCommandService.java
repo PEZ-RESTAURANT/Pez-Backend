@@ -12,4 +12,7 @@ public interface CashRegisterCommandService {
 
     Long handle(AddSaleIncomeCommand command);
 
+    void handle(CloseCashRegisterWithDeclarationCommand command);
+
+    void forceCloseCashRegister(Long cashRegisterId);
 }
