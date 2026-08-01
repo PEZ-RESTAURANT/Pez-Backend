@@ -6,6 +6,7 @@ public final class AuthorizeRoles {
 
     public static final String ADMIN = "hasRole('ADMIN')";
     public static final String CASHIER_OR_ADMIN = "hasAnyRole('ADMIN','CASHIER')";
-    public static final String STAFF_OR_ADMIN = "hasAnyRole('ADMIN','STAFF')";
+    public static final String WAITER_OR_ADMIN = "hasAnyRole('ADMIN','WAITER')";
+    public static final String COOK_OR_ADMIN = "hasAnyRole('ADMIN','COOK')";
     public static final String ANY_AUTHENTICATED = "isAuthenticated()";
 }

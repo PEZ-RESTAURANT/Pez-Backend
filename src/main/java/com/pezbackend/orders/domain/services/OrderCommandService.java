@@ -1,0 +1,85 @@
+package com.pezbackend.orders.domain.services;
+
+import com.pezbackend.orders.domain.model.aggregates.Order;
+import com.pezbackend.orders.domain.model.entities.RestaurantTable;
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+
+/**
+ * Servicio de comandos (Write) para el Bounded Context de Orders.
+ */
+public interface OrderCommandService {
+
+    /**
+     * Crea una nueva mesa en el salón.
+     */
+    RestaurantTable createTable(Integer number, Integer floor, String zoneTag, Integer positionX, Integer positionY);
+
+    /**
+     * Actualiza la posición física de una mesa en el mapa.
+     */
+    RestaurantTable updateTablePosition(Long tableId, Integer positionX, Integer positionY);
+
+    /**
+     * Solicita atención de mozo para una mesa (transición FREE -> UNATTENDED).
+     */
+    void requestAttention(Long tableId);
+
+    /**
+     * Un mozo atiende la mesa y toma el control (transición UNATTENDED -> TAKING_ORDER).
+     */
+    void attendTable(Long tableId, String waiterUsername);
+
+    /**
+     * Crea un nuevo pedido (comanda) de mesa o para llevar/delivery.
+     */
+    Order createOrder(Long tableId, String typeStr, Long customerId);
+
+    /**
+     * Comanda nuevos ítems (platos) a un pedido.
+     */
+    void addItemsToOrder(Long orderId, Long productId, Integer quantity, String note, Long waiterId, String waiterUsername);
+
+    /**
+     * Incrementa en 1 la cantidad de un ítem comandado.
+     */
+    void increaseItemQuantity(Long orderId, Long itemId, String executorUsername);
+
+    /**
+     * Decrementa en 1 la cantidad de un ítem comandado.
+     */
+    void decreaseItemQuantity(Long orderId, Long itemId, String executorUsername);
+
+    /**
+     * Cancela (anula) un ítem comandado requiriendo motivo (antes de preparación).
+     */
+    void cancelItem(Long orderId, Long itemId, String reasonCode, String detail, String executorUsername);
+
+    /**
+     * Elimina un ítem de la comanda requiriendo motivo (por error de digitación u otro).
+     */
+    void deleteItem(Long orderId, Long itemId, String reasonCode, String detail, String executorUsername);
+
+    /**
+     * Cambia el estado de preparación o entrega de un ítem (cocina o mozo).
+     */
+    void changeItemStatus(Long orderId, Long itemId, String statusStr, String executorUsername);
+
+    /**
+     * Aplica un ajuste manual de precio o descuento sobre el pedido.
+     */
+    void applyPriceAdjustment(Long orderId, String scopeStr, String validityStr,
+                              LocalDateTime startAt, LocalDateTime endAt, BigDecimal newValue,
+                              String reason, String executorUsername);
+
+    /**
+     * Emite la precuenta y cambia el estado a ISSUED_UNPAID (transición ALL_DELIVERED -> ISSUED_UNPAID).
+     */
+    void issueReceipt(Long orderId, String executorUsername);
+
+    /**
+     * Registra el pago del pedido (transición ISSUED_UNPAID -> PAID -> FREE automático).
+     */
+    void markAsPaid(Long orderId);
+}

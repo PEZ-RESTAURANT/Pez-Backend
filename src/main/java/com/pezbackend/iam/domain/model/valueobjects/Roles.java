@@ -6,6 +6,7 @@ package com.pezbackend.iam.domain.model.valueobjects;
 
 public enum Roles {
     ADMIN,
-    STAFF,
-    CASHIER
+    CASHIER,
+    WAITER,
+    COOK
 }

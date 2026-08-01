@@ -1,30 +1,8 @@
 package com.pezbackend.ordering.domain.services;
 
-import com.pezbackend.ordering.domain.model.commands.*;
+import com.pezbackend.ordering.domain.model.commands.MarkAccountAsPaidCommand;
 
+// TODO Fase 5: Eliminar esta clase/interfaz cuando el módulo billing se integre con com.pezbackend.orders
 public interface AccountCommandService {
-
-    Long handle(CreateAccountCommand command);
-
-    void handle(AddItemToAccountCommand command);
-
-    void handle(RemoveItemFromAccountCommand command);
-
-    void handle(UpdateItemQuantityCommand command);
-
-    void handle(AssignCustomerToAccountCommand command);
-
-    void handle(NameAccountCommand command);
-
-    void handle(CloseAccountCommand command);
-
-    void handle(IncreaseItemQuantityCommand command);
-
-    void handle(DecreaseItemQuantityCommand command);
-
-    void handle(CancelAccountCommand command);
-
-    void handle(AddProductToAccountCommand command);
-
     void handle(MarkAccountAsPaidCommand command);
 }
