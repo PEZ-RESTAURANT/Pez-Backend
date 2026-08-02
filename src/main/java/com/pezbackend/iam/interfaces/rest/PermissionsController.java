@@ -19,6 +19,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
+import com.pezbackend.iam.infrastructure.authorization.sfs.model.UserDetailsImpl;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -49,6 +51,28 @@ public class PermissionsController {
         List<Permission> permissions = queryService.getAllPermissions();
         List<PermissionResource> resources = permissions.stream()
                 .map(PermissionResourceFromEntityAssembler::toResourceFromEntity)
+                .toList();
+        return ResponseEntity.ok(resources);
+    }
+
+    /**
+     * Consulta los permisos efectivos ya resueltos para la cuenta del usuario autenticado actual.
+     * Acceso permitido a cualquier usuario autenticado en el sistema.
+     *
+     * @return listado de permisos efectivos del usuario actual
+     */
+    @PreAuthorize(AuthorizeRoles.ANY_AUTHENTICATED)
+    @GetMapping("/api/v1/accounts/me/permissions")
+    public ResponseEntity<List<UserPermissionResource>> getMyPermissions() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !(authentication.getPrincipal() instanceof UserDetailsImpl userDetails)) {
+            return ResponseEntity.status(org.springframework.http.HttpStatus.UNAUTHORIZED).build();
+        }
+        Long userId = userDetails.getId();
+        log.info("Procesando consulta de permisos propios para el usuario ID: {}", userId);
+        List<ResolvedPermission> resolved = queryService.getEffectivePermissionsForUser(userId);
+        List<UserPermissionResource> resources = resolved.stream()
+                .map(UserPermissionResourceFromResolvedPermissionAssembler::toResourceFromResolved)
                 .toList();
         return ResponseEntity.ok(resources);
     }
