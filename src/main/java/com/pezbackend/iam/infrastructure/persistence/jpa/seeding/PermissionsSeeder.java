@@ -76,6 +76,7 @@ public class PermissionsSeeder {
             // --- Kitchen ---
             new PermissionSeed("kitchen.view_own_zone", "kitchen", "Ver monitor de pedidos de la zona asignada", false, false, false, true),
             new PermissionSeed("kitchen.change_item_status", "kitchen", "Cambiar estado de platos (en preparación, listo)", false, false, false, true),
+            new PermissionSeed("kitchen.view_zones", "kitchen", "Visualizar el catálogo de zonas de cocina", true, false, true, true),
 
             // --- Staff ---
             new PermissionSeed("staff.view", "staff", "Ver listado de personal y contratos", true, true, false, false),
@@ -99,7 +100,14 @@ public class PermissionsSeeder {
             new PermissionSeed("analytics.export", "analytics", "Exportar reportes de negocio a PDF o Excel", true, false, false, false),
             new PermissionSeed("analytics.manage_config", "analytics", "Gestionar la configuración del módulo de analítica", true, false, false, false),
             new PermissionSeed("audit.view", "audit", "Visualizar historial y traza de eventos de auditoría", true, false, false, false),
-            new PermissionSeed("permissions.manage", "permissions", "Administrar permisos y overrides de usuarios", true, false, false, false)
+            new PermissionSeed("permissions.manage", "permissions", "Administrar permisos y overrides de usuarios", true, false, false, false),
+
+            // --- Fase 10 Extensions ---
+            new PermissionSeed("orders.merge_tables", "orders", "Unir o fusionar mesas del salón", true, true, false, false),
+            new PermissionSeed("orders.transfer_order", "orders", "Trasladar pedido activo a otra mesa", true, true, true, false),
+            new PermissionSeed("reservations.manage", "reservations", "Gestionar y operar reservas de mesas", true, true, false, false),
+            new PermissionSeed("reservations.view", "reservations", "Visualizar reservas de mesas", true, true, true, false),
+            new PermissionSeed("orders.force_unlock_table", "orders", "Forzar la liberación del bloqueo de una mesa", true, true, false, false)
     );
 
     /**

@@ -37,4 +37,9 @@ public interface RestaurantTableRepository extends JpaRepository<RestaurantTable
      * @return listado de mesas
      */
     List<RestaurantTable> findAllByStatus(TableStatus status);
+
+    /**
+     * Recupera todas las mesas que están fusionadas a una mesa ancla.
+     */
+    List<RestaurantTable> findAllByAnchorTableId(Long anchorTableId);
 }

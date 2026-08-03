@@ -13,13 +13,15 @@ import lombok.Setter;
 
 import java.math.BigDecimal;
 
+import com.pezbackend.shared.domain.model.entities.AbstractTenantEntity;
+
 /**
  * Entidad que representa un movimiento (ingreso o egreso) en una caja registradora.
  */
 @Getter
 @Setter
 @Entity
-public class CashMovement extends AuditableModel {
+public class CashMovement extends AbstractTenantEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     private CashRegister cashRegister;

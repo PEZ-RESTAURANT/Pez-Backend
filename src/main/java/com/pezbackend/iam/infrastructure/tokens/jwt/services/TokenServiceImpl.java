@@ -32,6 +32,7 @@ public class TokenServiceImpl implements BearerTokenService {
 
     private static final String WORKSHOP_ID_CLAIM = "workshop_id";
     private static final String ROLE_CLAIM = "role";
+    private static final String RESTAURANT_ID_CLAIM = "restaurantId";
     private static final int TOKEN_BEGIN_INDEX = 7;
 
     @Value("${authorization.jwt.secret}")
@@ -42,13 +43,18 @@ public class TokenServiceImpl implements BearerTokenService {
 
 
     /**
-     * Generates a JWT token based on the user ID, user role, and optionally the workshop ID.
+     * Generates a JWT token based on the user ID, user role.
      * @param userId The user ID (used as the subject)
      * @param userRole The user's role
      * @return The generated JWT token
      */
     @Override
     public String generateToken(Long userId, String userRole) {
+        return generateToken(userId, userRole, null);
+    }
+
+    @Override
+    public String generateToken(Long userId, String userRole, Long restaurantId) {
         var issuedAt = new Date();
         var expiration = DateUtils.addDays(issuedAt, expirationDays);
         var key = getSigningKey();
@@ -56,11 +62,17 @@ public class TokenServiceImpl implements BearerTokenService {
         var builder = Jwts.builder()
                 .subject(userId.toString())
                 .claim(ROLE_CLAIM, userRole)
+                .claim(RESTAURANT_ID_CLAIM, restaurantId)
                 .issuedAt(issuedAt)
                 .expiration(expiration)
                 .signWith(key);
 
         return builder.compact();
+    }
+
+    @Override
+    public Long getRestaurantIdFromToken(String token) {
+        return extractClaim(token, claims -> claims.get(RESTAURANT_ID_CLAIM, Long.class));
     }
 
 

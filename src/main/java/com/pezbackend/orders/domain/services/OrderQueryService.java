@@ -56,4 +56,9 @@ public interface OrderQueryService {
      * @return lista de ítems de comanda en cola de preparación
      */
     List<OrderItem> getKitchenQueue(Long zoneId);
+
+    /**
+     * Obtiene el grupo de mesas fusionadas asociadas (incluye el ancla y las fusionadas).
+     */
+    List<RestaurantTable> getMergeGroup(Long tableId);
 }

@@ -14,7 +14,7 @@ public class KitchenQueueItemResourceFromEntityAssembler {
      * @param entity el OrderItem a convertir
      * @return el recurso DTO correspondiente
      */
-    public static KitchenQueueItemResource toResourceFromEntity(OrderItem entity) {
+    public static KitchenQueueItemResource toResourceFromEntity(OrderItem entity, Integer tableNumber) {
         return new KitchenQueueItemResource(
                 entity.getId(),
                 entity.getOrderId(),
@@ -22,7 +22,8 @@ public class KitchenQueueItemResourceFromEntityAssembler {
                 entity.getQuantity(),
                 entity.getNote(),
                 entity.getStatus().name(),
-                entity.getCreatedAt()
+                entity.getCreatedAt(),
+                tableNumber
         );
     }
 }

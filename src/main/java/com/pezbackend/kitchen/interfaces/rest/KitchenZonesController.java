@@ -30,7 +30,7 @@ public class KitchenZonesController {
      * @return lista de recursos de zona de cocina
      */
     @GetMapping
-    @RequiresPermission("catalog.edit_kitchen_zones")
+    @RequiresPermission("kitchen.view_zones")
     public ResponseEntity<List<KitchenZoneResource>> getAllZones() {
         List<KitchenZone> zones = queryService.getAllZones();
         return ResponseEntity.ok(

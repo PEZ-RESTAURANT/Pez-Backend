@@ -1,8 +1,8 @@
 package com.pezbackend.catalog.domain.model.queries;
 
-import com.pezbackend.catalog.domain.model.valueobjects.ProductCategory;
+import com.pezbackend.catalog.domain.model.entities.Category;
 
 public record SearchProductsQuery(
         String name,
-        ProductCategory category
+        Category category
 ) {}

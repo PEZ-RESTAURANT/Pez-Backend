@@ -9,6 +9,8 @@ import lombok.Setter;
 
 import java.time.LocalDateTime;
 
+import com.pezbackend.shared.domain.model.entities.AbstractTenantEntity;
+
 /**
  * Entidad JPA que representa un registro de marca de asistencia (entrada y salida) de un empleado.
  */
@@ -16,7 +18,7 @@ import java.time.LocalDateTime;
 @Table(name = "attendance_records")
 @Getter
 @Setter
-public class AttendanceRecord extends AuditableModel {
+public class AttendanceRecord extends AbstractTenantEntity {
 
     @NotNull
     @Column(nullable = false)

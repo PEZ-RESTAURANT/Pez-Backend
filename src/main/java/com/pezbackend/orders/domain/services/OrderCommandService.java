@@ -22,6 +22,16 @@ public interface OrderCommandService {
     RestaurantTable updateTablePosition(Long tableId, Integer positionX, Integer positionY);
 
     /**
+     * Actualiza los detalles administrativos de una mesa (número, piso y etiqueta de zona).
+     */
+    RestaurantTable updateTableDetails(Long tableId, Integer number, Integer floor, String zoneTag);
+
+    /**
+     * Elimina una mesa física si está libre y no tiene comandas activas.
+     */
+    void deleteTable(Long tableId);
+
+    /**
      * Solicita atención de mozo para una mesa (transición FREE -> UNATTENDED).
      */
     void requestAttention(Long tableId);
@@ -82,4 +92,19 @@ public interface OrderCommandService {
      * Registra el pago del pedido (transición ISSUED_UNPAID -> PAID -> FREE automático).
      */
     void markAsPaid(Long orderId);
+
+    /**
+     * Fusiona un grupo de mesas bajo una mesa ancla.
+     */
+    void mergeTables(Long anchorTableId, java.util.List<Long> tableIdsToMerge, String waiterUsername);
+
+    /**
+     * Deshace la fusión de mesas asociadas a una mesa ancla.
+     */
+    void unmergeTables(Long anchorTableId, String waiterUsername);
+
+    /**
+     * Traslada la comanda activa de una mesa a otra.
+     */
+    void transferOrder(Long fromTableId, Long toTableId, String waiterUsername);
 }

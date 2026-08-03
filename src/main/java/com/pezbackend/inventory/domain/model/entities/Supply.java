@@ -6,6 +6,8 @@ import lombok.Setter;
 
 import java.math.BigDecimal;
 
+import com.pezbackend.shared.domain.model.entities.AbstractTenantBaseEntity;
+
 /**
  * Entidad JPA que representa un insumo o materia prima (ej: Pollo, Limones, Pisco).
  */
@@ -13,7 +15,7 @@ import java.math.BigDecimal;
 @Table(name = "supplies")
 @Getter
 @Setter
-public class Supply {
+public class Supply extends AbstractTenantBaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

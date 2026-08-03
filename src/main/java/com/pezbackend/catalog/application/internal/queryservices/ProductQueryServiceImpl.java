@@ -1,11 +1,12 @@
 package com.pezbackend.catalog.application.internal.queryservices;
 
 import com.pezbackend.catalog.domain.model.aggregates.Product;
+import com.pezbackend.catalog.domain.model.entities.Category;
 import com.pezbackend.catalog.domain.model.exceptions.ProductNotFoundException;
 import com.pezbackend.catalog.domain.model.queries.*;
-import com.pezbackend.catalog.domain.model.valueobjects.ProductCategory;
 import com.pezbackend.catalog.domain.services.ProductQueryService;
 import com.pezbackend.catalog.infrastructure.persistence.jpa.repositories.ProductRepository;
+import com.pezbackend.catalog.infrastructure.persistence.jpa.repositories.CategoryRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
@@ -16,9 +17,11 @@ import java.util.Map;
 public class ProductQueryServiceImpl implements ProductQueryService {
 
     private final ProductRepository productRepository;
+    private final CategoryRepository categoryRepository;
 
-    public ProductQueryServiceImpl(ProductRepository productRepository) {
+    public ProductQueryServiceImpl(ProductRepository productRepository, CategoryRepository categoryRepository) {
         this.productRepository = productRepository;
+        this.categoryRepository = categoryRepository;
     }
 
     @Override
@@ -63,9 +66,10 @@ public class ProductQueryServiceImpl implements ProductQueryService {
 
         Map<String, Long> result = new HashMap<>();
 
-        for (var category : ProductCategory.values()) {
+        List<Category> categories = categoryRepository.findAll();
+        for (var category : categories) {
             long count = productRepository.countByCategory(category);
-            result.put(category.name(), count);
+            result.put(category.getName(), count);
         }
 
         return result;

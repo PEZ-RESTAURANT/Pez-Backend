@@ -7,6 +7,8 @@ import lombok.Setter;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+import com.pezbackend.shared.domain.model.entities.AbstractTenantBaseEntity;
+
 /**
  * Entidad que registra descuadres al momento del arqueo/cierre de una caja registradora.
  */
@@ -14,7 +16,7 @@ import java.time.LocalDateTime;
 @Table(name = "cash_register_mismatches")
 @Getter
 @Setter
-public class CashRegisterMismatch {
+public class CashRegisterMismatch extends AbstractTenantBaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

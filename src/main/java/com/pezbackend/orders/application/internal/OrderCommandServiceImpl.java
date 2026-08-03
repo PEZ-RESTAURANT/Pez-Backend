@@ -22,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -60,9 +61,74 @@ public class OrderCommandServiceImpl implements OrderCommandService {
     }
 
     @Override
+    public RestaurantTable updateTableDetails(Long tableId, Integer number, Integer floor, String zoneTag) {
+        RestaurantTable table = restaurantTableRepository.findById(tableId)
+                .orElseThrow(() -> new ResourceNotFoundException("TABLE_NOT_FOUND", "Mesa no encontrada con ID: " + tableId));
+
+        if (!table.getNumber().equals(number) && restaurantTableRepository.existsByNumber(number)) {
+            throw new BusinessRuleViolationException(
+                    "TABLE_EXISTS",
+                    "Ya existe otra mesa con el número: " + number
+            );
+        }
+
+        table.setNumber(number);
+        table.setFloor(floor);
+        table.setZoneTag(zoneTag);
+        return restaurantTableRepository.save(table);
+    }
+
+    @Override
+    public void deleteTable(Long tableId) {
+        RestaurantTable table = restaurantTableRepository.findById(tableId)
+                .orElseThrow(() -> new ResourceNotFoundException("TABLE_NOT_FOUND", "Mesa no encontrada con ID: " + tableId));
+
+        if (table.getStatus() != TableStatus.FREE) {
+            throw new BusinessRuleViolationException(
+                    "TABLE_ACTIVE",
+                    "No se puede eliminar una mesa que no esté libre (estado actual: " + table.getStatus() + ")"
+            );
+        }
+
+        // Validación de fusión de mesas
+        if (table.getAnchorTableId() != null) {
+            throw new BusinessRuleViolationException(
+                    "TABLE_MERGED",
+                    "No se puede eliminar una mesa fusionada. Deshaga la fusión primero."
+            );
+        }
+
+        boolean isAnchor = !restaurantTableRepository.findAllByAnchorTableId(table.getId()).isEmpty();
+        if (isAnchor) {
+            throw new BusinessRuleViolationException(
+                    "TABLE_IS_ANCHOR",
+                    "No se puede eliminar una mesa que actúa como ancla de un grupo fusionado. Deshaga la fusión primero."
+            );
+        }
+
+        // Además verificamos comanda activa en base de datos para redundancia de seguridad
+        java.util.Optional<Order> activeOrder = orderRepository.findByTableIdAndStatusNot(tableId, OrderStatus.PAID);
+        if (activeOrder.isPresent() && activeOrder.get().getStatus() != OrderStatus.FREE) {
+            throw new BusinessRuleViolationException(
+                    "TABLE_HAS_ACTIVE_ORDER",
+                    "No se puede eliminar una mesa con un pedido activo."
+            );
+        }
+
+        restaurantTableRepository.delete(table);
+    }
+
+    @Override
     public void requestAttention(Long tableId) {
         RestaurantTable table = restaurantTableRepository.findById(tableId)
                 .orElseThrow(() -> new ResourceNotFoundException("TABLE_NOT_FOUND", "Mesa no encontrada con ID: " + tableId));
+
+        if (table.getAnchorTableId() != null) {
+            throw new BusinessRuleViolationException(
+                    "TABLE_MERGED",
+                    "No se puede solicitar atención en una mesa fusionada. Debe hacerlo contra la mesa ancla."
+            );
+        }
 
         if (table.getStatus() != TableStatus.FREE) {
             throw new InvalidStateTransitionException(
@@ -73,6 +139,7 @@ public class OrderCommandServiceImpl implements OrderCommandService {
 
         // Transición de mesa a UNATTENDED
         table.setStatus(TableStatus.UNATTENDED);
+        syncMergedTablesStatus(table.getId(), TableStatus.UNATTENDED);
         restaurantTableRepository.save(table);
 
         // Crear comanda asociada
@@ -104,6 +171,9 @@ public class OrderCommandServiceImpl implements OrderCommandService {
         order.transitionTo(OrderStatus.TAKING_ORDER);
         table.setStatus(TableStatus.TAKING_ORDER);
 
+        // Sincronizar mesas fusionadas
+        syncMergedTablesStatus(table.getId(), TableStatus.TAKING_ORDER);
+
         orderRepository.save(order);
         restaurantTableRepository.save(table);
 
@@ -122,9 +192,17 @@ public class OrderCommandServiceImpl implements OrderCommandService {
             RestaurantTable table = restaurantTableRepository.findById(tableId)
                     .orElseThrow(() -> new ResourceNotFoundException("TABLE_NOT_FOUND", "Mesa no encontrada con ID: " + tableId));
 
+            if (table.getAnchorTableId() != null) {
+                throw new BusinessRuleViolationException(
+                        "TABLE_MERGED",
+                        "No se puede iniciar un pedido en una mesa fusionada. Debe hacerlo contra la mesa ancla."
+                );
+            }
+
             if (table.getStatus() == TableStatus.FREE) {
                 // Mozo inicia directamente la comanda en la mesa
                 table.setStatus(TableStatus.TAKING_ORDER);
+                syncMergedTablesStatus(table.getId(), TableStatus.TAKING_ORDER);
                 restaurantTableRepository.save(table);
 
                 Order order = new Order(table.getId(), OrderType.DINE_IN, customerId);
@@ -139,6 +217,7 @@ public class OrderCommandServiceImpl implements OrderCommandService {
 
                 order.transitionTo(OrderStatus.TAKING_ORDER);
                 table.setStatus(TableStatus.TAKING_ORDER);
+                syncMergedTablesStatus(table.getId(), TableStatus.TAKING_ORDER);
 
                 restaurantTableRepository.save(table);
                 return orderRepository.save(order);
@@ -186,6 +265,7 @@ public class OrderCommandServiceImpl implements OrderCommandService {
             if (order.getTableId() != null) {
                 RestaurantTable table = restaurantTableRepository.findById(order.getTableId()).orElseThrow();
                 table.setStatus(TableStatus.WAITING_DISHES);
+                syncMergedTablesStatus(table.getId(), TableStatus.WAITING_DISHES);
                 restaurantTableRepository.save(table);
             }
         }
@@ -360,6 +440,7 @@ public class OrderCommandServiceImpl implements OrderCommandService {
             if (order.getTableId() != null) {
                 RestaurantTable table = restaurantTableRepository.findById(order.getTableId()).orElseThrow();
                 table.setStatus(TableStatus.ALL_DELIVERED);
+                syncMergedTablesStatus(table.getId(), TableStatus.ALL_DELIVERED);
                 restaurantTableRepository.save(table);
             }
             log.info("Todos los platos de la comanda {} han sido entregados. Estado cambiado a ALL_DELIVERED.", order.getId());
@@ -408,6 +489,7 @@ public class OrderCommandServiceImpl implements OrderCommandService {
         if (order.getTableId() != null) {
             RestaurantTable table = restaurantTableRepository.findById(order.getTableId()).orElseThrow();
             table.setStatus(TableStatus.ISSUED_UNPAID);
+            syncMergedTablesStatus(table.getId(), TableStatus.ISSUED_UNPAID);
             restaurantTableRepository.save(table);
         }
 
@@ -429,6 +511,7 @@ public class OrderCommandServiceImpl implements OrderCommandService {
         if (tableId != null) {
             table = restaurantTableRepository.findById(tableId).orElseThrow();
             table.setStatus(TableStatus.PAID);
+            syncMergedTablesStatus(table.getId(), TableStatus.PAID);
             restaurantTableRepository.save(table);
         }
         orderRepository.save(order);
@@ -440,8 +523,145 @@ public class OrderCommandServiceImpl implements OrderCommandService {
             table.setStatus(TableStatus.FREE);
             restaurantTableRepository.save(table);
             log.info("Mesa {} liberada (FREE).", table.getNumber());
+            
+            // Liberar automáticamente todas las mesas fusionadas y limpiar su anchorTableId
+            releaseMergedTables(table.getId());
+            
             eventPublisher.publishEvent(new TableReleasedEvent(table.getId(), table.getNumber()));
         }
         orderRepository.save(order);
+    }
+
+    @Override
+    public void mergeTables(Long anchorTableId, List<Long> tableIdsToMerge, String waiterUsername) {
+        RestaurantTable anchorTable = restaurantTableRepository.findById(anchorTableId)
+                .orElseThrow(() -> new ResourceNotFoundException("TABLE_NOT_FOUND", "Mesa ancla no encontrada con ID: " + anchorTableId));
+
+        if (anchorTable.getAnchorTableId() != null) {
+            throw new com.pezbackend.orders.domain.exceptions.TableAlreadyMergedException(
+                    "La mesa ancla seleccionada ya está fusionada a otra mesa."
+            );
+        }
+
+        List<Long> actualMergedIds = new ArrayList<>();
+        for (Long tableId : tableIdsToMerge) {
+            if (tableId.equals(anchorTableId)) {
+                continue;
+            }
+
+            RestaurantTable table = restaurantTableRepository.findById(tableId)
+                    .orElseThrow(() -> new ResourceNotFoundException("TABLE_NOT_FOUND", "Mesa a fusionar no encontrada con ID: " + tableId));
+
+            if (table.getStatus() != TableStatus.FREE) {
+                throw new com.pezbackend.orders.domain.exceptions.TableNotAvailableException(
+                        "La mesa a fusionar con número " + table.getNumber() + " no está disponible (estado actual: " + table.getStatus() + ")."
+                );
+            }
+
+            if (table.getAnchorTableId() != null) {
+                throw new com.pezbackend.orders.domain.exceptions.TableAlreadyMergedException(
+                        "La mesa con número " + table.getNumber() + " ya está fusionada con otra mesa."
+                );
+            }
+
+            table.setAnchorTableId(anchorTableId);
+            table.setStatus(anchorTable.getStatus());
+            restaurantTableRepository.save(table);
+            actualMergedIds.add(tableId);
+        }
+
+        if (!actualMergedIds.isEmpty()) {
+            eventPublisher.publishEvent(new TablesMergedEvent(anchorTableId, actualMergedIds, waiterUsername));
+            log.info("Mesas {} fusionadas exitosamente bajo la mesa ancla {}.", actualMergedIds, anchorTableId);
+        }
+    }
+
+    @Override
+    public void unmergeTables(Long anchorTableId, String waiterUsername) {
+        RestaurantTable anchorTable = restaurantTableRepository.findById(anchorTableId)
+                .orElseThrow(() -> new ResourceNotFoundException("TABLE_NOT_FOUND", "Mesa ancla no encontrada con ID: " + anchorTableId));
+
+        if (anchorTable.getStatus() != TableStatus.FREE && anchorTable.getStatus() != TableStatus.UNATTENDED) {
+            throw new BusinessRuleViolationException(
+                    "TABLE_OCCUPIED",
+                    "No se puede deshacer la fusión porque la mesa ancla tiene un pedido activo en curso (estado actual: " + anchorTable.getStatus() + ")."
+            );
+        }
+
+        List<RestaurantTable> merged = restaurantTableRepository.findAllByAnchorTableId(anchorTableId);
+        List<Long> unmergedIds = new ArrayList<>();
+        for (RestaurantTable table : merged) {
+            table.setAnchorTableId(null);
+            table.setStatus(TableStatus.FREE);
+            restaurantTableRepository.save(table);
+            unmergedIds.add(table.getId());
+        }
+
+        if (!unmergedIds.isEmpty()) {
+            eventPublisher.publishEvent(new TablesUnmergedEvent(anchorTableId, unmergedIds, waiterUsername));
+            log.info("Fusión deshecha. Mesas {} liberadas de la mesa ancla {}.", unmergedIds, anchorTableId);
+        }
+    }
+
+    @Override
+    public void transferOrder(Long fromTableId, Long toTableId, String waiterUsername) {
+        RestaurantTable fromTable = restaurantTableRepository.findById(fromTableId)
+                .orElseThrow(() -> new ResourceNotFoundException("TABLE_NOT_FOUND", "Mesa de origen no encontrada con ID: " + fromTableId));
+
+        List<RestaurantTable> activeMerges = restaurantTableRepository.findAllByAnchorTableId(fromTableId);
+        if (!activeMerges.isEmpty()) {
+            throw new BusinessRuleViolationException(
+                    "TABLE_MERGED",
+                    "No se permite trasladar el pedido de una mesa ancla con fusiones activas. Debe deshacer la fusión primero."
+            );
+        }
+
+        Order order = orderRepository.findByTableIdAndStatusNot(fromTableId, OrderStatus.FREE)
+                .filter(o -> o.getStatus() != OrderStatus.PAID)
+                .orElseThrow(() -> new ResourceNotFoundException("ORDER_NOT_FOUND", "No se encontró comanda activa para la mesa de origen."));
+
+        RestaurantTable toTable = restaurantTableRepository.findById(toTableId)
+                .orElseThrow(() -> new ResourceNotFoundException("TABLE_NOT_FOUND", "Mesa de destino no encontrada con ID: " + toTableId));
+
+        if (toTable.getStatus() != TableStatus.FREE || toTable.getAnchorTableId() != null) {
+            throw new com.pezbackend.orders.domain.exceptions.TableNotAvailableException(
+                    "La mesa de destino con número " + toTable.getNumber() + " no está disponible."
+            );
+        }
+
+        TableStatus currentStatus = fromTable.getStatus();
+
+        // Trasladar comanda
+        order.setTableId(toTableId);
+        orderRepository.save(order);
+
+        // Actualizar estados
+        toTable.setStatus(currentStatus);
+        syncMergedTablesStatus(toTableId, currentStatus);
+        restaurantTableRepository.save(toTable);
+
+        fromTable.setStatus(TableStatus.FREE);
+        restaurantTableRepository.save(fromTable);
+
+        log.info("Comanda {} trasladada exitosamente de mesa {} a mesa {}.", order.getId(), fromTable.getNumber(), toTable.getNumber());
+        eventPublisher.publishEvent(new OrderTransferredEvent(order.getId(), fromTableId, toTableId, waiterUsername));
+    }
+
+    private void syncMergedTablesStatus(Long anchorId, TableStatus status) {
+        List<RestaurantTable> mergedTables = restaurantTableRepository.findAllByAnchorTableId(anchorId);
+        for (RestaurantTable mt : mergedTables) {
+            mt.setStatus(status);
+            restaurantTableRepository.save(mt);
+        }
+    }
+
+    private void releaseMergedTables(Long anchorId) {
+        List<RestaurantTable> mergedTables = restaurantTableRepository.findAllByAnchorTableId(anchorId);
+        for (RestaurantTable mt : mergedTables) {
+            mt.setStatus(TableStatus.FREE);
+            mt.setAnchorTableId(null);
+            restaurantTableRepository.save(mt);
+            eventPublisher.publishEvent(new TableReleasedEvent(mt.getId(), mt.getNumber()));
+        }
     }
 }

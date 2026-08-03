@@ -12,5 +12,6 @@ public record RestaurantTableResource(
         String zoneTag,
         Integer positionX,
         Integer positionY,
-        TableStatus status
+        TableStatus status,
+        Long anchorTableId
 ) {}

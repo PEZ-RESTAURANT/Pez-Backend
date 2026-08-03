@@ -1,10 +1,10 @@
 package com.pezbackend.catalog.domain.model.queries;
 
-import com.pezbackend.catalog.domain.model.valueobjects.ProductCategory;
+import com.pezbackend.catalog.domain.model.entities.Category;
 import com.pezbackend.shared.domain.model.exceptions.BadRequestException;
 
 public record GetProductsByCategoryQuery(
-        ProductCategory category
+        Category category
 ) {
     public GetProductsByCategoryQuery {
         if (category == null)

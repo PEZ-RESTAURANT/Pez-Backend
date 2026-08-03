@@ -11,6 +11,8 @@ import lombok.Setter;
 
 import java.time.LocalDate;
 
+import com.pezbackend.shared.domain.model.entities.AbstractTenantEntity;
+
 /**
  * Entidad JPA que representa una encuesta de satisfacción respondida por un cliente.
  */
@@ -18,7 +20,7 @@ import java.time.LocalDate;
 @Table(name = "satisfaction_surveys")
 @Getter
 @Setter
-public class SatisfactionSurvey extends AuditableModel {
+public class SatisfactionSurvey extends AbstractTenantEntity {
 
     @NotNull
     @Column(nullable = false)

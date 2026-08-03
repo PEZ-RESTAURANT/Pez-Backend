@@ -3,8 +3,9 @@ package com.pezbackend.analytics;
 import com.pezbackend.analytics.domain.model.entities.AnalyticsConfig;
 import com.pezbackend.analytics.infrastructure.persistence.jpa.repositories.AnalyticsConfigRepository;
 import com.pezbackend.catalog.domain.model.aggregates.Product;
-import com.pezbackend.catalog.domain.model.valueobjects.ProductCategory;
+import com.pezbackend.catalog.domain.model.entities.Category;
 import com.pezbackend.catalog.domain.model.entities.ProductKitchenZone;
+import com.pezbackend.catalog.infrastructure.persistence.jpa.repositories.CategoryRepository;
 import com.pezbackend.catalog.infrastructure.persistence.jpa.repositories.ProductRepository;
 import com.pezbackend.catalog.infrastructure.persistence.jpa.repositories.ProductKitchenZoneRepository;
 import com.pezbackend.billing.domain.model.commands.CreateSaleCommand;
@@ -69,6 +70,9 @@ public class AnalyticsIntegrationTests {
     private ProductRepository productRepository;
 
     @Autowired
+    private CategoryRepository categoryRepository;
+
+    @Autowired
     private ProductKitchenZoneRepository productKitchenZoneRepository;
 
     @Autowired
@@ -114,6 +118,7 @@ public class AnalyticsIntegrationTests {
         productKitchenZoneRepository.deleteAll();
         kitchenZoneRepository.deleteAll();
         productRepository.deleteAll();
+        categoryRepository.deleteAll();
         userRepository.deleteAll();
         roleRepository.deleteAll();
 
@@ -125,8 +130,9 @@ public class AnalyticsIntegrationTests {
         adminUser = userRepository.save(adminUser);
         adminDetails = UserDetailsImpl.build(adminUser);
 
-        // 2. Crear plato y zona
-        ceviche = productRepository.save(new Product("Ceviche Clásico", BigDecimal.valueOf(35.00), ProductCategory.MARINA));
+        // 2. Crear plato y zona con categoría dinámica
+        Category marina = categoryRepository.save(new Category("Marina"));
+        ceviche = productRepository.save(new Product("Ceviche Clásico", BigDecimal.valueOf(35.00), marina));
         zoneMarina = kitchenZoneRepository.save(new KitchenZone("MARINA"));
         productKitchenZoneRepository.save(new ProductKitchenZone(ceviche.getId(), zoneMarina.getId()));
 

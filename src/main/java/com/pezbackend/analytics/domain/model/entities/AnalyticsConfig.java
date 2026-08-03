@@ -8,6 +8,8 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
 
+import com.pezbackend.shared.domain.model.entities.AbstractTenantEntity;
+
 /**
  * Entidad JPA que almacena la configuración de analítica de negocio.
  */
@@ -15,7 +17,7 @@ import lombok.Setter;
 @Table(name = "analytics_configs")
 @Getter
 @Setter
-public class AnalyticsConfig extends AuditableModel {
+public class AnalyticsConfig extends AbstractTenantEntity {
 
     @NotNull
     @Column(nullable = false)

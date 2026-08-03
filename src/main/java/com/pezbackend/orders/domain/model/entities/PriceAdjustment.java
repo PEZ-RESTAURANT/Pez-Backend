@@ -11,6 +11,8 @@ import java.time.LocalDateTime;
 
 import com.pezbackend.orders.domain.model.aggregates.Order;
 
+import com.pezbackend.shared.domain.model.entities.AbstractTenantBaseEntity;
+
 /**
  * Representa un ajuste manual de precio o descuento aplicado sobre un pedido por un administrador.
  */
@@ -18,7 +20,7 @@ import com.pezbackend.orders.domain.model.aggregates.Order;
 @Table(name = "price_adjustments")
 @Getter
 @Setter
-public class PriceAdjustment {
+public class PriceAdjustment extends AbstractTenantBaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

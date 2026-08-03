@@ -1,7 +1,7 @@
 package com.pezbackend.loyalty.domain.model.aggregates;
 
 import com.pezbackend.shared.domain.exceptions.BusinessRuleViolationException;
-import com.pezbackend.shared.domain.model.aggregates.AuditableAbstractAggregateRoot;
+import com.pezbackend.shared.domain.model.aggregates.AbstractTenantAggregateRoot;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
@@ -17,7 +17,7 @@ import java.time.LocalDateTime;
 @Table(name = "customers")
 @Getter
 @Setter
-public class Customer extends AuditableAbstractAggregateRoot<Customer> {
+public class Customer extends AbstractTenantAggregateRoot<Customer> {
 
     @NotNull
     @Column(nullable = false, unique = true, length = 50)

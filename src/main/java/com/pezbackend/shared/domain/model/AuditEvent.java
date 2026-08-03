@@ -9,6 +9,8 @@ import org.hibernate.type.SqlTypes;
 import java.time.LocalDateTime;
 import java.util.Map;
 
+import com.pezbackend.shared.domain.model.entities.AbstractTenantBaseEntity;
+
 /**
  * Entidad de persistencia que almacena un registro histórico de eventos de auditoría del sistema.
  * <p>
@@ -20,7 +22,7 @@ import java.util.Map;
 @Table(name = "audit_events")
 @Getter
 @Setter
-public class AuditEvent {
+public class AuditEvent extends AbstractTenantBaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

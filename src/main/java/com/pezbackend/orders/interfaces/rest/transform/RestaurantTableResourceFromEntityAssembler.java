@@ -17,7 +17,8 @@ public class RestaurantTableResourceFromEntityAssembler {
                 entity.getZoneTag(),
                 entity.getPositionX(),
                 entity.getPositionY(),
-                entity.getStatus()
+                entity.getStatus(),
+                entity.getAnchorTableId()
         );
     }
 }

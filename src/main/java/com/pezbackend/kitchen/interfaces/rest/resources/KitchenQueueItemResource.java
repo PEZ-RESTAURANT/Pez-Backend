@@ -20,5 +20,6 @@ public record KitchenQueueItemResource(
         Integer quantity,
         String note,
         String status,
-        LocalDateTime createdAt
+        LocalDateTime createdAt,
+        Integer tableNumber
 ) {}

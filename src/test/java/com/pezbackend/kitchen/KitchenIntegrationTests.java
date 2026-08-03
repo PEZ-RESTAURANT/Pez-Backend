@@ -1,8 +1,9 @@
 package com.pezbackend.kitchen;
 
 import com.pezbackend.catalog.domain.model.aggregates.Product;
-import com.pezbackend.catalog.domain.model.valueobjects.ProductCategory;
+import com.pezbackend.catalog.domain.model.entities.Category;
 import com.pezbackend.catalog.domain.services.ProductKitchenZoneCommandService;
+import com.pezbackend.catalog.infrastructure.persistence.jpa.repositories.CategoryRepository;
 import com.pezbackend.catalog.infrastructure.persistence.jpa.repositories.ProductRepository;
 import com.pezbackend.iam.domain.model.aggregates.User;
 import com.pezbackend.iam.domain.model.entities.Role;
@@ -61,6 +62,9 @@ public class KitchenIntegrationTests {
 
     @Autowired
     private ProductRepository productRepository;
+
+    @Autowired
+    private CategoryRepository categoryRepository;
 
     @Autowired
     private OrderCommandService orderCommandService;
@@ -165,10 +169,13 @@ public class KitchenIntegrationTests {
         zoneB = kitchenZoneCommandService.createZone("Bar");
 
         // Crear productos
-        productX = new Product("Ceviche Clásico", new BigDecimal("38.00"), ProductCategory.MARINA);
+        Category marina = categoryRepository.save(new Category("Marina"));
+        Category bebidas = categoryRepository.save(new Category("Bebidas"));
+        
+        productX = new Product("Ceviche Clásico", new BigDecimal("38.00"), marina);
         productX = productRepository.save(productX);
 
-        productY = new Product("Pisco Sour", new BigDecimal("22.00"), ProductCategory.BEBIDAS_ALCOHOLICAS);
+        productY = new Product("Pisco Sour", new BigDecimal("22.00"), bebidas);
         productY = productRepository.save(productY);
 
         // Asignar productos a zonas de cocina

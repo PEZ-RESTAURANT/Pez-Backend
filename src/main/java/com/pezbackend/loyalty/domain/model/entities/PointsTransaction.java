@@ -9,6 +9,8 @@ import lombok.Setter;
 
 import java.time.LocalDate;
 
+import com.pezbackend.shared.domain.model.entities.AbstractTenantEntity;
+
 /**
  * Entidad JPA que representa una transacción histórica de acumulación o canje de puntos.
  */
@@ -16,7 +18,7 @@ import java.time.LocalDate;
 @Table(name = "points_transactions")
 @Getter
 @Setter
-public class PointsTransaction extends AuditableModel {
+public class PointsTransaction extends AbstractTenantEntity {
 
     @NotNull
     @Column(nullable = false)

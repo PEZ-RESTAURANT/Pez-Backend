@@ -1,11 +1,11 @@
 package com.pezbackend.catalog.interfaces.rest;
 
 import com.pezbackend.catalog.domain.model.aggregates.Product;
+import com.pezbackend.catalog.domain.model.entities.Category;
 import com.pezbackend.catalog.domain.model.commands.CreateProductCommand;
 import com.pezbackend.catalog.domain.model.commands.DeleteProductCommand;
 import com.pezbackend.catalog.domain.model.commands.UpdateProductCommand;
 import com.pezbackend.catalog.domain.model.queries.*;
-import com.pezbackend.catalog.domain.model.valueobjects.ProductCategory;
 import com.pezbackend.catalog.domain.services.ProductCommandService;
 import com.pezbackend.catalog.domain.services.ProductQueryService;
 import com.pezbackend.catalog.interfaces.rest.resources.CreateProductResource;
@@ -14,6 +14,9 @@ import com.pezbackend.catalog.interfaces.rest.resources.UpdateProductResource;
 import com.pezbackend.catalog.interfaces.rest.transform.CreateProductCommandFromResourceAssembler;
 import com.pezbackend.catalog.interfaces.rest.transform.ProductResourceFromEntityAssembler;
 import com.pezbackend.iam.infrastructure.authorization.sfs.annotations.AuthorizeRoles;
+import com.pezbackend.shared.domain.model.exceptions.BadRequestException;
+import com.pezbackend.shared.domain.exceptions.TenantMismatchException;
+import com.pezbackend.shared.infrastructure.TenantContext;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -31,6 +34,7 @@ import com.pezbackend.catalog.domain.model.entities.Recipe;
 import com.pezbackend.catalog.interfaces.rest.resources.AddRecipeItemResource;
 import com.pezbackend.catalog.interfaces.rest.resources.RecipeResource;
 import com.pezbackend.catalog.interfaces.rest.transform.RecipeResourceFromEntityAssembler;
+import com.pezbackend.catalog.infrastructure.persistence.jpa.repositories.CategoryRepository;
 
 @RestController
 @RequestMapping("/api/v1/products")
@@ -41,26 +45,46 @@ public class ProductController {
     private final ProductKitchenZoneCommandService productKitchenZoneCommandService;
     private final RecipeCommandService recipeCommandService;
     private final RecipeQueryService recipeQueryService;
+    private final CategoryRepository categoryRepository;
 
     public ProductController(ProductCommandService commandService,
                              ProductQueryService queryService,
                              ProductKitchenZoneCommandService productKitchenZoneCommandService,
                              RecipeCommandService recipeCommandService,
-                             RecipeQueryService recipeQueryService) {
+                             RecipeQueryService recipeQueryService,
+                             CategoryRepository categoryRepository) {
         this.commandService = commandService;
         this.queryService = queryService;
         this.productKitchenZoneCommandService = productKitchenZoneCommandService;
         this.recipeCommandService = recipeCommandService;
         this.recipeQueryService = recipeQueryService;
+        this.categoryRepository = categoryRepository;
+    }
+
+    private void validateCategoryTenant(Category category) {
+        Long currentTenant = TenantContext.getCurrentTenantId();
+        if (currentTenant != null && !currentTenant.equals(category.getRestaurantId())) {
+            throw new TenantMismatchException("Category", category.getId());
+        }
+    }
+
+    private void validateProductTenant(Product product) {
+        Long currentTenant = TenantContext.getCurrentTenantId();
+        if (currentTenant != null && !currentTenant.equals(product.getRestaurantId())) {
+            throw new TenantMismatchException("Product", product.getId());
+        }
     }
 
     // 🔥 CREATE
     @PreAuthorize(AuthorizeRoles.ADMIN)
     @PostMapping
     public ResponseEntity<Void> create(@RequestBody CreateProductResource resource) {
+        Category category = categoryRepository.findById(resource.categoryId())
+                .orElseThrow(() -> new TenantMismatchException("Category", resource.categoryId()));
+        validateCategoryTenant(category);
 
         CreateProductCommand command =
-                CreateProductCommandFromResourceAssembler.toCommandFromResource(resource);
+                CreateProductCommandFromResourceAssembler.toCommandFromResource(resource, category);
 
         commandService.handle(command);
         return ResponseEntity.ok().build();
@@ -70,20 +94,22 @@ public class ProductController {
     @GetMapping
     public ResponseEntity<List<ProductResource>> getAll(
             @RequestParam(required = false) String name,
-            @RequestParam(required = false) String category
+            @RequestParam(required = false) Long categoryId
     ) {
 
         List<Product> products;
 
-        ProductCategory parsedCategory = null;
+        Category category = null;
 
-        if (category != null) {
-            parsedCategory = ProductCategory.valueOf(category);
+        if (categoryId != null) {
+            category = categoryRepository.findById(categoryId)
+                    .orElseThrow(() -> new TenantMismatchException("Category", categoryId));
+            validateCategoryTenant(category);
         }
 
-        if (name != null || parsedCategory != null) {
+        if (name != null || category != null) {
             products = queryService.handle(
-                    new SearchProductsQuery(name, parsedCategory)
+                    new SearchProductsQuery(name, category)
             );
         } else {
             products = queryService.handle(new GetAllProductsQuery());
@@ -101,6 +127,7 @@ public class ProductController {
     public ResponseEntity<ProductResource> getById(@PathVariable Long id) {
 
         Product product = queryService.handle(new GetProductByIdQuery(id));
+        validateProductTenant(product);
 
         return ResponseEntity.ok(
                 ProductResourceFromEntityAssembler.toResourceFromEntity(product)
@@ -108,15 +135,17 @@ public class ProductController {
     }
 
     // 🔍 GET BY CATEGORY
-    @GetMapping("/category/{category}")
+    @GetMapping("/category/{categoryId}")
     public ResponseEntity<List<ProductResource>> getByCategory(
-            @PathVariable String category
+            @PathVariable Long categoryId
     ) {
 
-        ProductCategory parsedCategory = ProductCategory.valueOf(category);
+        Category category = categoryRepository.findById(categoryId)
+                .orElseThrow(() -> new TenantMismatchException("Category", categoryId));
+        validateCategoryTenant(category);
 
         List<Product> products = queryService.handle(
-                new GetProductsByCategoryQuery(parsedCategory)
+                new GetProductsByCategoryQuery(category)
         );
 
         return ResponseEntity.ok(
@@ -141,12 +170,18 @@ public class ProductController {
             @PathVariable Long id,
             @RequestBody UpdateProductResource resource
     ) {
+        Product product = queryService.handle(new GetProductByIdQuery(id));
+        validateProductTenant(product);
+
+        Category category = categoryRepository.findById(resource.categoryId())
+                .orElseThrow(() -> new TenantMismatchException("Category", resource.categoryId()));
+        validateCategoryTenant(category);
 
         UpdateProductCommand command = new UpdateProductCommand(
                 id,
                 resource.name(),
                 resource.price(),
-                resource.category(),
+                category,
                 resource.estimatedPrepTimeMinutes(),
                 resource.active()
         );
@@ -159,6 +194,8 @@ public class ProductController {
     @PreAuthorize(AuthorizeRoles.ADMIN)
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
+        Product product = queryService.handle(new GetProductByIdQuery(id));
+        validateProductTenant(product);
 
         commandService.handle(new DeleteProductCommand(id));
         return ResponseEntity.ok().build();
@@ -171,6 +208,9 @@ public class ProductController {
             @PathVariable Long id,
             @RequestBody AssignProductToZoneResource resource
     ) {
+        Product product = queryService.handle(new GetProductByIdQuery(id));
+        validateProductTenant(product);
+
         productKitchenZoneCommandService.assignProductToZone(id, resource.zoneId());
         return ResponseEntity.ok().build();
     }
@@ -179,6 +219,9 @@ public class ProductController {
     @GetMapping("/{id}/recipe")
     @RequiresPermission("catalog.edit_supplies_recipes")
     public ResponseEntity<List<RecipeResource>> getRecipe(@PathVariable Long id) {
+        Product product = queryService.handle(new GetProductByIdQuery(id));
+        validateProductTenant(product);
+
         List<Recipe> recipe = recipeQueryService.getRecipeForProduct(id);
         return ResponseEntity.ok(
                 recipe.stream()
@@ -193,6 +236,9 @@ public class ProductController {
             @PathVariable Long id,
             @RequestBody AddRecipeItemResource resource
     ) {
+        Product product = queryService.handle(new GetProductByIdQuery(id));
+        validateProductTenant(product);
+
         recipeCommandService.addOrUpdateRecipeItem(id, resource.supplyId(), resource.quantityUsed());
         return ResponseEntity.ok().build();
     }
@@ -203,6 +249,9 @@ public class ProductController {
             @PathVariable Long id,
             @RequestBody AddRecipeItemResource resource
     ) {
+        Product product = queryService.handle(new GetProductByIdQuery(id));
+        validateProductTenant(product);
+
         recipeCommandService.addOrUpdateRecipeItem(id, resource.supplyId(), resource.quantityUsed());
         return ResponseEntity.ok().build();
     }
@@ -213,6 +262,9 @@ public class ProductController {
             @PathVariable Long id,
             @RequestParam Long supplyId
     ) {
+        Product product = queryService.handle(new GetProductByIdQuery(id));
+        validateProductTenant(product);
+
         recipeCommandService.deleteRecipeItem(id, supplyId);
         return ResponseEntity.ok().build();
     }

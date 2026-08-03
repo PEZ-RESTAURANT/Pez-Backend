@@ -1,0 +1,212 @@
+package com.pezbackend.catalog;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.pezbackend.catalog.domain.model.aggregates.Product;
+import com.pezbackend.catalog.domain.model.entities.Category;
+import com.pezbackend.catalog.infrastructure.persistence.jpa.repositories.CategoryRepository;
+import com.pezbackend.catalog.infrastructure.persistence.jpa.repositories.ProductRepository;
+import com.pezbackend.catalog.interfaces.rest.resources.CategoryResource;
+import com.pezbackend.catalog.interfaces.rest.resources.CreateProductResource;
+import com.pezbackend.iam.domain.model.aggregates.User;
+import com.pezbackend.iam.domain.model.entities.Role;
+import com.pezbackend.iam.domain.model.valueobjects.Roles;
+import com.pezbackend.iam.infrastructure.persistence.jpa.repositories.RoleRepository;
+import com.pezbackend.iam.infrastructure.persistence.jpa.repositories.UserRepository;
+import com.pezbackend.iam.application.internal.outboundservices.tokens.TokenService;
+import com.pezbackend.tenancy.interfaces.rest.resources.OnboardingResource;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.MediaType;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.math.BigDecimal;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+@SpringBootTest
+@AutoConfigureMockMvc
+@ActiveProfiles("test")
+@Transactional
+public class CatalogIntegrationTests {
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @Autowired
+    private RoleRepository roleRepository;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private CategoryRepository categoryRepository;
+
+    @Autowired
+    private ProductRepository productRepository;
+
+    @Autowired
+    private TokenService tokenService;
+
+    private final ObjectMapper objectMapper = new ObjectMapper()
+            .registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
+
+    @BeforeEach
+    public void setUp() {
+        if (roleRepository.findByName(Roles.ADMIN).isEmpty()) {
+            roleRepository.save(new Role(Roles.ADMIN));
+        }
+    }
+
+    @Test
+    public void testOnboardingCreatesSeededCategories() throws Exception {
+        // 1. Registrar un nuevo restaurante A
+        OnboardingResource onboardingResource = new OnboardingResource(
+                "Restaurante Test Seeding", "20777777777", "contacto@testseeding.com", "555-777",
+                "admin@testseeding.com", "securePass123", "Carlos", "Soto", "TEST-INVITE-CODE"
+        );
+
+        String response = mockMvc.perform(post("/api/v1/restaurants/onboarding")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(onboardingResource)))
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString();
+
+        Long tenantId = objectMapper.readTree(response).get("id").asLong();
+
+        // 2. Obtener token del admin creado
+        User admin = userRepository.findByEmail("admin@testseeding.com")
+                .orElseThrow(() -> new AssertionError("Admin not found"));
+        String token = tokenService.generateToken(admin.getId(), Roles.ADMIN.name(), tenantId);
+
+        // 3. Consultar las categorías y verificar que se sembraron las 13
+        mockMvc.perform(get("/api/v1/categories")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(13))
+                .andExpect(jsonPath("$[0].name").value("Marina"))
+                .andExpect(jsonPath("$[12].name").value("Brasa"));
+    }
+
+    @Test
+    public void testCannotDeleteCategoryWithProducts() throws Exception {
+        // 1. Registrar un restaurante para tener un tenant context limpio
+        OnboardingResource onboardingResource = new OnboardingResource(
+                "Restaurante Test Delete", "20888888888", "contacto@testdel.com", "555-888",
+                "admin@testdel.com", "securePass123", "Pedro", "Gomez", "TEST-INVITE-CODE"
+        );
+
+        String response = mockMvc.perform(post("/api/v1/restaurants/onboarding")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(onboardingResource)))
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString();
+
+        Long tenantId = objectMapper.readTree(response).get("id").asLong();
+
+        User admin = userRepository.findByEmail("admin@testdel.com")
+                .orElseThrow(() -> new AssertionError("Admin not found"));
+        String token = tokenService.generateToken(admin.getId(), Roles.ADMIN.name(), tenantId);
+
+        // Crear una categoría adicional manualmente
+        String categoryJson = mockMvc.perform(post("/api/v1/categories")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(new CategoryResource(null, "Especiales"))))
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString();
+
+        Long categoryId = objectMapper.readTree(categoryJson).get("id").asLong();
+
+        // Crear un producto asociado a esa categoría
+        CreateProductResource productResource = new CreateProductResource("Ceviche Royal", new BigDecimal("55.00"), categoryId);
+        mockMvc.perform(post("/api/v1/products")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(productResource)))
+                .andExpect(status().isOk());
+
+        // Intentar eliminar la categoría -> debe arrojar 400 Bad Request
+        mockMvc.perform(delete("/api/v1/categories/" + categoryId)
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("No se puede eliminar una categoría con productos activos."));
+    }
+
+    @Test
+    public void testTenantIsolationBetweenCategories() throws Exception {
+        // 1. Crear Restaurante A (Tenant A)
+        OnboardingResource resourceA = new OnboardingResource(
+                "Restaurante A Isolation", "20111111111", "contacto@resta.com", "555-111",
+                "admin@resta.com", "securePassA", "Ana", "Ruiz", "TEST-INVITE-CODE"
+        );
+        String responseA = mockMvc.perform(post("/api/v1/restaurants/onboarding")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(resourceA)))
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString();
+        Long tenantIdA = objectMapper.readTree(responseA).get("id").asLong();
+        User adminA = userRepository.findByEmail("admin@resta.com").orElseThrow();
+        String tokenA = tokenService.generateToken(adminA.getId(), Roles.ADMIN.name(), tenantIdA);
+
+        // 2. Crear Restaurante B (Tenant B)
+        OnboardingResource resourceB = new OnboardingResource(
+                "Restaurante B Isolation", "20222222222", "contacto@restb.com", "555-222",
+                "admin@restb.com", "securePassB", "Beto", "Diaz", "TEST-INVITE-CODE"
+        );
+        String responseB = mockMvc.perform(post("/api/v1/restaurants/onboarding")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(resourceB)))
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString();
+        Long tenantIdB = objectMapper.readTree(responseB).get("id").asLong();
+        User adminB = userRepository.findByEmail("admin@restb.com").orElseThrow();
+        String tokenB = tokenService.generateToken(adminB.getId(), Roles.ADMIN.name(), tenantIdB);
+
+        // 3. Crear Categoría "Marina A" en el Tenant A
+        String catJsonA = mockMvc.perform(post("/api/v1/categories")
+                        .header("Authorization", "Bearer " + tokenA)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(new CategoryResource(null, "Marina A"))))
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString();
+        Long catIdA = objectMapper.readTree(catJsonA).get("id").asLong();
+
+        // 4. Crear Categoría "Criolla B" en el Tenant B
+        String catJsonB = mockMvc.perform(post("/api/v1/categories")
+                        .header("Authorization", "Bearer " + tokenB)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(new CategoryResource(null, "Criolla B"))))
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString();
+        Long catIdB = objectMapper.readTree(catJsonB).get("id").asLong();
+
+        // 5. Tenant A consulta categorías -> No debe ver "Criolla B" pero sí "Marina A" (más las 13 por defecto)
+        mockMvc.perform(get("/api/v1/categories")
+                        .header("Authorization", "Bearer " + tokenA))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(14)) // 13 por defecto + 1 agregada
+                .andExpect(jsonPath("$[?(@.name == 'Marina A')]").exists())
+                .andExpect(jsonPath("$[?(@.name == 'Criolla B')]").doesNotExist());
+
+        // 6. Tenant B consulta categorías -> No debe ver "Marina A" pero sí "Criolla B"
+        mockMvc.perform(get("/api/v1/categories")
+                        .header("Authorization", "Bearer " + tokenB))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(14)) // 13 por defecto + 1 agregada
+                .andExpect(jsonPath("$[?(@.name == 'Criolla B')]").exists())
+                .andExpect(jsonPath("$[?(@.name == 'Marina A')]").doesNotExist());
+
+        // 7. Tenant A intenta borrar "Criolla B" -> Debe fallar con 404 Not Found (aislamiento)
+        mockMvc.perform(delete("/api/v1/categories/" + catIdB)
+                        .header("Authorization", "Bearer " + tokenA))
+                .andExpect(status().isNotFound());
+    }
+}

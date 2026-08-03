@@ -32,17 +32,20 @@ public class WebSecurityConfiguration {
     private final BearerTokenService tokenService;
     private final BCryptHashingService hashingService;
     private final AuthenticationEntryPoint unauthorizedRequestHandler;
+    private final com.pezbackend.shared.infrastructure.persistence.jpa.configuration.TenantFilter tenantFilter;
 
     public WebSecurityConfiguration(
             @Qualifier("defaultUserDetailsService") UserDetailsServiceExtension userDetailsService,
             BearerTokenService tokenService,
             BCryptHashingService hashingService,
-            AuthenticationEntryPoint authenticationEntryPoint
+            AuthenticationEntryPoint authenticationEntryPoint,
+            com.pezbackend.shared.infrastructure.persistence.jpa.configuration.TenantFilter tenantFilter
     ) {
         this.userDetailsService = userDetailsService;
         this.tokenService = tokenService;
         this.hashingService = hashingService;
         this.unauthorizedRequestHandler = authenticationEntryPoint;
+        this.tenantFilter = tenantFilter;
     }
 
     @Bean
@@ -77,6 +80,7 @@ public class WebSecurityConfiguration {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/v1/users/signup", "/api/v1/users/signup/**").permitAll()
                         .requestMatchers("/api/v1/users/signin", "/api/v1/users/signin/**").permitAll()
+                        .requestMatchers("/api/v1/restaurants/onboarding", "/api/v1/restaurants/onboarding/**").permitAll()
                         .requestMatchers(
                                 "/api/v1/users/available-roles",
                                 "/v3/api-docs/**",
@@ -85,12 +89,15 @@ public class WebSecurityConfiguration {
                                 "/swagger-ui/**",
                                 "/swagger-resources/**",
                                 "/webjars/**",
-                                "/test/**"
+                                "/test/**",
+                                "/ws",
+                                "/ws/**"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )
                 // 🧱 Filtro JWT antes del UsernamePasswordAuthenticationFilter
-                .addFilterBefore(authorizationRequestFilter(), UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(authorizationRequestFilter(), UsernamePasswordAuthenticationFilter.class)
+                .addFilterAfter(tenantFilter, BearerAuthorizationRequestFilter.class);
 
         return http.build();
     }

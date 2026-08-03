@@ -12,6 +12,7 @@ import com.pezbackend.billing.interfaces.rest.resources.SaleResource;
 import com.pezbackend.billing.interfaces.rest.transform.CreateSaleCommandFromResourceAssembler;
 import com.pezbackend.billing.interfaces.rest.transform.SaleResourceFromEntityAssembler;
 import com.pezbackend.iam.infrastructure.authorization.sfs.annotations.RequiresPermission;
+import com.pezbackend.billing.infrastructure.persistence.jpa.repositories.SaleRepository;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
@@ -29,10 +30,12 @@ public class SaleController {
 
     private final SaleCommandService commandService;
     private final SaleQueryService queryService;
+    private final SaleRepository saleRepository;
 
-    public SaleController(SaleCommandService commandService, SaleQueryService queryService) {
+    public SaleController(SaleCommandService commandService, SaleQueryService queryService, SaleRepository saleRepository) {
         this.commandService = commandService;
         this.queryService = queryService;
+        this.saleRepository = saleRepository;
     }
 
     // Emitir comprobante
@@ -65,11 +68,14 @@ public class SaleController {
     @RequiresPermission("inventory.view") // Reutiliza permiso de ver inventario/shift o similar
     public ResponseEntity<List<SaleResource>> getSales(
             @RequestParam(required = false) String from,
-            @RequestParam(required = false) String to
+            @RequestParam(required = false) String to,
+            @RequestParam(required = false) String customerDocumentNumber
     ) {
         List<Sale> sales;
 
-        if (from == null && to == null) {
+        if (customerDocumentNumber != null) {
+            sales = saleRepository.findByCustomerDocumentNumber(customerDocumentNumber);
+        } else if (from == null && to == null) {
             sales = queryService.handle(new GetCurrentSalesQuery());
         } else {
             LocalDateTime startDate = LocalDate.parse(from).atStartOfDay();

@@ -11,6 +11,8 @@ import lombok.Setter;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
+import com.pezbackend.shared.domain.model.entities.AbstractTenantEntity;
+
 /**
  * Entidad JPA que representa un registro de horas extras laboradas por un empleado.
  */
@@ -18,7 +20,7 @@ import java.time.LocalDate;
 @Table(name = "overtime_records")
 @Getter
 @Setter
-public class OvertimeRecord extends AuditableModel {
+public class OvertimeRecord extends AbstractTenantEntity {
 
     @NotNull
     @Column(nullable = false)

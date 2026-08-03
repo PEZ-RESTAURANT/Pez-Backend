@@ -1,8 +1,9 @@
 package com.pezbackend.inventory;
 
 import com.pezbackend.catalog.domain.model.aggregates.Product;
-import com.pezbackend.catalog.domain.model.valueobjects.ProductCategory;
+import com.pezbackend.catalog.domain.model.entities.Category;
 import com.pezbackend.catalog.domain.services.RecipeCommandService;
+import com.pezbackend.catalog.infrastructure.persistence.jpa.repositories.CategoryRepository;
 import com.pezbackend.catalog.infrastructure.persistence.jpa.repositories.ProductRepository;
 import com.pezbackend.catalog.infrastructure.persistence.jpa.repositories.RecipeRepository;
 import com.pezbackend.iam.domain.model.entities.Role;
@@ -61,6 +62,9 @@ public class InventoryIntegrationTests {
 
     @Autowired
     private ProductRepository productRepository;
+
+    @Autowired
+    private CategoryRepository categoryRepository;
 
     @Autowired
     private RecipeRepository recipeRepository;
@@ -170,7 +174,8 @@ public class InventoryIntegrationTests {
         supplyLimon = supplyRepository.save(supplyLimon);
 
         // Crear producto
-        productLomo = new Product("Lomo Saltado Premium", new BigDecimal("45.00"), ProductCategory.MARINA);
+        Category marina = categoryRepository.save(new Category("Marina"));
+        productLomo = new Product("Lomo Saltado Premium", new BigDecimal("45.00"), marina);
         productLomo = productRepository.save(productLomo);
 
         // Asignar receta: 1 Lomo Saltado usa 0.2500 kg de Lomo Fino y 0.1000 kg de Limon

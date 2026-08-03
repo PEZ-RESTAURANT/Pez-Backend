@@ -3,14 +3,14 @@ package com.pezbackend.catalog.domain.model.commands;
 import com.pezbackend.catalog.domain.model.exceptions.InvalidProductCategoryException;
 import com.pezbackend.catalog.domain.model.exceptions.InvalidProductNameException;
 import com.pezbackend.catalog.domain.model.exceptions.InvalidProductPriceException;
-import com.pezbackend.catalog.domain.model.valueobjects.ProductCategory;
+import com.pezbackend.catalog.domain.model.entities.Category;
 
 import java.math.BigDecimal;
 
 public record CreateProductCommand(
         String name,
         BigDecimal price,
-        ProductCategory category
+        Category category
 ) {
     public CreateProductCommand {
         if (name == null || name.isBlank())

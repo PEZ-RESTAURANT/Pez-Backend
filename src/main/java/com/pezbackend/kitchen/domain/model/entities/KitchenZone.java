@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import com.pezbackend.shared.domain.model.entities.AbstractTenantBaseEntity;
+
 /**
  * Entidad JPA que representa una zona de cocina (ej: Bar, Cocina Caliente, Cocina Fría).
  */
@@ -11,7 +13,7 @@ import lombok.Setter;
 @Table(name = "kitchen_zones")
 @Getter
 @Setter
-public class KitchenZone {
+public class KitchenZone extends AbstractTenantBaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

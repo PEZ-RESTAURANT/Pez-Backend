@@ -9,6 +9,8 @@ import lombok.Setter;
 
 import java.time.LocalDate;
 
+import com.pezbackend.shared.domain.model.entities.AbstractTenantEntity;
+
 /**
  * Entidad JPA que representa una sanción aplicada a un empleado.
  */
@@ -16,7 +18,7 @@ import java.time.LocalDate;
 @Table(name = "sanctions")
 @Getter
 @Setter
-public class Sanction extends AuditableModel {
+public class Sanction extends AbstractTenantEntity {
 
     @NotNull
     @Column(nullable = false)

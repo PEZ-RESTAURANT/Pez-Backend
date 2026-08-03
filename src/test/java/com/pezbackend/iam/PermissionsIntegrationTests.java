@@ -21,6 +21,14 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.test.web.servlet.MockMvc;
+import com.pezbackend.iam.infrastructure.authorization.sfs.model.UserDetailsImpl;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
+
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -31,9 +39,13 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * la lógica de resolución (regla OR y overrides) y la protección del permiso especial permissions.manage.
  */
 @SpringBootTest
+@AutoConfigureMockMvc
 @ActiveProfiles("test")
 @Transactional
 public class PermissionsIntegrationTests {
+
+    @Autowired
+    private MockMvc mockMvc;
 
     @Autowired
     private PermissionResolutionService resolutionService;
@@ -172,5 +184,35 @@ public class PermissionsIntegrationTests {
         assertThatThrownBy(() -> commandService.handle(deleteCmd))
                 .isInstanceOf(BusinessRuleViolationException.class)
                 .hasMessageContaining("permissions.manage");
+    }
+
+    @Test
+    public void testGetMyPermissionsWithOverrides() throws Exception {
+        // CASHIER has orders.create = true by default. We apply a REVOKED override.
+        CreatePermissionOverrideCommand overrideCmd = new CreatePermissionOverrideCommand(
+                testUser.getId(),
+                "orders.create",
+                OverrideValue.REVOKED,
+                "Prueba de anulación en test de integración",
+                "admin_user"
+        );
+        commandService.handle(overrideCmd);
+
+        UserDetailsImpl userDetails = UserDetailsImpl.build(testUser);
+
+        // Perform GET /api/v1/accounts/me/permissions as the CASHIER (testUser)
+        mockMvc.perform(get("/api/v1/accounts/me/permissions")
+                        .with(user(userDetails)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isArray())
+                // Verify the override value (granted: false) is returned correctly
+                .andExpect(jsonPath("$[?(@.code == 'orders.create')].granted").value(false));
+    }
+
+    @Test
+    public void testGetMyPermissionsUnauthenticated() throws Exception {
+        // Unauthenticated user should not be allowed
+        mockMvc.perform(get("/api/v1/accounts/me/permissions"))
+                .andExpect(status().isUnauthorized());
     }
 }

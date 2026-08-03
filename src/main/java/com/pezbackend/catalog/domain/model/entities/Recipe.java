@@ -6,6 +6,10 @@ import lombok.Setter;
 
 import java.math.BigDecimal;
 
+import org.hibernate.annotations.Filter;
+import com.pezbackend.shared.infrastructure.TenantContext;
+import jakarta.validation.constraints.NotNull;
+
 /**
  * Entidad JPA que representa una asociación de receta, indicando qué insumo y en qué cantidad usa un producto.
  * Mapeado por una clave compuesta compuesta por productId y supplyId.
@@ -15,7 +19,19 @@ import java.math.BigDecimal;
 @IdClass(RecipeId.class)
 @Getter
 @Setter
+@Filter(name = "tenantFilter", condition = "restaurant_id = :restaurantId")
 public class Recipe {
+
+    @Column(name = "restaurant_id", nullable = false)
+    private Long restaurantId;
+
+    @PrePersist
+    public void prePersist() {
+        if (this.restaurantId == null) {
+            Long current = TenantContext.getCurrentTenantId();
+            this.restaurantId = (current != null) ? current : 1L;
+        }
+    }
 
     @Id
     @Column(name = "product_id", nullable = false)

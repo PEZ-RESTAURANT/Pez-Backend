@@ -3,8 +3,8 @@ package com.pezbackend.catalog.domain.model.aggregates;
 import com.pezbackend.catalog.domain.model.exceptions.InvalidProductCategoryException;
 import com.pezbackend.catalog.domain.model.exceptions.InvalidProductNameException;
 import com.pezbackend.catalog.domain.model.exceptions.InvalidProductPriceException;
-import com.pezbackend.catalog.domain.model.valueobjects.ProductCategory;
-import com.pezbackend.shared.domain.model.aggregates.AuditableAbstractAggregateRoot;
+import com.pezbackend.catalog.domain.model.entities.Category;
+import com.pezbackend.shared.domain.model.aggregates.AbstractTenantAggregateRoot;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -14,7 +14,8 @@ import java.math.BigDecimal;
 
 @Getter
 @Entity
-public class Product extends AuditableAbstractAggregateRoot<Product> {
+@Table(name = "product")
+public class Product extends AbstractTenantAggregateRoot<Product> {
 
     @NotBlank
     @Column(nullable = false, length = 150)
@@ -25,9 +26,9 @@ public class Product extends AuditableAbstractAggregateRoot<Product> {
     private BigDecimal price;
 
     @NotNull
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private ProductCategory category;
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "category_id", nullable = false)
+    private Category category;
 
     @Column(name = "estimated_prep_time_minutes")
     private Integer estimatedPrepTimeMinutes;
@@ -37,7 +38,7 @@ public class Product extends AuditableAbstractAggregateRoot<Product> {
 
     protected Product() {}
 
-    public Product(String name, BigDecimal price, ProductCategory category) {
+    public Product(String name, BigDecimal price, Category category) {
         validate(name, price, category);
 
         this.name = name;
@@ -47,7 +48,7 @@ public class Product extends AuditableAbstractAggregateRoot<Product> {
         this.estimatedPrepTimeMinutes = null;
     }
 
-    public Product(String name, BigDecimal price, ProductCategory category, Integer estimatedPrepTimeMinutes, Boolean active) {
+    public Product(String name, BigDecimal price, Category category, Integer estimatedPrepTimeMinutes, Boolean active) {
         validate(name, price, category);
 
         this.name = name;
@@ -57,7 +58,7 @@ public class Product extends AuditableAbstractAggregateRoot<Product> {
         this.active = active != null ? active : true;
     }
 
-    public void update(String name, BigDecimal price, ProductCategory category, Integer estimatedPrepTimeMinutes, Boolean active) {
+    public void update(String name, BigDecimal price, Category category, Integer estimatedPrepTimeMinutes, Boolean active) {
         if (name == null || name.isBlank())
             throw new InvalidProductNameException();
 
@@ -74,11 +75,11 @@ public class Product extends AuditableAbstractAggregateRoot<Product> {
         this.active = active != null ? active : true;
     }
 
-    public void update(String name, BigDecimal price, ProductCategory category) {
+    public void update(String name, BigDecimal price, Category category) {
         update(name, price, category, this.estimatedPrepTimeMinutes, this.active);
     }
 
-    private void validate(String name, BigDecimal price, ProductCategory category) {
+    private void validate(String name, BigDecimal price, Category category) {
         if (name == null || name.isBlank())
             throw new InvalidProductNameException();
 

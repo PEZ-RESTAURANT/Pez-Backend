@@ -73,4 +73,18 @@ public class OrderQueryServiceImpl implements OrderQueryService {
                 .sorted(Comparator.comparing(OrderItem::getCreatedAt))
                 .toList();
     }
+
+    @Override
+    public List<RestaurantTable> getMergeGroup(Long tableId) {
+        RestaurantTable table = getTableById(tableId);
+        Long anchorId = table.getAnchorTableId() != null ? table.getAnchorTableId() : table.getId();
+
+        RestaurantTable anchorTable = getTableById(anchorId);
+        List<RestaurantTable> merged = restaurantTableRepository.findAllByAnchorTableId(anchorId);
+
+        java.util.List<RestaurantTable> group = new java.util.ArrayList<>();
+        group.add(anchorTable);
+        group.addAll(merged);
+        return group;
+    }
 }

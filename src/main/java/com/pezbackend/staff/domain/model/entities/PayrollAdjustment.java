@@ -10,6 +10,8 @@ import lombok.Setter;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
+import com.pezbackend.shared.domain.model.entities.AbstractTenantEntity;
+
 /**
  * Entidad JPA que representa un ajuste de nómina (adelanto de sueldo o deducción por consumo).
  */
@@ -17,7 +19,7 @@ import java.time.LocalDate;
 @Table(name = "payroll_adjustments")
 @Getter
 @Setter
-public class PayrollAdjustment extends AuditableModel {
+public class PayrollAdjustment extends AbstractTenantEntity {
 
     @NotNull
     @Column(nullable = false)

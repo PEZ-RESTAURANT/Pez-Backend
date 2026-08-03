@@ -5,6 +5,8 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import com.pezbackend.shared.domain.model.entities.AbstractTenantBaseEntity;
+
 /**
  * Representa una mesa física dentro del salón del restaurante.
  */
@@ -12,7 +14,7 @@ import lombok.Setter;
 @Table(name = "restaurant_tables")
 @Getter
 @Setter
-public class RestaurantTable {
+public class RestaurantTable extends AbstractTenantBaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -36,6 +38,9 @@ public class RestaurantTable {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 50)
     private TableStatus status = TableStatus.FREE;
+
+    @Column(name = "anchor_table_id")
+    private Long anchorTableId;
 
     /**
      * Constructor requerido por la especificación de JPA. No debe ser utilizado directamente.

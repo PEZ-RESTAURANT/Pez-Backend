@@ -10,6 +10,8 @@ import java.time.LocalDateTime;
 
 import com.pezbackend.orders.domain.model.aggregates.Order;
 
+import com.pezbackend.shared.domain.model.entities.AbstractTenantBaseEntity;
+
 /**
  * Representa un plato o ítem individual comandado dentro de un pedido.
  */
@@ -17,7 +19,7 @@ import com.pezbackend.orders.domain.model.aggregates.Order;
 @Table(name = "order_items")
 @Getter
 @Setter
-public class OrderItem {
+public class OrderItem extends AbstractTenantBaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

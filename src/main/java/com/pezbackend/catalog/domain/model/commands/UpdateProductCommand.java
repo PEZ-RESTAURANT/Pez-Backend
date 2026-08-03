@@ -3,7 +3,7 @@ package com.pezbackend.catalog.domain.model.commands;
 import com.pezbackend.catalog.domain.model.exceptions.InvalidProductCategoryException;
 import com.pezbackend.catalog.domain.model.exceptions.InvalidProductNameException;
 import com.pezbackend.catalog.domain.model.exceptions.InvalidProductPriceException;
-import com.pezbackend.catalog.domain.model.valueobjects.ProductCategory;
+import com.pezbackend.catalog.domain.model.entities.Category;
 import com.pezbackend.shared.domain.model.exceptions.BadRequestException;
 
 import java.math.BigDecimal;
@@ -12,7 +12,7 @@ public record UpdateProductCommand(
         Long productId,
         String name,
         BigDecimal price,
-        ProductCategory category,
+        Category category,
         Integer estimatedPrepTimeMinutes,
         Boolean active
 ) {

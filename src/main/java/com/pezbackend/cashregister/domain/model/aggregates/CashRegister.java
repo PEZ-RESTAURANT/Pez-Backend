@@ -4,7 +4,7 @@ import com.pezbackend.cashregister.domain.model.entities.CashMovement;
 import com.pezbackend.cashregister.domain.model.exceptions.*;
 import com.pezbackend.cashregister.domain.model.valueobjects.CashMovementType;
 import com.pezbackend.cashregister.domain.model.valueobjects.CashRegisterStatus;
-import com.pezbackend.shared.domain.model.aggregates.AuditableAbstractAggregateRoot;
+import com.pezbackend.shared.domain.model.aggregates.AbstractTenantAggregateRoot;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
@@ -16,7 +16,7 @@ import java.util.List;
 
 @Getter
 @Entity
-public class CashRegister extends AuditableAbstractAggregateRoot<CashRegister> {
+public class CashRegister extends AbstractTenantAggregateRoot<CashRegister> {
 
     @NotNull
     @Column(nullable = false)

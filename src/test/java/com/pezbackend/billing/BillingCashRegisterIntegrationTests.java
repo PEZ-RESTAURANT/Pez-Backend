@@ -1,7 +1,8 @@
 package com.pezbackend.billing;
 
 import com.pezbackend.catalog.domain.model.aggregates.Product;
-import com.pezbackend.catalog.domain.model.valueobjects.ProductCategory;
+import com.pezbackend.catalog.domain.model.entities.Category;
+import com.pezbackend.catalog.infrastructure.persistence.jpa.repositories.CategoryRepository;
 import com.pezbackend.catalog.infrastructure.persistence.jpa.repositories.ProductRepository;
 import com.pezbackend.iam.domain.model.entities.Role;
 import com.pezbackend.iam.domain.model.aggregates.User;
@@ -77,6 +78,9 @@ public class BillingCashRegisterIntegrationTests {
 
     @Autowired
     private ProductRepository productRepository;
+
+    @Autowired
+    private CategoryRepository categoryRepository;
 
     @Autowired
     private OrderCommandService orderCommandService;
@@ -163,8 +167,9 @@ public class BillingCashRegisterIntegrationTests {
 
         adminDetails = UserDetailsImpl.build(adminUser);
 
-        // Crear producto de prueba
-        productCeviche = new Product("Ceviche de Prueba", new BigDecimal("40.00"), ProductCategory.MARINA);
+        // Crear producto de prueba con categoría dinámica
+        Category marina = categoryRepository.save(new Category("Marina"));
+        productCeviche = new Product("Ceviche de Prueba", new BigDecimal("40.00"), marina);
         productCeviche = productRepository.save(productCeviche);
     }
 

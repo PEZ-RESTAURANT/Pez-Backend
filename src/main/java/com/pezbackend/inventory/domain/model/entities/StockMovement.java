@@ -8,6 +8,8 @@ import lombok.Setter;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+import com.pezbackend.shared.domain.model.entities.AbstractTenantBaseEntity;
+
 /**
  * Entidad JPA que representa una transacción de movimiento en el stock de un insumo.
  */
@@ -15,7 +17,7 @@ import java.time.LocalDateTime;
 @Table(name = "stock_movements")
 @Getter
 @Setter
-public class StockMovement {
+public class StockMovement extends AbstractTenantBaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

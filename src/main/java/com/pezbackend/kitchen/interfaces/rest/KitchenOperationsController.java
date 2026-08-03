@@ -18,6 +18,11 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Set;
 
+import com.pezbackend.orders.infrastructure.persistence.jpa.repositories.RestaurantTableRepository;
+import com.pezbackend.orders.domain.model.entities.RestaurantTable;
+import java.util.stream.Collectors;
+import java.util.Map;
+
 /**
  * Controlador REST para las operaciones de preparación en la cocina (cola FIFO y transiciones).
  */
@@ -30,6 +35,7 @@ public class KitchenOperationsController {
     private final ProductKitchenZoneQueryService productKitchenZoneQueryService;
     private final OrderQueryService orderQueryService;
     private final OrderCommandService orderCommandService;
+    private final RestaurantTableRepository restaurantTableRepository;
 
     /**
      * Obtiene la cola FIFO de platos/ítems pendientes de preparación para una zona específica.
@@ -50,10 +56,21 @@ public class KitchenOperationsController {
         // 3. Obtener los IDs de productos asociados a esta zona de cocina
         Set<Long> productIdsInZone = productKitchenZoneQueryService.getProductIdsForZone(zoneId);
 
+        // Obtener mapa de tableId a tableNumber para el restaurante actual
+        Map<Long, Integer> tableIdToNumber = restaurantTableRepository.findAll().stream()
+                .filter(t -> t.getId() != null && t.getNumber() != null)
+                .collect(Collectors.toMap(RestaurantTable::getId, RestaurantTable::getNumber, (v1, v2) -> v1));
+
         // 4. Filtrar y mapear a recursos
         List<KitchenQueueItemResource> filteredQueue = fullQueue.stream()
                 .filter(item -> productIdsInZone.contains(item.getProductId()))
-                .map(KitchenQueueItemResourceFromEntityAssembler::toResourceFromEntity)
+                .map(item -> {
+                    Integer tableNum = null;
+                    if (item.getOrder() != null && item.getOrder().getTableId() != null) {
+                        tableNum = tableIdToNumber.get(item.getOrder().getTableId());
+                    }
+                    return KitchenQueueItemResourceFromEntityAssembler.toResourceFromEntity(item, tableNum);
+                })
                 .toList();
 
         return ResponseEntity.ok(filteredQueue);

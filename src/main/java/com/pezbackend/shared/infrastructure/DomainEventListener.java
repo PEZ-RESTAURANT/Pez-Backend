@@ -38,6 +38,21 @@ public class DomainEventListener {
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void handleDomainEvent(DomainEvent event) {
         log.info("Auditoría: capturado evento '{}' del módulo '{}'", event.eventType(), event.module());
+        
+        Long currentTenantId = TenantContext.getCurrentTenantId();
+        boolean contextSetTemporarily = false;
+        
+        if (currentTenantId == null) {
+            var auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+            if (auth != null && auth.getPrincipal() instanceof com.pezbackend.iam.infrastructure.authorization.sfs.model.UserDetailsImpl userDetails) {
+                currentTenantId = userDetails.getRestaurantId();
+                if (currentTenantId != null) {
+                    TenantContext.setCurrentTenantId(currentTenantId);
+                    contextSetTemporarily = true;
+                }
+            }
+        }
+
         try {
             Map<String, Object> payloadMap;
             Object rawPayload = event.payload();
@@ -66,6 +81,10 @@ public class DomainEventListener {
             log.debug("Auditoría: evento '{}' guardado con ID {}", event.eventType(), auditEvent.getId());
         } catch (Exception ex) {
             log.error("Auditoría: Error al persistir el evento '{}': {}", event.eventType(), ex.getMessage(), ex);
+        } finally {
+            if (contextSetTemporarily) {
+                TenantContext.clear();
+            }
         }
     }
 }

@@ -10,6 +10,8 @@ import lombok.Setter;
 
 import java.math.BigDecimal;
 
+import com.pezbackend.shared.domain.model.entities.AbstractTenantEntity;
+
 /**
  * Entidad JPA que representa la configuración global del programa de fidelización de clientes.
  */
@@ -17,7 +19,7 @@ import java.math.BigDecimal;
 @Table(name = "loyalty_configs")
 @Getter
 @Setter
-public class LoyaltyConfig extends AuditableModel {
+public class LoyaltyConfig extends AbstractTenantEntity {
 
     @NotNull
     @Column(nullable = false, precision = 19, scale = 4)

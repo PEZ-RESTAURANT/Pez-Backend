@@ -7,7 +7,7 @@ import com.pezbackend.billing.domain.model.exceptions.PaymentMismatchException;
 import com.pezbackend.billing.domain.model.valueobjects.DocumentType;
 import com.pezbackend.billing.domain.model.valueobjects.PaymentMethod;
 import com.pezbackend.billing.domain.model.valueobjects.SaleStatus;
-import com.pezbackend.shared.domain.model.aggregates.AuditableAbstractAggregateRoot;
+import com.pezbackend.shared.domain.model.aggregates.AbstractTenantAggregateRoot;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -22,7 +22,7 @@ import java.util.List;
 @Getter
 @Setter
 @Entity
-public class Sale extends AuditableAbstractAggregateRoot<Sale> {
+public class Sale extends AbstractTenantAggregateRoot<Sale> {
 
     private Long staffId;
     private String name;

@@ -1,7 +1,7 @@
 package com.pezbackend.iam.domain.model.aggregates;
 
 import com.pezbackend.iam.domain.model.entities.Role;
-import com.pezbackend.shared.domain.model.aggregates.AuditableAbstractAggregateRoot;
+import com.pezbackend.shared.domain.model.aggregates.AbstractTenantAggregateRoot;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -13,7 +13,7 @@ import java.util.List;
 @Getter
 @Setter
 @Entity
-public class User extends AuditableAbstractAggregateRoot<User> {
+public class User extends AbstractTenantAggregateRoot<User> {
 
     @Column(unique = true, nullable = false)
     private String email;

@@ -17,6 +17,22 @@ public interface TokenService {
     String generateToken(Long userId, String userRole);
 
     /**
+     * Generate a token for a given user, role, and restaurant ID
+     * @param userId the user ID
+     * @param userRole the user role
+     * @param restaurantId the restaurant ID
+     * @return String the token
+     */
+    String generateToken(Long userId, String userRole, Long restaurantId);
+
+    /**
+     * Extract the restaurant ID from a token
+     * @param token the token
+     * @return Long the restaurant ID
+     */
+    Long getRestaurantIdFromToken(String token);
+
+    /**
      * Extract the username from a token
      * @param token the token
      * @return Long the userId

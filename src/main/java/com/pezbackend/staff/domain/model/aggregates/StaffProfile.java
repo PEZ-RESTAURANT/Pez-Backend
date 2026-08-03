@@ -1,7 +1,7 @@
 package com.pezbackend.staff.domain.model.aggregates;
 
 import com.pezbackend.staff.domain.model.valueobjects.StaffPaymentType;
-import com.pezbackend.shared.domain.model.aggregates.AuditableAbstractAggregateRoot;
+import com.pezbackend.shared.domain.model.aggregates.AbstractTenantAggregateRoot;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
@@ -17,7 +17,7 @@ import java.time.LocalDateTime;
 @Table(name = "staff_profiles")
 @Getter
 @Setter
-public class StaffProfile extends AuditableAbstractAggregateRoot<StaffProfile> {
+public class StaffProfile extends AbstractTenantAggregateRoot<StaffProfile> {
 
     @NotNull
     @Column(nullable = false, unique = true)

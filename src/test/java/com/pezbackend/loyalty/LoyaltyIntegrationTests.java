@@ -1,7 +1,8 @@
 package com.pezbackend.loyalty;
 
 import com.pezbackend.catalog.domain.model.aggregates.Product;
-import com.pezbackend.catalog.domain.model.valueobjects.ProductCategory;
+import com.pezbackend.catalog.domain.model.entities.Category;
+import com.pezbackend.catalog.infrastructure.persistence.jpa.repositories.CategoryRepository;
 import com.pezbackend.catalog.infrastructure.persistence.jpa.repositories.ProductRepository;
 import com.pezbackend.billing.domain.model.commands.CreateSaleCommand;
 import com.pezbackend.billing.domain.model.valueobjects.DocumentType;
@@ -78,6 +79,9 @@ public class LoyaltyIntegrationTests {
     private ProductRepository productRepository;
 
     @Autowired
+    private CategoryRepository categoryRepository;
+
+    @Autowired
     private RestaurantTableRepository restaurantTableRepository;
 
     @Autowired
@@ -102,6 +106,7 @@ public class LoyaltyIntegrationTests {
         userRepository.deleteAll();
         roleRepository.deleteAll();
         productRepository.deleteAll();
+        categoryRepository.deleteAll();
         restaurantTableRepository.deleteAll();
 
         // Sembrar roles y usuarios de seguridad
@@ -113,8 +118,9 @@ public class LoyaltyIntegrationTests {
         adminUser = userRepository.save(adminUser);
         adminDetails = UserDetailsImpl.build(adminUser);
 
-        // Crear producto de prueba
-        ceviche = new Product("Ceviche Carretillero", new BigDecimal("35.00"), ProductCategory.MARINA);
+        // Crear producto de prueba con categoría dinámica
+        Category marina = categoryRepository.save(new Category("Marina"));
+        ceviche = new Product("Ceviche Carretillero", new BigDecimal("35.00"), marina);
         ceviche = productRepository.save(ceviche);
 
         // Inicializar configuración de fidelización por defecto si no existe

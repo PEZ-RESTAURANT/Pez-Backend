@@ -1,7 +1,8 @@
 package com.pezbackend.orders;
 
 import com.pezbackend.catalog.domain.model.aggregates.Product;
-import com.pezbackend.catalog.domain.model.valueobjects.ProductCategory;
+import com.pezbackend.catalog.domain.model.entities.Category;
+import com.pezbackend.catalog.infrastructure.persistence.jpa.repositories.CategoryRepository;
 import com.pezbackend.catalog.infrastructure.persistence.jpa.repositories.ProductRepository;
 import com.pezbackend.orders.domain.model.aggregates.Order;
 import com.pezbackend.orders.domain.model.entities.OrderItem;
@@ -44,11 +45,15 @@ public class OrdersIntegrationTests {
     @Autowired
     private ProductRepository productRepository;
 
+    @Autowired
+    private CategoryRepository categoryRepository;
+
     private Product ceviche;
 
     @BeforeEach
     public void setUp() {
-        ceviche = new Product("Ceviche Carretillero", new BigDecimal("35.00"), ProductCategory.MARINA);
+        Category marina = categoryRepository.save(new Category("Marina"));
+        ceviche = new Product("Ceviche Carretillero", new BigDecimal("35.00"), marina);
         ceviche = productRepository.save(ceviche);
     }
 
@@ -222,5 +227,43 @@ public class OrdersIntegrationTests {
                 .findFirst().orElseThrow();
         assertThat(item2.getQuantity()).isEqualTo(2);
         assertThat(item2.getNote()).isEqualTo("Con yuyo");
+    }
+
+    @Test
+    public void testUpdateTableDetails() {
+        RestaurantTable table = commandService.createTable(50, 1, "Mesa 50", 10, 10);
+        RestaurantTable updated = commandService.updateTableDetails(table.getId(), 51, 2, "Piso 2 Zona A");
+        
+        assertThat(updated.getNumber()).isEqualTo(51);
+        assertThat(updated.getFloor()).isEqualTo(2);
+        assertThat(updated.getZoneTag()).isEqualTo("Piso 2 Zona A");
+    }
+
+    @Test
+    public void testDeleteTableConstraints() {
+        RestaurantTable table = commandService.createTable(60, 1, "Mesa 60", 10, 10);
+        
+        // Se puede eliminar si está libre
+        commandService.deleteTable(table.getId());
+        
+        // No se puede encontrar después
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> queryService.getTableById(table.getId()))
+                .isInstanceOf(com.pezbackend.shared.domain.exceptions.ResourceNotFoundException.class);
+    }
+
+    @Test
+    public void testCannotDeleteMergedTable() {
+        RestaurantTable anchor = commandService.createTable(70, 1, "Ancla", 10, 10);
+        RestaurantTable child = commandService.createTable(71, 1, "Hija", 20, 20);
+
+        commandService.mergeTables(anchor.getId(), List.of(child.getId()), "waiter_user");
+
+        // Intento de eliminar la mesa hija fusionada -> arroja excepción
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> commandService.deleteTable(child.getId()))
+                .isInstanceOf(com.pezbackend.shared.domain.exceptions.BusinessRuleViolationException.class);
+
+        // Intento de eliminar la mesa ancla fusionada -> arroja excepción
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> commandService.deleteTable(anchor.getId()))
+                .isInstanceOf(com.pezbackend.shared.domain.exceptions.BusinessRuleViolationException.class);
     }
 }

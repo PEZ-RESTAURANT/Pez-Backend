@@ -51,6 +51,30 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * Maneja los intentos de acceso cross-tenant no autorizados mapeándolos a HTTP 404 (Not Found).
+     *
+     * @param ex      la excepción {@link TenantMismatchException} capturada
+     * @param request la solicitud HTTP actual
+     * @return una respuesta de error con código HTTP 404 (Not Found)
+     */
+    @ExceptionHandler(TenantMismatchException.class)
+    public ResponseEntity<ErrorResponse> handleTenantMismatchException(
+            TenantMismatchException ex,
+            HttpServletRequest request
+    ) {
+        log.warn("⚠️ [CROSS-TENANT] Intento de acceso cross-tenant detectado: {} - URI: {}", ex.getMessage(), request.getRequestURI());
+        ErrorResponse error = new ErrorResponse(
+                LocalDateTime.now(),
+                404,
+                ex.getErrorCode(),
+                ex.getMessage(),
+                request.getRequestURI(),
+                ex.getDetails()
+        );
+        return ResponseEntity.status(404).body(error);
+    }
+
+    /**
      * Maneja las excepciones originadas por violaciones a reglas de negocio del sistema.
      *
      * @param ex      la excepción {@link BusinessRuleViolationException} capturada
