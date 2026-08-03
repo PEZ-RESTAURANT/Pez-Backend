@@ -36,6 +36,8 @@ import com.pezbackend.catalog.interfaces.rest.resources.RecipeResource;
 import com.pezbackend.catalog.interfaces.rest.transform.RecipeResourceFromEntityAssembler;
 import com.pezbackend.catalog.infrastructure.persistence.jpa.repositories.CategoryRepository;
 
+import com.pezbackend.catalog.domain.services.ProductKitchenZoneQueryService;
+
 @RestController
 @RequestMapping("/api/v1/products")
 public class ProductController {
@@ -43,6 +45,7 @@ public class ProductController {
     private final ProductCommandService commandService;
     private final ProductQueryService queryService;
     private final ProductKitchenZoneCommandService productKitchenZoneCommandService;
+    private final ProductKitchenZoneQueryService productKitchenZoneQueryService;
     private final RecipeCommandService recipeCommandService;
     private final RecipeQueryService recipeQueryService;
     private final CategoryRepository categoryRepository;
@@ -50,12 +53,14 @@ public class ProductController {
     public ProductController(ProductCommandService commandService,
                              ProductQueryService queryService,
                              ProductKitchenZoneCommandService productKitchenZoneCommandService,
+                             ProductKitchenZoneQueryService productKitchenZoneQueryService,
                              RecipeCommandService recipeCommandService,
                              RecipeQueryService recipeQueryService,
                              CategoryRepository categoryRepository) {
         this.commandService = commandService;
         this.queryService = queryService;
         this.productKitchenZoneCommandService = productKitchenZoneCommandService;
+        this.productKitchenZoneQueryService = productKitchenZoneQueryService;
         this.recipeCommandService = recipeCommandService;
         this.recipeQueryService = recipeQueryService;
         this.categoryRepository = categoryRepository;
@@ -211,8 +216,25 @@ public class ProductController {
         Product product = queryService.handle(new GetProductByIdQuery(id));
         validateProductTenant(product);
 
-        productKitchenZoneCommandService.assignProductToZone(id, resource.zoneId());
+        if (resource.zoneId() == null) {
+            productKitchenZoneCommandService.removeProductFromZone(id);
+        } else {
+            productKitchenZoneCommandService.assignProductToZone(id, resource.zoneId());
+        }
         return ResponseEntity.ok().build();
+    }
+
+    // 🔍 GET KITCHEN ZONE
+    @GetMapping("/{id}/kitchen-zone")
+    @RequiresPermission("catalog.edit_kitchen_zones")
+    public ResponseEntity<Map<String, Long>> getKitchenZone(@PathVariable Long id) {
+        Product product = queryService.handle(new GetProductByIdQuery(id));
+        validateProductTenant(product);
+
+        java.util.Optional<Long> zoneIdOpt = productKitchenZoneQueryService.getZoneIdForProduct(id);
+        java.util.Map<String, Long> response = new java.util.HashMap<>();
+        response.put("zoneId", zoneIdOpt.orElse(null));
+        return ResponseEntity.ok(response);
     }
 
     // 📖 RECIPES ENDPOINTS

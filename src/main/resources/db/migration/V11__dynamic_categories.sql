@@ -17,4 +17,4 @@ ALTER TABLE product ADD CONSTRAINT fk_product_category FOREIGN KEY (category_id)
 ALTER TABLE product DROP COLUMN category;
 
 -- Hacemos la columna category_id NOT NULL para asegurar la integridad de la base de datos
-ALTER TABLE product ALTER COLUMN category_id SET NOT NULL;
+ALTER TABLE product MODIFY COLUMN category_id BIGINT NOT NULL;

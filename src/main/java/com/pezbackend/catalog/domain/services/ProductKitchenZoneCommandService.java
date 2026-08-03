@@ -12,4 +12,11 @@ public interface ProductKitchenZoneCommandService {
      * @param zoneId    ID de la zona de cocina
      */
     void assignProductToZone(Long productId, Long zoneId);
+
+    /**
+     * Elimina la asignación de zona de cocina de un producto.
+     *
+     * @param productId ID del producto
+     */
+    void removeProductFromZone(Long productId);
 }

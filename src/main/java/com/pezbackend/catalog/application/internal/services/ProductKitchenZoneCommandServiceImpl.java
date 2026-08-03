@@ -41,4 +41,14 @@ public class ProductKitchenZoneCommandServiceImpl implements ProductKitchenZoneC
         assignment.setZoneId(zoneId);
         productKitchenZoneRepository.save(assignment);
     }
+
+    @Override
+    @Transactional
+    public void removeProductFromZone(Long productId) {
+        if (!productRepository.existsById(productId)) {
+            throw new ResourceNotFoundException("PRODUCT_NOT_FOUND", "Producto no encontrado con ID: " + productId);
+        }
+        productKitchenZoneRepository.findByProductId(productId)
+                .ifPresent(productKitchenZoneRepository::delete);
+    }
 }

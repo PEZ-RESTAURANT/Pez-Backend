@@ -14,6 +14,9 @@ import com.pezbackend.iam.infrastructure.persistence.jpa.repositories.RoleReposi
 import com.pezbackend.iam.infrastructure.persistence.jpa.repositories.UserRepository;
 import com.pezbackend.iam.application.internal.outboundservices.tokens.TokenService;
 import com.pezbackend.tenancy.interfaces.rest.resources.OnboardingResource;
+import com.pezbackend.kitchen.domain.model.entities.KitchenZone;
+import com.pezbackend.kitchen.infrastructure.persistence.jpa.repositories.KitchenZoneRepository;
+import com.pezbackend.shared.infrastructure.TenantContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -54,6 +57,9 @@ public class CatalogIntegrationTests {
 
     @Autowired
     private TokenService tokenService;
+
+    @Autowired
+    private KitchenZoneRepository kitchenZoneRepository;
 
     private final ObjectMapper objectMapper = new ObjectMapper()
             .registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
@@ -208,5 +214,90 @@ public class CatalogIntegrationTests {
         mockMvc.perform(delete("/api/v1/categories/" + catIdB)
                         .header("Authorization", "Bearer " + tokenA))
                 .andExpect(status().isNotFound());
+    }
+
+    @Test
+    public void testProductKitchenZoneAssignment() throws Exception {
+        // 1. Setup Tenant/User
+        OnboardingResource onboardingResource = new OnboardingResource(
+                "Restaurante Test Kitchen", "20999999999", "contacto@testkitchen.com", "555-999",
+                "admin@testkitchen.com", "securePass123", "Carlos", "Soto", "TEST-INVITE-CODE"
+        );
+
+        String response = mockMvc.perform(post("/api/v1/restaurants/onboarding")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(onboardingResource)))
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString();
+
+        Long tenantId = objectMapper.readTree(response).get("id").asLong();
+
+        User admin = userRepository.findByEmail("admin@testkitchen.com")
+                .orElseThrow(() -> new AssertionError("Admin not found"));
+        String token = tokenService.generateToken(admin.getId(), Roles.ADMIN.name(), tenantId);
+
+        // 2. Crear Categoría y Producto
+        TenantContext.setCurrentTenantId(tenantId);
+        Category cat = new Category("Pescados");
+        cat.setRestaurantId(tenantId);
+        cat = categoryRepository.save(cat);
+
+        Product prod = new Product("Ceviche Clásico", new java.math.BigDecimal("35.00"), cat, 10, true);
+        prod.setRestaurantId(tenantId);
+        prod = productRepository.save(prod);
+
+        // 3. Crear una zona de cocina
+        KitchenZone zone = new KitchenZone("Fríos");
+        zone.setRestaurantId(tenantId);
+        zone = kitchenZoneRepository.save(zone);
+
+        // 4. Asignar producto a zona
+        mockMvc.perform(put("/api/v1/products/" + prod.getId() + "/kitchen-zone")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"zoneId\": " + zone.getId() + "}"))
+                .andExpect(status().isOk());
+
+        // 5. Consultar asignación
+        mockMvc.perform(get("/api/v1/products/" + prod.getId() + "/kitchen-zone")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.zoneId").value(zone.getId()));
+
+        // 6. Remover de zona (unassign) enviando null
+        mockMvc.perform(put("/api/v1/products/" + prod.getId() + "/kitchen-zone")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"zoneId\": null}"))
+                .andExpect(status().isOk());
+
+        // 7. Verificar que no está asignado y devuelve null
+        mockMvc.perform(get("/api/v1/products/" + prod.getId() + "/kitchen-zone")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.zoneId").value(org.hamcrest.Matchers.nullValue()));
+
+        // 8. Reasignar a zona y luego eliminar la zona de cocina
+        mockMvc.perform(put("/api/v1/products/" + prod.getId() + "/kitchen-zone")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"zoneId\": " + zone.getId() + "}"))
+                .andExpect(status().isOk());
+
+        // Eliminar zona de cocina
+        mockMvc.perform(delete("/api/v1/kitchen/zones/" + zone.getId())
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk());
+
+        // Verificar que el producto sigue existiendo y su zona es null
+        mockMvc.perform(get("/api/v1/products/" + prod.getId() + "/kitchen-zone")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.zoneId").value(org.hamcrest.Matchers.nullValue()));
+
+        mockMvc.perform(get("/api/v1/products/" + prod.getId())
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name").value("Ceviche Clásico"));
     }
 }
