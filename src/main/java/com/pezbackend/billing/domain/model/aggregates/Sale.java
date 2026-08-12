@@ -1,5 +1,6 @@
 package com.pezbackend.billing.domain.model.aggregates;
 
+import org.hibernate.annotations.Filter;
 import com.pezbackend.billing.domain.model.entities.SaleDetail;
 import com.pezbackend.billing.domain.model.entities.SalePayment;
 import com.pezbackend.billing.domain.model.exceptions.EmptySaleException;
@@ -22,6 +23,7 @@ import java.util.List;
 @Getter
 @Setter
 @Entity
+@Filter(name = "tenantFilter", condition = "restaurant_id = :restaurantId")
 public class Sale extends AbstractTenantAggregateRoot<Sale> {
 
     private Long staffId;

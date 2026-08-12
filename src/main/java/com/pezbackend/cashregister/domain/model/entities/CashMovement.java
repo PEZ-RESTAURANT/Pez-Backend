@@ -1,5 +1,6 @@
 package com.pezbackend.cashregister.domain.model.entities;
 
+import org.hibernate.annotations.Filter;
 import com.pezbackend.cashregister.domain.model.aggregates.CashRegister;
 import com.pezbackend.cashregister.domain.model.exceptions.CashMovementInvalidAmountException;
 import com.pezbackend.cashregister.domain.model.exceptions.CashMovementTypeMismatchException;
@@ -21,6 +22,7 @@ import com.pezbackend.shared.domain.model.entities.AbstractTenantEntity;
 @Getter
 @Setter
 @Entity
+@Filter(name = "tenantFilter", condition = "restaurant_id = :restaurantId")
 public class CashMovement extends AbstractTenantEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)

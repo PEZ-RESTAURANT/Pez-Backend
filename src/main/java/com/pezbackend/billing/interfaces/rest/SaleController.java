@@ -65,7 +65,7 @@ public class SaleController {
 
     // Obtener todos
     @GetMapping
-    @RequiresPermission("inventory.view") // Reutiliza permiso de ver inventario/shift o similar
+    @RequiresPermission("cashregister.view")
     public ResponseEntity<List<SaleResource>> getSales(
             @RequestParam(required = false) String from,
             @RequestParam(required = false) String to,
@@ -95,7 +95,7 @@ public class SaleController {
 
     // Obtener por id
     @GetMapping("/{id}")
-    @RequiresPermission("inventory.view")
+    @RequiresPermission("cashregister.view")
     public ResponseEntity<SaleResource> getById(@PathVariable Long id) {
         Sale sale = queryService.handle(new GetSaleByIdQuery(id));
         return ResponseEntity.ok(SaleResourceFromEntityAssembler.toResourceFromEntity(sale));
@@ -103,7 +103,7 @@ public class SaleController {
 
     // Obtener por tipo de documento
     @GetMapping("/document-type/{documentType}")
-    @RequiresPermission("inventory.view")
+    @RequiresPermission("cashregister.view")
     public ResponseEntity<List<SaleResource>> getByDocumentType(@PathVariable String documentType) {
         List<Sale> sales = queryService.handle(new GetSalesByDocumentTypeQuery(
                 Enum.valueOf(com.pezbackend.billing.domain.model.valueobjects.DocumentType.class, documentType)
@@ -117,7 +117,7 @@ public class SaleController {
 
     // Obtener por medio de pago
     @GetMapping("/payment-method/{paymentMethod}")
-    @RequiresPermission("inventory.view")
+    @RequiresPermission("cashregister.view")
     public ResponseEntity<List<SaleResource>> getByPaymentMethod(@PathVariable String paymentMethod) {
         List<Sale> sales = queryService.handle(new GetSalesByPaymentMethodQuery(
                 Enum.valueOf(com.pezbackend.billing.domain.model.valueobjects.PaymentMethod.class, paymentMethod)
@@ -131,7 +131,7 @@ public class SaleController {
 
     // Obtener por personal
     @GetMapping("/staff/{staffId}")
-    @RequiresPermission("inventory.view")
+    @RequiresPermission("cashregister.view")
     public ResponseEntity<List<SaleResource>> getByStaff(@PathVariable Long staffId) {
         List<Sale> sales = queryService.handle(new GetSalesByStaffQuery(staffId));
         return ResponseEntity.ok(

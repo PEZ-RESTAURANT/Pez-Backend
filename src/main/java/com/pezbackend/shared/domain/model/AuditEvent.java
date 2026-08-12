@@ -1,5 +1,6 @@
 package com.pezbackend.shared.domain.model;
 
+import org.hibernate.annotations.Filter;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -22,6 +23,7 @@ import com.pezbackend.shared.domain.model.entities.AbstractTenantBaseEntity;
 @Table(name = "audit_events")
 @Getter
 @Setter
+@Filter(name = "tenantFilter", condition = "restaurant_id = :restaurantId")
 public class AuditEvent extends AbstractTenantBaseEntity {
 
     @Id

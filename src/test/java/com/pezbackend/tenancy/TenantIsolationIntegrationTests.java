@@ -70,22 +70,11 @@ public class TenantIsolationIntegrationTests {
     }
 
     @Test
-    public void testOnboardingInviteCodeValidation() throws Exception {
-        // 1. Onboarding con código de invitación incorrecto -> 403 Forbidden
-        OnboardingResource invalidResource = new OnboardingResource(
-                "Restaurante Falso", "123456", "test@test.com", "9999",
-                "admin@falso.com", "pass123", "Admin", "User", "INVALID-CODE"
-        );
-
-        mockMvc.perform(post("/api/v1/restaurants/onboarding")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(invalidResource)))
-                .andExpect(status().isForbidden());
-
-        // 2. Onboarding con código de invitación correcto (TEST-INVITE-CODE configurado en application-test.properties) -> 201 Created
+    public void testOnboardingFlow() throws Exception {
+        // Onboarding sin código de invitación -> 201 Created
         OnboardingResource validResource = new OnboardingResource(
                 "Restaurante A", "123456789", "contacto@restaurantea.com", "555-1234",
-                "admin@restaurantea.com", "securePassword123", "Juan", "Perez", "TEST-INVITE-CODE"
+                "admin@restaurantea.com", "securePassword123", "Juan", "Perez"
         );
 
         mockMvc.perform(post("/api/v1/restaurants/onboarding")
@@ -101,7 +90,7 @@ public class TenantIsolationIntegrationTests {
         // 1. Crear Tenant A mediante onboarding directo
         OnboardingResource resourceA = new OnboardingResource(
                 "Tenant A", "20123456789", "info@tenanta.com", "999111222",
-                "admin@tenanta.com", "passA", "Admin", "A", "TEST-INVITE-CODE"
+                "admin@tenanta.com", "passA", "Admin", "A"
         );
         String responseA = mockMvc.perform(post("/api/v1/restaurants/onboarding")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -114,7 +103,7 @@ public class TenantIsolationIntegrationTests {
         // 2. Crear Tenant B mediante onboarding directo
         OnboardingResource resourceB = new OnboardingResource(
                 "Tenant B", "20987654321", "info@tenantb.com", "999333444",
-                "admin@tenantb.com", "passB", "Admin", "B", "TEST-INVITE-CODE"
+                "admin@tenantb.com", "passB", "Admin", "B"
         );
         String responseB = mockMvc.perform(post("/api/v1/restaurants/onboarding")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -168,11 +157,9 @@ public class TenantIsolationIntegrationTests {
                 mockRestaurantRepository, mockUserRepository, mockRoleRepository, mockHashingService, mockPaymentMethodConfigRepository, mockCategoryRepository
         );
 
-        ReflectionTestUtils.setField(service, "expectedInviteCode", "MOCK-INVITE");
-
         OnboardingCommand command = new OnboardingCommand(
                 "Mock Rest", "111", "mock@mock.com", "000",
-                "admin@mock.com", "pass", "A", "B", "MOCK-INVITE"
+                "admin@mock.com", "pass", "A", "B"
         );
 
         Restaurant savedRestaurant = new Restaurant("Mock Rest", "111", "mock@mock.com", "000");

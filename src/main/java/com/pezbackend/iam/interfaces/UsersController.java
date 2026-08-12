@@ -5,6 +5,7 @@ import com.pezbackend.iam.application.internal.queryservices.UserQueryServiceImp
 import com.pezbackend.iam.domain.model.aggregates.User;
 import com.pezbackend.iam.domain.model.commands.SignInCommand;
 import com.pezbackend.iam.domain.model.commands.SignUpCommand;
+import com.pezbackend.iam.domain.model.commands.UpdateUserCommand;
 import com.pezbackend.iam.domain.model.exceptions.InvalidCredentialsException;
 import com.pezbackend.iam.domain.model.exceptions.UserAccountDeactivatedException;
 import com.pezbackend.iam.domain.model.exceptions.UserAlreadyExistsException;
@@ -12,14 +13,22 @@ import com.pezbackend.iam.domain.model.exceptions.UserNotFoundException;
 import com.pezbackend.iam.domain.model.queries.GetAllUsersQuery;
 import com.pezbackend.iam.domain.model.queries.GetUserByEmailQuery;
 import com.pezbackend.iam.domain.services.RoleValidationService;
+import com.pezbackend.iam.infrastructure.authorization.sfs.annotations.RequiresPermission;
 import com.pezbackend.iam.interfaces.rest.resources.AuthenticationResponseResource;
 import com.pezbackend.iam.interfaces.rest.resources.SignInResource;
 import com.pezbackend.iam.interfaces.rest.resources.SignUpResource;
+import com.pezbackend.iam.interfaces.rest.resources.UpdateUserResource;
 import com.pezbackend.iam.interfaces.rest.resources.UserResource;
 import com.pezbackend.iam.interfaces.rest.transform.SignInCommandFromResourceAssembler;
 import com.pezbackend.iam.interfaces.rest.transform.SignUpCommandFromResourceAssembler;
 import com.pezbackend.iam.interfaces.rest.transform.UserResourceFromEntityAssembler;
 import jakarta.validation.Valid;
+import jakarta.persistence.EntityManager;
+import org.hibernate.Session;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.Authentication;
+import com.pezbackend.iam.infrastructure.authorization.sfs.model.UserDetailsImpl;
+import com.pezbackend.shared.infrastructure.TenantContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -45,14 +54,17 @@ public class UsersController {
     private final UserCommandServiceImpl userCommandService;
     private final UserQueryServiceImpl userQueryService;
     private final RoleValidationService roleValidationService;
+    private final com.pezbackend.iam.infrastructure.tokens.jwt.BearerTokenService tokenService;
 
     public UsersController(
             UserCommandServiceImpl userCommandService,
             UserQueryServiceImpl userQueryService,
-            RoleValidationService roleValidationService) {
+            RoleValidationService roleValidationService,
+            com.pezbackend.iam.infrastructure.tokens.jwt.BearerTokenService tokenService) {
         this.userCommandService = userCommandService;
         this.userQueryService = userQueryService;
         this.roleValidationService = roleValidationService;
+        this.tokenService = tokenService;
     }
 
     /**
@@ -154,8 +166,11 @@ public class UsersController {
             }
             
             User user = userOptional.get();
+            if (user.getRestaurantId() != null && !user.getRestaurantId().equals(TenantContext.getCurrentTenantId())) {
+                throw new com.pezbackend.shared.domain.exceptions.TenantMismatchException("User", user.getId());
+            }
+
             UserResource userResource = UserResourceFromEntityAssembler.toResourceFromEntity(user);
-            
             return ResponseEntity.ok(userResource);
                     
         } catch (UserNotFoundException e) {
@@ -174,6 +189,7 @@ public class UsersController {
      * @return ResponseEntity with list of all users
      */
     @GetMapping
+    @RequiresPermission("iam.manage_accounts")
     public ResponseEntity<?> getAllUsers() {
         try {
             LOGGER.debug("Processing getAllUsers request");
@@ -189,6 +205,96 @@ public class UsersController {
             LOGGER.error("Unexpected error retrieving all users: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("An unexpected error occurred while retrieving users");
+        }
+    }
+
+    /**
+     * Create a new staff account (admin management)
+     */
+    @PostMapping
+    @RequiresPermission("iam.manage_accounts")
+    public ResponseEntity<?> createUser(@Valid @RequestBody SignUpResource resource) {
+        try {
+            LOGGER.info("Processing staff account creation request for email: {}", resource.email());
+            
+            SignUpCommand command = SignUpCommandFromResourceAssembler.toCommandFromResource(resource);
+            User user = userCommandService.handle(command);
+            UserResource userResource = UserResourceFromEntityAssembler.toResourceFromEntity(user);
+            
+            return ResponseEntity.status(HttpStatus.CREATED).body(userResource);
+            
+        } catch (UserAlreadyExistsException e) {
+            LOGGER.warn("User creation failed for email {}: {}", resource.email(), e.getMessage());
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
+        } catch (Exception e) {
+            LOGGER.error("Unexpected error during user creation: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("An unexpected error occurred during user creation");
+        }
+    }
+
+    /**
+     * Update an existing user account details or status (admin management)
+     */
+    @PutMapping("/{id}")
+    @RequiresPermission("iam.manage_accounts")
+    public ResponseEntity<?> updateUser(@PathVariable Long id, @Valid @RequestBody UpdateUserResource resource) {
+        try {
+            LOGGER.info("Processing user update request for ID: {}", id);
+            
+            UpdateUserCommand command = new UpdateUserCommand(
+                id,
+                resource.email(),
+                resource.firstName(),
+                resource.lastName(),
+                resource.requestedRole(),
+                resource.active()
+            );
+            
+            User user = userCommandService.handle(command);
+            UserResource userResource = UserResourceFromEntityAssembler.toResourceFromEntity(user);
+            
+            return ResponseEntity.ok(userResource);
+            
+        } catch (UserNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        } catch (UserAlreadyExistsException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
+        } catch (Exception e) {
+            LOGGER.error("Unexpected error during user update: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("An unexpected error occurred during user update");
+        }
+    }
+
+    /**
+     * Get user by ID (admin management / details page)
+     * @param id the user ID
+     * @return ResponseEntity with user details
+     */
+    @GetMapping("/{id}")
+    @RequiresPermission("iam.manage_accounts")
+    public ResponseEntity<?> getUserById(@PathVariable Long id) {
+        try {
+            LOGGER.debug("Processing getUserById request for ID: {}", id);
+            
+            User user = userQueryService.handle(new com.pezbackend.iam.domain.model.queries.GetUserByIdQuery(id))
+                    .orElseThrow(() -> new UserNotFoundException(id));
+            
+            // Tenant Isolation
+            if (user.getRestaurantId() != null && !user.getRestaurantId().equals(TenantContext.getCurrentTenantId())) {
+                throw new com.pezbackend.shared.domain.exceptions.TenantMismatchException("User", id);
+            }
+            
+            UserResource userResource = UserResourceFromEntityAssembler.toResourceFromEntity(user);
+            return ResponseEntity.ok(userResource);
+            
+        } catch (UserNotFoundException | com.pezbackend.shared.domain.exceptions.TenantMismatchException e) {
+            throw e;
+        } catch (Exception e) {
+            LOGGER.error("Unexpected error retrieving user by ID {}: {}", id, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("An unexpected error occurred while retrieving user");
         }
     }
 
@@ -210,5 +316,18 @@ public class UsersController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("An unexpected error occurred while retrieving available roles");
         }
+    }
+
+    /**
+     * Revoke current user's session token (Sign Out)
+     */
+    @PostMapping("/signout")
+    public ResponseEntity<Void> signOut(jakarta.servlet.http.HttpServletRequest request) {
+        String token = tokenService.getBearerTokenFrom(request);
+        if (token != null) {
+            tokenService.invalidateToken(token);
+            LOGGER.info("Sesión cerrada exitosamente, token revocado.");
+        }
+        return ResponseEntity.ok().build();
     }
 }

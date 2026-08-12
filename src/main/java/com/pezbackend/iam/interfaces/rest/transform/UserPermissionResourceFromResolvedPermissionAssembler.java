@@ -20,7 +20,12 @@ public class UserPermissionResourceFromResolvedPermissionAssembler {
                 resolved.code(),
                 resolved.module(),
                 resolved.description(),
-                resolved.granted()
+                resolved.granted(),
+                resolved.isOverride(),
+                resolved.roleDefaultValue(),
+                resolved.overrideGrantedBy(),
+                resolved.overrideDate() != null ? resolved.overrideDate().toString() : null,
+                resolved.overrideReason()
             );
     }
 }

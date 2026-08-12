@@ -31,6 +31,7 @@ public class UserDetailsImpl implements UserDetails {
     private final boolean enabled;
     private final Collection<? extends GrantedAuthority> authorities;
     private final Long restaurantId;
+    private final java.time.LocalDateTime passwordChangedAt;
 
     /**
      * This constructor initializes the UserDetailsImpl object.
@@ -42,11 +43,12 @@ public class UserDetailsImpl implements UserDetails {
      * @param enabled Whether the user is enabled.
      * @param authorities The authorities.
      * @param restaurantId The restaurant ID.
+     * @param passwordChangedAt The last time the password changed.
      */
     public UserDetailsImpl(Long id, String password, String email, 
                           String firstName, String lastName,
                           boolean enabled, Collection<? extends GrantedAuthority> authorities,
-                          Long restaurantId) {
+                          Long restaurantId, java.time.LocalDateTime passwordChangedAt) {
         this.id = id;
         this.password = password;
         this.email = email;
@@ -58,6 +60,7 @@ public class UserDetailsImpl implements UserDetails {
         this.credentialsNonExpired = true;
         this.enabled = enabled;
         this.restaurantId = restaurantId;
+        this.passwordChangedAt = passwordChangedAt;
     }
 
     /**
@@ -80,7 +83,8 @@ public class UserDetailsImpl implements UserDetails {
                 user.getLastName(),
                 user.getActive(),
                 authorities,
-                user.getRestaurantId());
+                user.getRestaurantId(),
+                user.getPasswordChangedAt());
     }
 
     /**

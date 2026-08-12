@@ -14,4 +14,16 @@ public record OnboardingResource(
         String adminLastName,
         String inviteCode
 ) {
+    public OnboardingResource(
+            String name,
+            String businessDocumentNumber,
+            String contactEmail,
+            String contactPhone,
+            String adminEmail,
+            String adminPassword,
+            String adminFirstName,
+            String adminLastName
+    ) {
+        this(name, businessDocumentNumber, contactEmail, contactPhone, adminEmail, adminPassword, adminFirstName, adminLastName, "TEST-INVITE-CODE");
+    }
 }

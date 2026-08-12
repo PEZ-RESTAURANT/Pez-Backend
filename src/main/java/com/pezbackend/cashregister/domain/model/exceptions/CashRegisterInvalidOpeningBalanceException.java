@@ -6,6 +6,6 @@ import java.math.BigDecimal;
 
 public class CashRegisterInvalidOpeningBalanceException extends BusinessRuleException {
     public CashRegisterInvalidOpeningBalanceException(BigDecimal amount) {
-        super("Opening balance must be greater than zero: " + amount);
+        super("Opening balance cannot be negative: " + amount);
     }
 }

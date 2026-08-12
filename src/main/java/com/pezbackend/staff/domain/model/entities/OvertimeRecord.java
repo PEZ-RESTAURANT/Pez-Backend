@@ -1,5 +1,6 @@
 package com.pezbackend.staff.domain.model.entities;
 
+import org.hibernate.annotations.Filter;
 import com.pezbackend.shared.domain.model.entities.AuditableModel;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -20,6 +21,7 @@ import com.pezbackend.shared.domain.model.entities.AbstractTenantEntity;
 @Table(name = "overtime_records")
 @Getter
 @Setter
+@Filter(name = "tenantFilter", condition = "restaurant_id = :restaurantId")
 public class OvertimeRecord extends AbstractTenantEntity {
 
     @NotNull

@@ -5,11 +5,13 @@ import com.pezbackend.iam.application.internal.outboundservices.tokens.TokenServ
 import com.pezbackend.iam.domain.model.aggregates.User;
 import com.pezbackend.iam.domain.model.commands.SignInCommand;
 import com.pezbackend.iam.domain.model.commands.SignUpCommand;
+import com.pezbackend.iam.domain.model.commands.UpdateUserCommand;
 import com.pezbackend.iam.domain.model.entities.Role;
 import com.pezbackend.iam.domain.model.exceptions.InvalidCredentialsException;
 import com.pezbackend.iam.domain.model.exceptions.RoleNotFoundException;
 import com.pezbackend.iam.domain.model.exceptions.UserAccountDeactivatedException;
 import com.pezbackend.iam.domain.model.exceptions.UserAlreadyExistsException;
+import com.pezbackend.iam.domain.model.exceptions.UserNotFoundException;
 import com.pezbackend.iam.domain.services.RoleValidationService;
 import com.pezbackend.iam.domain.services.UserCommandService;
 import com.pezbackend.iam.infrastructure.persistence.jpa.repositories.RoleRepository;
@@ -57,7 +59,7 @@ public class UserCommandServiceImpl implements UserCommandService {
     }
 
     @Override
-    public void handle(SignUpCommand command) {
+    public User handle(SignUpCommand command) {
         LOGGER.info("Processing SignUp command for email: {} with role: {}",
             command.email(), command.requestedRole());
 
@@ -94,7 +96,34 @@ public class UserCommandServiceImpl implements UserCommandService {
         // Save user
         User savedUser = userRepository.save(user);
         LOGGER.info("User registered successfully with ID: {}", savedUser.getId());
+        return savedUser;
+    }
 
+    @Override
+    public User handle(UpdateUserCommand command) {
+        LOGGER.info("Processing UpdateUser command for ID: {}", command.id());
+
+        User user = userRepository.findById(command.id())
+                .orElseThrow(() -> new UserNotFoundException(command.id().toString()));
+
+        // Check if email is changing and already exists
+        if (!user.getEmail().equalsIgnoreCase(command.email()) && userRepository.existsByEmail(command.email())) {
+            throw new UserAlreadyExistsException(command.email());
+        }
+
+        user.setEmail(command.email());
+        user.setFirstName(command.firstName());
+        user.setLastName(command.lastName());
+        user.setActive(command.active());
+
+        // Update role
+        Role requestedRole = roleRepository.findByName(command.requestedRole())
+                .orElseThrow(() -> new RoleNotFoundException(command.requestedRole()));
+
+        user.getRoles().clear();
+        user.addRole(requestedRole);
+
+        return userRepository.save(user);
     }
 
     @Override

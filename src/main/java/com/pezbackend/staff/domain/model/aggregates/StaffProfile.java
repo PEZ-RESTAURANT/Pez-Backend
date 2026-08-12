@@ -1,5 +1,6 @@
 package com.pezbackend.staff.domain.model.aggregates;
 
+import org.hibernate.annotations.Filter;
 import com.pezbackend.staff.domain.model.valueobjects.StaffPaymentType;
 import com.pezbackend.shared.domain.model.aggregates.AbstractTenantAggregateRoot;
 import jakarta.persistence.*;
@@ -17,6 +18,7 @@ import java.time.LocalDateTime;
 @Table(name = "staff_profiles")
 @Getter
 @Setter
+@Filter(name = "tenantFilter", condition = "restaurant_id = :restaurantId")
 public class StaffProfile extends AbstractTenantAggregateRoot<StaffProfile> {
 
     @NotNull

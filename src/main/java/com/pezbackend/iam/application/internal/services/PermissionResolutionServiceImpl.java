@@ -36,25 +36,31 @@ public class PermissionResolutionServiceImpl implements PermissionResolutionServ
     @Override
     @Transactional(readOnly = true)
     public boolean hasPermission(Long userId, String permissionCode) {
-        // 1. Validar la existencia del permiso en el catálogo
-        Permission permission = permissionRepository.findByCode(permissionCode)
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "PERMISSION_NOT_FOUND",
-                        "No se encontró el permiso con código: " + permissionCode
-                ));
-
-        // 2. Validar la existencia del usuario
+        // 1. Validar la existencia del usuario
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "USER_NOT_FOUND",
                         "No se encontró el usuario con ID: " + userId
                 ));
 
-        // 3. Regla especial hardcoded: 'permissions.manage'
+        // 2. Si la cuenta es ADMIN, retornar true inmediatamente (bypass total de seguridad)
+        boolean isAdmin = user.getRoles().stream()
+                .anyMatch(role -> role.getName() == Roles.ADMIN);
+        if (isAdmin) {
+            return true;
+        }
+
+        // 3. Validar la existencia del permiso en el catálogo
+        Permission permission = permissionRepository.findByCode(permissionCode)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "PERMISSION_NOT_FOUND",
+                        "No se encontró el permiso con código: " + permissionCode
+                ));
+
+        // 4. Regla especial hardcoded: 'permissions.manage'
         if ("permissions.manage".equals(permissionCode)) {
             // Solo usuarios con el rol ADMIN pueden gestionar permisos. No admite overrides.
-            return user.getRoles().stream()
-                    .anyMatch(role -> role.getName() == Roles.ADMIN);
+            return true; // Ya sabemos que isAdmin es false si llegó acá, pero por completitud de firma
         }
 
         // 4. Evaluar override individual de la cuenta

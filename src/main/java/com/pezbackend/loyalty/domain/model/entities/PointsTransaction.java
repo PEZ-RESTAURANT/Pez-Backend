@@ -1,5 +1,6 @@
 package com.pezbackend.loyalty.domain.model.entities;
 
+import org.hibernate.annotations.Filter;
 import com.pezbackend.loyalty.domain.model.valueobjects.PointsTransactionType;
 import com.pezbackend.shared.domain.model.entities.AuditableModel;
 import jakarta.persistence.*;
@@ -18,6 +19,7 @@ import com.pezbackend.shared.domain.model.entities.AbstractTenantEntity;
 @Table(name = "points_transactions")
 @Getter
 @Setter
+@Filter(name = "tenantFilter", condition = "restaurant_id = :restaurantId")
 public class PointsTransaction extends AbstractTenantEntity {
 
     @NotNull

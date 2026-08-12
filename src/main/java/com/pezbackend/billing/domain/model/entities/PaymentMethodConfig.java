@@ -1,5 +1,6 @@
 package com.pezbackend.billing.domain.model.entities;
 
+import org.hibernate.annotations.Filter;
 import com.pezbackend.billing.domain.model.valueobjects.PaymentMethod;
 import com.pezbackend.shared.domain.model.entities.AbstractTenantEntity;
 import jakarta.persistence.*;
@@ -10,6 +11,7 @@ import lombok.Setter;
 @Table(name = "payment_method_configs")
 @Getter
 @Setter
+@Filter(name = "tenantFilter", condition = "restaurant_id = :restaurantId")
 public class PaymentMethodConfig extends AbstractTenantEntity {
 
     @Column(nullable = false, length = 100)

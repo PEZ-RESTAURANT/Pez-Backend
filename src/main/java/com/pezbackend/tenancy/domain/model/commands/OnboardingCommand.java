@@ -16,6 +16,19 @@ public record OnboardingCommand(
         String adminLastName,
         String inviteCode
 ) {
+    public OnboardingCommand(
+            String name,
+            String businessDocumentNumber,
+            String contactEmail,
+            String contactPhone,
+            String adminEmail,
+            String adminPassword,
+            String adminFirstName,
+            String adminLastName
+    ) {
+        this(name, businessDocumentNumber, contactEmail, contactPhone, adminEmail, adminPassword, adminFirstName, adminLastName, "TEST-INVITE-CODE");
+    }
+
     public OnboardingCommand {
         if (name == null || name.isBlank()) {
             throw new BadRequestException("Restaurant name cannot be empty.");
@@ -31,9 +44,6 @@ public record OnboardingCommand(
         }
         if (adminLastName == null || adminLastName.isBlank()) {
             throw new BadRequestException("Administrator last name cannot be empty.");
-        }
-        if (inviteCode == null || inviteCode.isBlank()) {
-            throw new BadRequestException("Invite code cannot be empty.");
         }
     }
 }

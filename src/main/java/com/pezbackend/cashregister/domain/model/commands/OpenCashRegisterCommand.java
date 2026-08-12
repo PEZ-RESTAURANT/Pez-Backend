@@ -6,7 +6,7 @@ import java.math.BigDecimal;
 
 public record OpenCashRegisterCommand(BigDecimal openingBalance) {
     public OpenCashRegisterCommand {
-        if (openingBalance == null || openingBalance.compareTo(BigDecimal.ZERO) <= 0)
-            throw new BadRequestException("Opening balance must be greater than zero");
+        if (openingBalance == null || openingBalance.compareTo(BigDecimal.ZERO) < 0)
+            throw new BadRequestException("Opening balance cannot be negative");
     }
 }

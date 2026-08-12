@@ -81,7 +81,7 @@ public class ProductController {
     }
 
     // 🔥 CREATE
-    @PreAuthorize(AuthorizeRoles.ADMIN)
+    @RequiresPermission("catalog.edit_products_categories")
     @PostMapping
     public ResponseEntity<Void> create(@RequestBody CreateProductResource resource) {
         Category category = categoryRepository.findById(resource.categoryId())
@@ -196,7 +196,7 @@ public class ProductController {
     }
 
     // ❌ DELETE
-    @PreAuthorize(AuthorizeRoles.ADMIN)
+    @RequiresPermission("catalog.edit_products_categories")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         Product product = queryService.handle(new GetProductByIdQuery(id));

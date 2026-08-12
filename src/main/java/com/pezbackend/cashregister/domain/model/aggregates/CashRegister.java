@@ -1,5 +1,6 @@
 package com.pezbackend.cashregister.domain.model.aggregates;
 
+import org.hibernate.annotations.Filter;
 import com.pezbackend.cashregister.domain.model.entities.CashMovement;
 import com.pezbackend.cashregister.domain.model.exceptions.*;
 import com.pezbackend.cashregister.domain.model.valueobjects.CashMovementType;
@@ -16,6 +17,7 @@ import java.util.List;
 
 @Getter
 @Entity
+@Filter(name = "tenantFilter", condition = "restaurant_id = :restaurantId")
 public class CashRegister extends AbstractTenantAggregateRoot<CashRegister> {
 
     @NotNull
@@ -42,7 +44,7 @@ public class CashRegister extends AbstractTenantAggregateRoot<CashRegister> {
     // Abrir caja
     public CashRegister(BigDecimal openingBalance) {
 
-        if (openingBalance == null || openingBalance.compareTo(BigDecimal.ZERO) <= 0)
+        if (openingBalance == null || openingBalance.compareTo(BigDecimal.ZERO) < 0)
             throw new CashRegisterInvalidOpeningBalanceException(openingBalance);
 
         this.openingBalance = openingBalance;

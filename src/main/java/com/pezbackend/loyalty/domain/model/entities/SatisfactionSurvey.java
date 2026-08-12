@@ -1,5 +1,6 @@
 package com.pezbackend.loyalty.domain.model.entities;
 
+import org.hibernate.annotations.Filter;
 import com.pezbackend.shared.domain.exceptions.BusinessRuleViolationException;
 import com.pezbackend.shared.domain.model.entities.AuditableModel;
 import jakarta.persistence.Column;
@@ -20,6 +21,7 @@ import com.pezbackend.shared.domain.model.entities.AbstractTenantEntity;
 @Table(name = "satisfaction_surveys")
 @Getter
 @Setter
+@Filter(name = "tenantFilter", condition = "restaurant_id = :restaurantId")
 public class SatisfactionSurvey extends AbstractTenantEntity {
 
     @NotNull

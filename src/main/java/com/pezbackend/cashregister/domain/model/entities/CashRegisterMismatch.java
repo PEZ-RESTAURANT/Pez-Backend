@@ -1,5 +1,6 @@
 package com.pezbackend.cashregister.domain.model.entities;
 
+import org.hibernate.annotations.Filter;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -16,6 +17,7 @@ import com.pezbackend.shared.domain.model.entities.AbstractTenantBaseEntity;
 @Table(name = "cash_register_mismatches")
 @Getter
 @Setter
+@Filter(name = "tenantFilter", condition = "restaurant_id = :restaurantId")
 public class CashRegisterMismatch extends AbstractTenantBaseEntity {
 
     @Id

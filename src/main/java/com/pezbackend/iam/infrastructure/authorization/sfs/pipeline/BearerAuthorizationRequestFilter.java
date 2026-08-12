@@ -2,6 +2,7 @@ package com.pezbackend.iam.infrastructure.authorization.sfs.pipeline;
 
 import com.pezbackend.iam.infrastructure.authorization.sfs.model.UserDetailsServiceExtension;
 import com.pezbackend.iam.infrastructure.authorization.sfs.model.UsernamePasswordAuthenticationTokenBuilder;
+import com.pezbackend.iam.infrastructure.authorization.sfs.model.UserDetailsImpl;
 import com.pezbackend.iam.infrastructure.tokens.jwt.BearerTokenService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -53,7 +54,7 @@ public class BearerAuthorizationRequestFilter extends OncePerRequestFilter {
         }
 
         // 2️⃣ Endpoints públicos (sin token requerido)
-        if (path.contains("/api/v1/users/signup") || path.contains("/api/v1/users/signin") || path.contains("/api/v1/restaurants/onboarding") || path.contains("/ws")) {
+        if (path.contains("/api/v1/users/signup") || path.contains("/api/v1/users/signin") || path.contains("/api/v1/restaurants/onboarding") || path.contains("/ws") || path.contains("/api/v1/auth/")) {
             System.out.println("🟢 Ruta pública detectada (" + path + "), omitiendo validación JWT");
             filterChain.doFilter(request, response);
             return;
@@ -62,14 +63,51 @@ public class BearerAuthorizationRequestFilter extends OncePerRequestFilter {
         // 3️⃣ Validación normal del token
         String token = tokenService.getBearerTokenFrom(request);
 
-        if (StringUtils.hasText(token) && tokenService.validateToken(token)) {
-            Long userId = tokenService.getUserIdFromToken(token);
-            UserDetails userDetails = userDetailsService.loadUserById(userId);
+        if (StringUtils.hasText(token)) {
+            try {
+                if (tokenService.isTokenInvalidated(token)) {
+                    LOGGER.warn("Token revocado utilizado en petición a: {}", path);
+                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                    response.getWriter().write("Token has been revoked.");
+                    return;
+                }
 
-            SecurityContext context = SecurityContextHolder.createEmptyContext();
-            var authenticationToken = UsernamePasswordAuthenticationTokenBuilder.build(userDetails, request);
-            context.setAuthentication(authenticationToken);
-            SecurityContextHolder.setContext(context);
+                if (tokenService.validateToken(token)) {
+                    Long userId = tokenService.getUserIdFromToken(token);
+                    UserDetails userDetails = userDetailsService.loadUserById(userId);
+
+                    if (!userDetails.isEnabled()) {
+                        LOGGER.warn("Petición rechazada: Cuenta desactivada para el usuario ID {}", userId);
+                        response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                        response.getWriter().write("User account is deactivated.");
+                        return;
+                    }
+
+                    if (userDetails instanceof UserDetailsImpl) {
+                        UserDetailsImpl customUserDetails = (UserDetailsImpl) userDetails;
+                        if (customUserDetails.getPasswordChangedAt() != null) {
+                            java.util.Date issuedAt = tokenService.getIssuedAtFromToken(token);
+                            java.time.LocalDateTime issuedAtLdt = java.time.LocalDateTime.ofInstant(
+                                    issuedAt.toInstant(),
+                                    java.time.ZoneId.systemDefault()
+                            );
+                            if (issuedAtLdt.isBefore(customUserDetails.getPasswordChangedAt())) {
+                                LOGGER.warn("Token revocado debido a cambio de contraseña posterior para el usuario ID {}", userId);
+                                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                                response.getWriter().write("Token has been revoked due to password change.");
+                                return;
+                            }
+                        }
+                    }
+
+                    SecurityContext context = SecurityContextHolder.createEmptyContext();
+                    var authenticationToken = UsernamePasswordAuthenticationTokenBuilder.build(userDetails, request);
+                    context.setAuthentication(authenticationToken);
+                    SecurityContextHolder.setContext(context);
+                }
+            } catch (Exception e) {
+                LOGGER.error("Error procesando autenticación en BearerAuthorizationRequestFilter: {}", e.getMessage());
+            }
         }
 
         filterChain.doFilter(request, response);

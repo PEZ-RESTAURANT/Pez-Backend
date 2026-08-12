@@ -12,5 +12,10 @@ public record ResolvedPermission(
         String code,
         String module,
         String description,
-        boolean granted
+        boolean granted,
+        boolean isOverride,
+        boolean roleDefaultValue,
+        String overrideGrantedBy,
+        java.time.LocalDateTime overrideDate,
+        String overrideReason
 ) {}

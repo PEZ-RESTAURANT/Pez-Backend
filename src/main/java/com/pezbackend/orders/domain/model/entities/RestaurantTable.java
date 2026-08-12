@@ -1,5 +1,6 @@
 package com.pezbackend.orders.domain.model.entities;
 
+import org.hibernate.annotations.Filter;
 import com.pezbackend.orders.domain.model.valueobjects.TableStatus;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -11,16 +12,19 @@ import com.pezbackend.shared.domain.model.entities.AbstractTenantBaseEntity;
  * Representa una mesa física dentro del salón del restaurante.
  */
 @Entity
-@Table(name = "restaurant_tables")
+@Table(name = "restaurant_tables", uniqueConstraints = {
+        @UniqueConstraint(columnNames = {"restaurant_id", "number"})
+})
 @Getter
 @Setter
+@Filter(name = "tenantFilter", condition = "restaurant_id = :restaurantId")
 public class RestaurantTable extends AbstractTenantBaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(unique = true, nullable = false)
+    @Column(nullable = false)
     private Integer number;
 
     @Column(nullable = false)

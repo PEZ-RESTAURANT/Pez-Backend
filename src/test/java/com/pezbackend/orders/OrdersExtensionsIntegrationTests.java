@@ -81,7 +81,7 @@ public class OrdersExtensionsIntegrationTests {
         // Onboarding Tenant A
         OnboardingResource resourceA = new OnboardingResource(
                 "Tenant A", "20123456789", "info@tenanta.com", "999111222",
-                "admin@tenanta.com", "passA", "Admin", "A", "TEST-INVITE-CODE"
+                "admin@tenanta.com", "passA", "Admin", "A"
         );
         String responseA = mockMvc.perform(post("/api/v1/restaurants/onboarding")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -93,7 +93,7 @@ public class OrdersExtensionsIntegrationTests {
         // Onboarding Tenant B
         OnboardingResource resourceB = new OnboardingResource(
                 "Tenant B", "20987654321", "info@tenantb.com", "999333444",
-                "admin@tenantb.com", "passB", "Admin", "B", "TEST-INVITE-CODE"
+                "admin@tenantb.com", "passB", "Admin", "B"
         );
         String responseB = mockMvc.perform(post("/api/v1/restaurants/onboarding")
                         .contentType(MediaType.APPLICATION_JSON)

@@ -29,7 +29,7 @@ public class RealtimeEventForwarder {
     );
 
     private static final Set<String> KITCHEN_EVENTS = Set.of(
-            "ItemOrdered", "ItemStatusChanged"
+            "ItemOrdered", "ItemStatusChanged", "ItemCancelled"
     );
 
     private static final Set<String> ALERTS_EVENTS = Set.of(

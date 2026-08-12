@@ -299,6 +299,46 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * Maneja las excepciones cuando el método HTTP no está soportado para una ruta.
+     */
+    @ExceptionHandler(org.springframework.web.HttpRequestMethodNotSupportedException.class)
+    public ResponseEntity<ErrorResponse> handleMethodNotSupported(
+            org.springframework.web.HttpRequestMethodNotSupportedException ex,
+            HttpServletRequest request
+    ) {
+        log.warn("Método HTTP no soportado: {} - URI: {}", ex.getMethod(), request.getRequestURI());
+        ErrorResponse error = new ErrorResponse(
+                LocalDateTime.now(),
+                405,
+                "METHOD_NOT_ALLOWED",
+                ex.getMessage(),
+                request.getRequestURI(),
+                Map.of()
+        );
+        return ResponseEntity.status(405).body(error);
+    }
+
+    /**
+     * Maneja las excepciones de tipo ruta no encontrada.
+     */
+    @ExceptionHandler(org.springframework.web.servlet.NoHandlerFoundException.class)
+    public ResponseEntity<ErrorResponse> handleNoHandlerFound(
+            org.springframework.web.servlet.NoHandlerFoundException ex,
+            HttpServletRequest request
+    ) {
+        log.warn("Ruta no encontrada: {} {} - URI: {}", ex.getHttpMethod(), ex.getRequestURL(), request.getRequestURI());
+        ErrorResponse error = new ErrorResponse(
+                LocalDateTime.now(),
+                404,
+                "ROUTE_NOT_FOUND",
+                ex.getMessage(),
+                request.getRequestURI(),
+                Map.of()
+        );
+        return ResponseEntity.status(404).body(error);
+    }
+
+    /**
      * Manejador de fallback para cualquier excepción no mapeada de manera explícita.
      *
      * @param ex      la excepción {@link Exception} genérica

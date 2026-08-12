@@ -1,5 +1,6 @@
 package com.pezbackend.loyalty.domain.model.aggregates;
 
+import org.hibernate.annotations.Filter;
 import com.pezbackend.shared.domain.exceptions.BusinessRuleViolationException;
 import com.pezbackend.shared.domain.model.aggregates.AbstractTenantAggregateRoot;
 import jakarta.persistence.*;
@@ -17,6 +18,7 @@ import java.time.LocalDateTime;
 @Table(name = "customers")
 @Getter
 @Setter
+@Filter(name = "tenantFilter", condition = "restaurant_id = :restaurantId")
 public class Customer extends AbstractTenantAggregateRoot<Customer> {
 
     @NotNull

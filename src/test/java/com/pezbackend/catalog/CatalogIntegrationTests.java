@@ -17,6 +17,8 @@ import com.pezbackend.tenancy.interfaces.rest.resources.OnboardingResource;
 import com.pezbackend.kitchen.domain.model.entities.KitchenZone;
 import com.pezbackend.kitchen.infrastructure.persistence.jpa.repositories.KitchenZoneRepository;
 import com.pezbackend.shared.infrastructure.TenantContext;
+import com.pezbackend.orders.interfaces.rest.resources.CreateTableResource;
+import com.pezbackend.kitchen.interfaces.rest.resources.CreateKitchenZoneResource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -61,6 +63,9 @@ public class CatalogIntegrationTests {
     @Autowired
     private KitchenZoneRepository kitchenZoneRepository;
 
+    @Autowired
+    private com.pezbackend.orders.infrastructure.persistence.jpa.repositories.RestaurantTableRepository restaurantTableRepository;
+
     private final ObjectMapper objectMapper = new ObjectMapper()
             .registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
 
@@ -76,7 +81,7 @@ public class CatalogIntegrationTests {
         // 1. Registrar un nuevo restaurante A
         OnboardingResource onboardingResource = new OnboardingResource(
                 "Restaurante Test Seeding", "20777777777", "contacto@testseeding.com", "555-777",
-                "admin@testseeding.com", "securePass123", "Carlos", "Soto", "TEST-INVITE-CODE"
+                "admin@testseeding.com", "securePass123", "Carlos", "Soto"
         );
 
         String response = mockMvc.perform(post("/api/v1/restaurants/onboarding")
@@ -92,13 +97,11 @@ public class CatalogIntegrationTests {
                 .orElseThrow(() -> new AssertionError("Admin not found"));
         String token = tokenService.generateToken(admin.getId(), Roles.ADMIN.name(), tenantId);
 
-        // 3. Consultar las categorías y verificar que se sembraron las 13
+        // 3. Consultar las categorías y verificar que no se sembró ninguna por defecto (catálogo vacío)
         mockMvc.perform(get("/api/v1/categories")
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(13))
-                .andExpect(jsonPath("$[0].name").value("Marina"))
-                .andExpect(jsonPath("$[12].name").value("Brasa"));
+                .andExpect(jsonPath("$.length()").value(0));
     }
 
     @Test
@@ -106,7 +109,7 @@ public class CatalogIntegrationTests {
         // 1. Registrar un restaurante para tener un tenant context limpio
         OnboardingResource onboardingResource = new OnboardingResource(
                 "Restaurante Test Delete", "20888888888", "contacto@testdel.com", "555-888",
-                "admin@testdel.com", "securePass123", "Pedro", "Gomez", "TEST-INVITE-CODE"
+                "admin@testdel.com", "securePass123", "Pedro", "Gomez"
         );
 
         String response = mockMvc.perform(post("/api/v1/restaurants/onboarding")
@@ -151,7 +154,7 @@ public class CatalogIntegrationTests {
         // 1. Crear Restaurante A (Tenant A)
         OnboardingResource resourceA = new OnboardingResource(
                 "Restaurante A Isolation", "20111111111", "contacto@resta.com", "555-111",
-                "admin@resta.com", "securePassA", "Ana", "Ruiz", "TEST-INVITE-CODE"
+                "admin@resta.com", "securePassA", "Ana", "Ruiz"
         );
         String responseA = mockMvc.perform(post("/api/v1/restaurants/onboarding")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -165,7 +168,7 @@ public class CatalogIntegrationTests {
         // 2. Crear Restaurante B (Tenant B)
         OnboardingResource resourceB = new OnboardingResource(
                 "Restaurante B Isolation", "20222222222", "contacto@restb.com", "555-222",
-                "admin@restb.com", "securePassB", "Beto", "Diaz", "TEST-INVITE-CODE"
+                "admin@restb.com", "securePassB", "Beto", "Diaz"
         );
         String responseB = mockMvc.perform(post("/api/v1/restaurants/onboarding")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -194,11 +197,11 @@ public class CatalogIntegrationTests {
                 .andReturn().getResponse().getContentAsString();
         Long catIdB = objectMapper.readTree(catJsonB).get("id").asLong();
 
-        // 5. Tenant A consulta categorías -> No debe ver "Criolla B" pero sí "Marina A" (más las 13 por defecto)
+        // 5. Tenant A consulta categorías -> No debe ver "Criolla B" pero sí "Marina A"
         mockMvc.perform(get("/api/v1/categories")
                         .header("Authorization", "Bearer " + tokenA))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(14)) // 13 por defecto + 1 agregada
+                .andExpect(jsonPath("$.length()").value(1)) // 1 agregada
                 .andExpect(jsonPath("$[?(@.name == 'Marina A')]").exists())
                 .andExpect(jsonPath("$[?(@.name == 'Criolla B')]").doesNotExist());
 
@@ -206,7 +209,7 @@ public class CatalogIntegrationTests {
         mockMvc.perform(get("/api/v1/categories")
                         .header("Authorization", "Bearer " + tokenB))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(14)) // 13 por defecto + 1 agregada
+                .andExpect(jsonPath("$.length()").value(1)) // 1 agregada
                 .andExpect(jsonPath("$[?(@.name == 'Criolla B')]").exists())
                 .andExpect(jsonPath("$[?(@.name == 'Marina A')]").doesNotExist());
 
@@ -221,7 +224,7 @@ public class CatalogIntegrationTests {
         // 1. Setup Tenant/User
         OnboardingResource onboardingResource = new OnboardingResource(
                 "Restaurante Test Kitchen", "20999999999", "contacto@testkitchen.com", "555-999",
-                "admin@testkitchen.com", "securePass123", "Carlos", "Soto", "TEST-INVITE-CODE"
+                "admin@testkitchen.com", "securePass123", "Carlos", "Soto"
         );
 
         String response = mockMvc.perform(post("/api/v1/restaurants/onboarding")
@@ -299,5 +302,131 @@ public class CatalogIntegrationTests {
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.name").value("Ceviche Clásico"));
+    }
+
+    @Test
+    public void testTenantIsolationOnCoreEntities() throws Exception {
+        // 1. Crear Restaurante Tenant A
+        OnboardingResource onboardingA = new OnboardingResource(
+                "Restaurante Tenant A", "20111111111", "contacto@tenanta.com", "555-111",
+                "admin@tenanta.com", "secureA123", "Admin", "A"
+        );
+        String responseA = mockMvc.perform(post("/api/v1/restaurants/onboarding")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(onboardingA)))
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString();
+        Long tenantIdA = objectMapper.readTree(responseA).get("id").asLong();
+
+        User adminA = userRepository.findByEmail("admin@tenanta.com")
+                .orElseThrow(() -> new AssertionError("Admin A not found"));
+        String tokenA = tokenService.generateToken(adminA.getId(), Roles.ADMIN.name(), tenantIdA);
+
+        // 2. Crear Restaurante Tenant B
+        OnboardingResource onboardingB = new OnboardingResource(
+                "Restaurante Tenant B", "20222222222", "contacto@tenantb.com", "555-222",
+                "admin@tenantb.com", "secureB123", "Admin", "B"
+        );
+        String responseB = mockMvc.perform(post("/api/v1/restaurants/onboarding")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(onboardingB)))
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString();
+        Long tenantIdB = objectMapper.readTree(responseB).get("id").asLong();
+
+        User adminB = userRepository.findByEmail("admin@tenantb.com")
+                .orElseThrow(() -> new AssertionError("Admin B not found"));
+        String tokenB = tokenService.generateToken(adminB.getId(), Roles.ADMIN.name(), tenantIdB);
+
+        // ==========================================
+        // 3. AISLAMIENTO DE CATEGORÍAS (Category)
+        // ==========================================
+        mockMvc.perform(post("/api/v1/categories")
+                        .header("Authorization", "Bearer " + tokenA)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\": \"Entradas A\"}"))
+                .andExpect(status().isCreated());
+
+        mockMvc.perform(post("/api/v1/categories")
+                        .header("Authorization", "Bearer " + tokenB)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\": \"Platos de Fondo B\"}"))
+                .andExpect(status().isCreated());
+
+        // Consultar desde A
+        mockMvc.perform(get("/api/v1/categories")
+                        .header("Authorization", "Bearer " + tokenA))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].name").value("Entradas A"));
+
+        // Consultar desde B
+        mockMvc.perform(get("/api/v1/categories")
+                        .header("Authorization", "Bearer " + tokenB))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].name").value("Platos de Fondo B"));
+
+        // ==========================================
+        // 4. AISLAMIENTO DE MESAS (RestaurantTable)
+        // ==========================================
+        CreateTableResource tableA = new CreateTableResource(10, 1, "Salón A", 10, 10);
+        mockMvc.perform(post("/api/v1/tables")
+                        .header("Authorization", "Bearer " + tokenA)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(tableA)))
+                .andExpect(status().isCreated());
+
+        CreateTableResource tableB = new CreateTableResource(20, 1, "Salón B", 20, 20);
+        mockMvc.perform(post("/api/v1/tables")
+                        .header("Authorization", "Bearer " + tokenB)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(tableB)))
+                .andExpect(status().isCreated());
+
+        // Consultar desde A
+        mockMvc.perform(get("/api/v1/tables")
+                        .header("Authorization", "Bearer " + tokenA))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].number").value(10));
+
+        // Consultar desde B
+        mockMvc.perform(get("/api/v1/tables")
+                        .header("Authorization", "Bearer " + tokenB))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].number").value(20));
+
+        // ==========================================
+        // 5. AISLAMIENTO DE ZONAS DE COCINA (KitchenZone)
+        // ==========================================
+        CreateKitchenZoneResource zoneA = new CreateKitchenZoneResource("Cocina Principal A");
+        mockMvc.perform(post("/api/v1/kitchen/zones")
+                        .header("Authorization", "Bearer " + tokenA)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(zoneA)))
+                .andExpect(status().isOk());
+
+        CreateKitchenZoneResource zoneB = new CreateKitchenZoneResource("Bar B");
+        mockMvc.perform(post("/api/v1/kitchen/zones")
+                        .header("Authorization", "Bearer " + tokenB)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(zoneB)))
+                .andExpect(status().isOk());
+
+        // Consultar desde A
+        mockMvc.perform(get("/api/v1/kitchen/zones")
+                        .header("Authorization", "Bearer " + tokenA))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].name").value("Cocina Principal A"));
+
+        // Consultar desde B
+        mockMvc.perform(get("/api/v1/kitchen/zones")
+                        .header("Authorization", "Bearer " + tokenB))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].name").value("Bar B"));
     }
 }

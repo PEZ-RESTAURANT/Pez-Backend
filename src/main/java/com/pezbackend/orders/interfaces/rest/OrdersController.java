@@ -10,6 +10,9 @@ import com.pezbackend.orders.interfaces.rest.resources.*;
 import com.pezbackend.orders.interfaces.rest.transform.OrderItemResourceFromEntityAssembler;
 import com.pezbackend.orders.interfaces.rest.transform.OrderResourceFromEntityAssembler;
 import com.pezbackend.orders.interfaces.rest.transform.RestaurantTableResourceFromEntityAssembler;
+import com.pezbackend.shared.infrastructure.persistence.jpa.repositories.AuditEventRepository;
+import com.pezbackend.shared.interfaces.rest.resources.AuditEventResource;
+import com.pezbackend.shared.interfaces.rest.transform.AuditEventResourceFromEntityAssembler;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -33,6 +36,7 @@ public class OrdersController {
 
     private final OrderQueryService orderQueryService;
     private final OrderCommandService orderCommandService;
+    private final AuditEventRepository auditEventRepository;
 
     @GetMapping
     @PreAuthorize("isAuthenticated()")
@@ -49,6 +53,19 @@ public class OrdersController {
     public ResponseEntity<OrderResource> getOrderById(@PathVariable Long id) {
         Order order = orderQueryService.getOrderById(id);
         return ResponseEntity.ok(OrderResourceFromEntityAssembler.toResourceFromEntity(order));
+    }
+
+    @GetMapping("/{orderId}/cancellations")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<List<AuditEventResource>> getOrderCancellations(@PathVariable Long orderId) {
+        List<com.pezbackend.shared.domain.model.AuditEvent> events = auditEventRepository.findAll().stream()
+                .filter(e -> "ItemCancelled".equals(e.getEventType()) && e.getPayload() != null && e.getPayload().get("orderId") instanceof Number num && num.longValue() == orderId)
+                .toList();
+
+        List<AuditEventResource> resources = events.stream()
+                .map(AuditEventResourceFromEntityAssembler::toResourceFromEntity)
+                .toList();
+        return ResponseEntity.ok(resources);
     }
 
     @GetMapping("/queue/attention")

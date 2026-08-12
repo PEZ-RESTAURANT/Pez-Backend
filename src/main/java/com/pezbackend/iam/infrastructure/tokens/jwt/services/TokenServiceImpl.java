@@ -23,9 +23,18 @@ import java.util.function.Function;
  * This class is responsible for generating and validating JWT tokens.
  * It uses the secret and expiration days from the application.properties file.
  */
+import com.pezbackend.iam.infrastructure.persistence.jpa.repositories.BlacklistedTokenRepository;
+import com.pezbackend.iam.domain.model.entities.BlacklistedToken;
+
 @Service
 public class TokenServiceImpl implements BearerTokenService {
     private final Logger LOGGER = LoggerFactory.getLogger(TokenServiceImpl.class);
+
+    private final BlacklistedTokenRepository blacklistedTokenRepository;
+
+    public TokenServiceImpl(BlacklistedTokenRepository blacklistedTokenRepository) {
+        this.blacklistedTokenRepository = blacklistedTokenRepository;
+    }
 
     private static final String AUTHORIZATION_PARAMETER_NAME = "Authorization";
     private static final String BEARER_TOKEN_PREFIX = "Bearer ";
@@ -142,5 +151,51 @@ public class TokenServiceImpl implements BearerTokenService {
 
         if (isTokenPresentIn(parameter) && isBearerTokenIn(parameter)) return extractTokenFrom(parameter);
         return null;
+    }
+
+    @Override
+    public void invalidateToken(String token) {
+        if (token == null || token.isBlank()) {
+            return;
+        }
+        try {
+            Date expirationDate = extractClaim(token, Claims::getExpiration);
+            java.time.LocalDateTime expiresAt = java.time.LocalDateTime.ofInstant(
+                    expirationDate.toInstant(),
+                    java.time.ZoneId.systemDefault()
+            );
+
+            if (!blacklistedTokenRepository.existsByToken(token)) {
+                blacklistedTokenRepository.save(new BlacklistedToken(token, expiresAt));
+                LOGGER.info("Token añadido a la lista negra con expiración en: {}", expiresAt);
+            }
+        } catch (Exception e) {
+            java.time.LocalDateTime expiresAt = java.time.LocalDateTime.now().plusDays(expirationDays);
+            if (!blacklistedTokenRepository.existsByToken(token)) {
+                blacklistedTokenRepository.save(new BlacklistedToken(token, expiresAt));
+                LOGGER.warn("Token no pudo ser decodificado pero fue añadido a lista negra con expiración default: {}", e.getMessage());
+            }
+        }
+    }
+
+    @Override
+    public boolean isTokenInvalidated(String token) {
+        if (token == null || token.isBlank()) {
+            return false;
+        }
+        return blacklistedTokenRepository.existsByToken(token);
+    }
+
+    @Override
+    @org.springframework.transaction.annotation.Transactional
+    public void cleanExpiredTokens() {
+        java.time.LocalDateTime now = java.time.LocalDateTime.now();
+        blacklistedTokenRepository.deleteByExpiresAtBefore(now);
+        LOGGER.info("Limpieza de tokens revocados expirados completada.");
+    }
+
+    @Override
+    public java.util.Date getIssuedAtFromToken(String token) {
+        return extractClaim(token, Claims::getIssuedAt);
     }
 }

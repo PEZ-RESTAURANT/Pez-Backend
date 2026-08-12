@@ -1,5 +1,6 @@
 package com.pezbackend.iam.domain.model.aggregates;
 
+import org.hibernate.annotations.Filter;
 import com.pezbackend.iam.domain.model.entities.Role;
 import com.pezbackend.shared.domain.model.aggregates.AbstractTenantAggregateRoot;
 import jakarta.persistence.*;
@@ -13,6 +14,7 @@ import java.util.List;
 @Getter
 @Setter
 @Entity
+@Filter(name = "tenantFilter", condition = "restaurant_id = :restaurantId")
 public class User extends AbstractTenantAggregateRoot<User> {
 
     @Column(unique = true, nullable = false)
@@ -32,6 +34,9 @@ public class User extends AbstractTenantAggregateRoot<User> {
 
     @Column(nullable = false)
     private Boolean active = true;
+
+    @Column(name = "password_changed_at")
+    private java.time.LocalDateTime passwordChangedAt;
 
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "user_roles",

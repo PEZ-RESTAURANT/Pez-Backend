@@ -1,5 +1,6 @@
 package com.pezbackend.staff.domain.model.entities;
 
+import org.hibernate.annotations.Filter;
 import com.pezbackend.staff.domain.model.valueobjects.PayrollAdjustmentType;
 import com.pezbackend.shared.domain.model.entities.AuditableModel;
 import jakarta.persistence.*;
@@ -19,6 +20,7 @@ import com.pezbackend.shared.domain.model.entities.AbstractTenantEntity;
 @Table(name = "payroll_adjustments")
 @Getter
 @Setter
+@Filter(name = "tenantFilter", condition = "restaurant_id = :restaurantId")
 public class PayrollAdjustment extends AbstractTenantEntity {
 
     @NotNull

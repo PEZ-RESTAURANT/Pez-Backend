@@ -93,11 +93,25 @@ public class StaffController {
         return ResponseEntity.ok(StaffProfileResourceAssembler.toResource(profile));
     }
 
+    private LocalDateTime parseLocalDateTime(String input) {
+        if (input == null || input.isBlank()) {
+            return LocalDateTime.now();
+        }
+        try {
+            return LocalDateTime.parse(input);
+        } catch (Exception e) {
+            try {
+                return java.time.OffsetDateTime.parse(input).toLocalDateTime();
+            } catch (Exception ex) {
+                return java.time.LocalDate.parse(input).atStartOfDay();
+            }
+        }
+    }
+
     @PostMapping("/attendance/check-in")
     @RequiresPermission("staff.register_attendance")
     public ResponseEntity<AttendanceRecordResource> checkIn(@RequestBody AttendanceCheckInResource resource) {
-        LocalDateTime checkInTime = (resource.checkInAt() == null || resource.checkInAt().isBlank())
-                ? LocalDateTime.now() : LocalDateTime.parse(resource.checkInAt());
+        LocalDateTime checkInTime = parseLocalDateTime(resource.checkInAt());
 
         AttendanceRecord record = commandService.checkIn(
                 resource.staffProfileId(),
@@ -110,8 +124,7 @@ public class StaffController {
     @PostMapping("/attendance/check-out")
     @RequiresPermission("staff.register_attendance")
     public ResponseEntity<AttendanceRecordResource> checkOut(@RequestBody AttendanceCheckOutResource resource) {
-        LocalDateTime checkOutTime = (resource.checkOutAt() == null || resource.checkOutAt().isBlank())
-                ? LocalDateTime.now() : LocalDateTime.parse(resource.checkOutAt());
+        LocalDateTime checkOutTime = parseLocalDateTime(resource.checkOutAt());
 
         AttendanceRecord record = commandService.checkOut(
                 resource.staffProfileId(),

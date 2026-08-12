@@ -49,6 +49,12 @@ public class UserQueryServiceImpl implements UserQueryService {
     }
 
     @Override
+    public Optional<User> handle(com.pezbackend.iam.domain.model.queries.GetUserByIdQuery query) {
+        LOGGER.debug("Processing GetUserByIdQuery for ID: {}", query.userId());
+        return userRepository.findById(query.userId());
+    }
+
+    @Override
     public List<User> handle(GetAllUsersQuery query) {
         LOGGER.debug("Processing GetAllUsersQuery");
         

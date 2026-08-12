@@ -385,7 +385,17 @@ public class OrderCommandServiceImpl implements OrderCommandService {
 
         orderRepository.save(order);
         log.info("Ítem ID {} removido/cancelado de la comanda {} por {}.", itemId, orderId, executorUsername);
-        eventPublisher.publishEvent(new ItemCancelledEvent(order.getId(), itemId, originalWaiterId, reason.name(), detail, executorUsername));
+        eventPublisher.publishEvent(new ItemCancelledEvent(
+                order.getId(),
+                itemId,
+                item.getProductId(),
+                item.getQuantity(),
+                item.getUnitPriceSnapshot(),
+                originalWaiterId,
+                reason.name(),
+                detail,
+                executorUsername
+        ));
     }
 
     @Override

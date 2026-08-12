@@ -1,5 +1,6 @@
 package com.pezbackend.orders.domain.model.aggregates;
 
+import org.hibernate.annotations.Filter;
 import com.pezbackend.orders.domain.model.entities.OrderItem;
 import com.pezbackend.orders.domain.model.entities.PriceAdjustment;
 import com.pezbackend.orders.domain.model.valueobjects.OrderStatus;
@@ -22,6 +23,7 @@ import com.pezbackend.shared.domain.model.entities.AbstractTenantBaseEntity;
 @Table(name = "orders")
 @Getter
 @Setter
+@Filter(name = "tenantFilter", condition = "restaurant_id = :restaurantId")
 public class Order extends AbstractTenantBaseEntity {
 
     @Id

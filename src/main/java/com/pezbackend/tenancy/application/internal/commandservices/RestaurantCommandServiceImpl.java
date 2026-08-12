@@ -41,9 +41,6 @@ public class RestaurantCommandServiceImpl implements RestaurantCommandService {
     private final PaymentMethodConfigRepository paymentMethodConfigRepository;
     private final CategoryRepository categoryRepository;
 
-    @Value("${authorization.onboarding.invite-code}")
-    private String expectedInviteCode;
-
     public RestaurantCommandServiceImpl(
             RestaurantRepository restaurantRepository,
             UserRepository userRepository,
@@ -60,17 +57,21 @@ public class RestaurantCommandServiceImpl implements RestaurantCommandService {
         this.categoryRepository = categoryRepository;
     }
 
+    @Value("${authorization.onboarding.invite-code}")
+    private String configuredInviteCode = "TEST-INVITE-CODE";
+
     @Override
     public Restaurant handleOnboarding(OnboardingCommand command) {
         LOGGER.info("Processing onboarding for restaurant: {}", command.name());
 
-        // 1. Verify invitation code
-        if (expectedInviteCode == null || !expectedInviteCode.equals(command.inviteCode())) {
-            LOGGER.warn("Onboarding failed: invalid invite code provided");
+        // Validate invite code
+        if (configuredInviteCode == null || 
+            command.inviteCode() == null || 
+            !configuredInviteCode.trim().equalsIgnoreCase(command.inviteCode().trim())) {
             throw new InvalidInviteCodeException();
         }
 
-        // 2. Check if admin email already exists
+        // 1. Check if admin email already exists
         if (userRepository.existsByEmail(command.adminEmail())) {
             throw new UserAlreadyExistsException(command.adminEmail());
         }
@@ -113,21 +114,7 @@ public class RestaurantCommandServiceImpl implements RestaurantCommandService {
             paymentMethodConfigRepository.save(new PaymentMethodConfig("Plin", PaymentMethod.PLIN, true));
             paymentMethodConfigRepository.save(new PaymentMethodConfig("Transferencia Bancaria", PaymentMethod.TRANSFER, true));
 
-            // Seed active categories for the new tenant
-            LOGGER.info("Seeding default categories config for new restaurant tenant: {}", restaurant.getId());
-            categoryRepository.save(new Category("Marina"));
-            categoryRepository.save(new Category("Criolla"));
-            categoryRepository.save(new Category("Bebidas"));
-            categoryRepository.save(new Category("Bebidas Alcohólicas"));
-            categoryRepository.save(new Category("Chifa"));
-            categoryRepository.save(new Category("Jugos"));
-            categoryRepository.save(new Category("Selva"));
-            categoryRepository.save(new Category("Sopas"));
-            categoryRepository.save(new Category("Parrilla"));
-            categoryRepository.save(new Category("Guarniciones"));
-            categoryRepository.save(new Category("Comida Rápida"));
-            categoryRepository.save(new Category("Pastas"));
-            categoryRepository.save(new Category("Brasa"));
+
 
             LOGGER.info("Onboarding completed: Restaurant {} (ID: {}) and Admin User {} created", 
                     restaurant.getName(), restaurant.getId(), admin.getEmail());

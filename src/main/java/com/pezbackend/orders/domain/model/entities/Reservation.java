@@ -1,5 +1,6 @@
 package com.pezbackend.orders.domain.model.entities;
 
+import org.hibernate.annotations.Filter;
 import com.pezbackend.orders.domain.model.valueobjects.ReservationStatus;
 import com.pezbackend.shared.domain.model.entities.AbstractTenantEntity;
 import jakarta.persistence.*;
@@ -16,6 +17,7 @@ import java.time.LocalDateTime;
 @Table(name = "reservations")
 @Getter
 @Setter
+@Filter(name = "tenantFilter", condition = "restaurant_id = :restaurantId")
 public class Reservation extends AbstractTenantEntity {
 
     @Column(name = "customer_name", nullable = false)

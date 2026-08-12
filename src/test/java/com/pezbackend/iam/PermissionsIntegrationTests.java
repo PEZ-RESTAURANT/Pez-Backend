@@ -8,6 +8,7 @@ import com.pezbackend.iam.domain.model.valueobjects.Roles;
 import com.pezbackend.iam.domain.services.PermissionCommandService;
 import com.pezbackend.iam.domain.services.PermissionQueryService;
 import com.pezbackend.iam.domain.services.PermissionResolutionService;
+import com.pezbackend.iam.domain.model.queries.ResolvedPermission;
 import com.pezbackend.iam.domain.model.commands.CreatePermissionOverrideCommand;
 import com.pezbackend.iam.domain.model.commands.DeletePermissionOverrideCommand;
 import com.pezbackend.iam.infrastructure.persistence.jpa.repositories.PermissionRepository;
@@ -214,5 +215,34 @@ public class PermissionsIntegrationTests {
         // Unauthenticated user should not be allowed
         mockMvc.perform(get("/api/v1/accounts/me/permissions"))
                 .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    public void testGetPermissionsWithMatchingOverride() {
+        // CASHIER has orders.create = true by default. 
+        // We apply an override of GRANTED, matching the role default.
+        CreatePermissionOverrideCommand overrideCmd = new CreatePermissionOverrideCommand(
+                testUser.getId(),
+                "orders.create",
+                OverrideValue.GRANTED,
+                "Explicitly granted matching the role default",
+                "admin_user"
+        );
+        commandService.handle(overrideCmd);
+
+        // Fetch effective permissions
+        List<ResolvedPermission> resolvedList = queryService.getEffectivePermissionsForUser(testUser.getId());
+        
+        ResolvedPermission ordersCreatePerm = resolvedList.stream()
+                .filter(p -> "orders.create".equals(p.code()))
+                .findFirst()
+                .orElseThrow();
+
+        // Verify that isOverride is true even if granted value matches default
+        assertThat(ordersCreatePerm.granted()).isTrue();
+        assertThat(ordersCreatePerm.isOverride()).isTrue();
+        assertThat(ordersCreatePerm.roleDefaultValue()).isTrue();
+        assertThat(ordersCreatePerm.overrideGrantedBy()).isEqualTo("admin_user");
+        assertThat(ordersCreatePerm.overrideReason()).isEqualTo("Explicitly granted matching the role default");
     }
 }

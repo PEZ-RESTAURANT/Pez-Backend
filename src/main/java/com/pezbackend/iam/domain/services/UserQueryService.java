@@ -20,6 +20,13 @@ public interface UserQueryService {
     Optional<User> handle(GetUserByEmailQuery query);
 
     /**
+     * Handles the query to find a user by ID.
+     * @param query The query containing the user ID.
+     * @return An Optional containing the User aggregate if found.
+     */
+    Optional<User> handle(com.pezbackend.iam.domain.model.queries.GetUserByIdQuery query);
+
+    /**
      * Handles the query to retrieve all users.
      * @param query The query (empty, used for consistency).
      * @return A list of all User aggregates.

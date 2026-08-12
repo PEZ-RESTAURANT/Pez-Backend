@@ -12,5 +12,10 @@ public record UserPermissionResource(
         String code,
         String module,
         String description,
-        boolean granted
+        boolean granted,
+        boolean isOverride,
+        boolean roleDefaultValue,
+        String overrideGrantedBy,
+        String overrideDate,
+        String overrideReason
 ) {}

@@ -1,5 +1,6 @@
 package com.pezbackend.staff.domain.model.entities;
 
+import org.hibernate.annotations.Filter;
 import com.pezbackend.staff.domain.model.valueobjects.SanctionType;
 import com.pezbackend.shared.domain.model.entities.AuditableModel;
 import jakarta.persistence.*;
@@ -18,6 +19,7 @@ import com.pezbackend.shared.domain.model.entities.AbstractTenantEntity;
 @Table(name = "sanctions")
 @Getter
 @Setter
+@Filter(name = "tenantFilter", condition = "restaurant_id = :restaurantId")
 public class Sanction extends AbstractTenantEntity {
 
     @NotNull

@@ -1,5 +1,6 @@
 package com.pezbackend.inventory.domain.model.entities;
 
+import org.hibernate.annotations.Filter;
 import com.pezbackend.inventory.domain.model.valueobjects.StockMovementType;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -17,6 +18,7 @@ import com.pezbackend.shared.domain.model.entities.AbstractTenantBaseEntity;
 @Table(name = "stock_movements")
 @Getter
 @Setter
+@Filter(name = "tenantFilter", condition = "restaurant_id = :restaurantId")
 public class StockMovement extends AbstractTenantBaseEntity {
 
     @Id

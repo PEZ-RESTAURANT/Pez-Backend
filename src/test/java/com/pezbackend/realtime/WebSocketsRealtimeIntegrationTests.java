@@ -95,7 +95,7 @@ public class WebSocketsRealtimeIntegrationTests {
         // Onboarding Tenant A
         OnboardingResource resourceA = new OnboardingResource(
                 "Ws Tenant A " + suffix, docA, "ws_info_" + suffix + "@tenanta.com", "999111222",
-                emailA, "passA", "Admin", "A", "TEST-INVITE-CODE"
+                emailA, "passA", "Admin", "A"
         );
         String responseA = mockMvc.perform(post("/api/v1/restaurants/onboarding")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -107,7 +107,7 @@ public class WebSocketsRealtimeIntegrationTests {
         // Onboarding Tenant B
         OnboardingResource resourceB = new OnboardingResource(
                 "Ws Tenant B " + suffix, docB, "ws_info_" + suffix + "@tenantb.com", "999333444",
-                emailB, "passB", "Admin", "B", "TEST-INVITE-CODE"
+                emailB, "passB", "Admin", "B"
         );
         String responseB = mockMvc.perform(post("/api/v1/restaurants/onboarding")
                         .contentType(MediaType.APPLICATION_JSON)

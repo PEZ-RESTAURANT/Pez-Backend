@@ -1,0 +1,264 @@
+package com.pezbackend.iam.interfaces;
+
+import com.pezbackend.iam.domain.model.aggregates.User;
+import com.pezbackend.iam.domain.model.entities.PasswordResetToken;
+import com.pezbackend.iam.infrastructure.persistence.jpa.repositories.PasswordResetTokenRepository;
+import com.pezbackend.iam.infrastructure.persistence.jpa.repositories.UserRepository;
+import com.pezbackend.iam.application.internal.outboundservices.hashing.HashingService;
+import com.pezbackend.shared.infrastructure.email.EmailService;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+
+@RestController
+@RequestMapping("/api/v1/auth")
+@Slf4j
+public class AuthController {
+
+    private final UserRepository userRepository;
+    private final PasswordResetTokenRepository passwordResetTokenRepository;
+    private final HashingService hashingService;
+    private final EmailService emailService;
+
+    public AuthController(
+            UserRepository userRepository,
+            PasswordResetTokenRepository passwordResetTokenRepository,
+            @org.springframework.beans.factory.annotation.Qualifier("hashingServiceImpl") HashingService hashingService,
+            EmailService emailService
+    ) {
+        this.userRepository = userRepository;
+        this.passwordResetTokenRepository = passwordResetTokenRepository;
+        this.hashingService = hashingService;
+        this.emailService = emailService;
+    }
+
+    public void resetRateLimits() {
+        emailRateLimits.clear();
+        ipRateLimits.clear();
+    }
+
+    @Value("${app.frontend.url:http://localhost:4200}")
+    private String frontendUrl;
+
+    // Rate Limiting caches: ConcurrentHashMap tracking timestamps per email and IP
+    private final Map<String, List<Instant>> emailRateLimits = new ConcurrentHashMap<>();
+    private final Map<String, List<Instant>> ipRateLimits = new ConcurrentHashMap<>();
+
+    public record ForgotPasswordRequest(
+            @NotBlank(message = "El correo electrónico es requerido.")
+            @Email(message = "Formato de correo electrónico inválido.")
+            String email
+    ) {}
+
+    public record ResetPasswordRequest(
+            @NotBlank(message = "El token es requerido.")
+            String token,
+            @NotBlank(message = "La nueva contraseña es requerida.")
+            String newPassword
+    ) {}
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<Map<String, String>> forgotPassword(
+            @Valid @RequestBody ForgotPasswordRequest requestBody,
+            HttpServletRequest request
+    ) {
+        String email = requestBody.email().trim().toLowerCase();
+        String ip = getClientIp(request);
+
+        log.info("Solicitud de recuperación de contraseña para: {} desde IP: {}", email, ip);
+
+        // 1. Verificar Rate Limiting antes que nada para prevenir timing attacks y enumeración
+        if (isRateLimited(email, ip)) {
+            log.warn("Límite de solicitudes excedido para: {} o IP: {}", email, ip);
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("message", "Demasiadas solicitudes. Por favor, intente de nuevo en 10 minutos.");
+            return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body(errorResponse);
+        }
+
+        // 2. Buscar usuario. Siempre responder el mismo mensaje genérico para seguridad
+        Optional<User> userOpt = userRepository.findByEmail(email);
+        
+        if (userOpt.isPresent()) {
+            User user = userOpt.get();
+            
+            // Generar token aleatorio largo
+            String rawToken = UUID.randomUUID().toString().replace("-", "") + 
+                              UUID.randomUUID().toString().replace("-", "");
+            String tokenHash = hashToken(rawToken);
+
+            // Guardar token en base de datos
+            PasswordResetToken resetToken = new PasswordResetToken(
+                    user,
+                    tokenHash,
+                    LocalDateTime.now().plusMinutes(30)
+            );
+            passwordResetTokenRepository.save(resetToken);
+
+            // Enviar correo electrónico
+            String resetUrl = frontendUrl + "/auth/reset-password?token=" + rawToken;
+            sendResetEmail(user.getEmail(), user.getFirstName(), resetUrl);
+        } else {
+            // Mitigación de timing attack: simular retardo artificial si el usuario no existe
+            try { Thread.sleep(50); } catch (InterruptedException ignored) {}
+        }
+
+        Map<String, String> response = new HashMap<>();
+        response.put("message", "Si el correo electrónico ingresado existe en nuestro sistema, recibirá un enlace para restablecer su contraseña.");
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<Map<String, String>> resetPassword(
+            @Valid @RequestBody ResetPasswordRequest requestBody
+    ) {
+        String rawToken = requestBody.token();
+        String newPassword = requestBody.newPassword();
+
+        String tokenHash = hashToken(rawToken);
+        Optional<PasswordResetToken> tokenOpt = passwordResetTokenRepository.findByTokenHash(tokenHash);
+
+        if (tokenOpt.isEmpty()) {
+            return errorResponse("El enlace de recuperación es inválido o ya ha sido utilizado.");
+        }
+
+        PasswordResetToken resetToken = tokenOpt.get();
+
+        if (resetToken.isUsed()) {
+            return errorResponse("Este enlace de recuperación ya ha sido utilizado.");
+        }
+
+        if (resetToken.getExpiresAt().isBefore(LocalDateTime.now())) {
+            return errorResponse("El enlace de recuperación ha expirado. Por favor, solicite uno nuevo.");
+        }
+
+        // Cambiar la contraseña del usuario
+        User user = resetToken.getUser();
+        String newPasswordHash = hashingService.encode(newPassword);
+        user.setPasswordHash(newPasswordHash);
+        
+        // Registrar fecha de cambio de contraseña para revocar automáticamente tokens JWT existentes
+        user.setPasswordChangedAt(LocalDateTime.now());
+        userRepository.save(user);
+
+        // Marcar token como usado
+        resetToken.setUsed(true);
+        passwordResetTokenRepository.save(resetToken);
+
+        // Enviar correo de confirmación de cambio exitoso
+        sendConfirmationEmail(user.getEmail(), user.getFirstName());
+
+        Map<String, String> response = new HashMap<>();
+        response.put("message", "Contraseña restablecida exitosamente.");
+        return ResponseEntity.ok(response);
+    }
+
+    private ResponseEntity<Map<String, String>> errorResponse(String message) {
+        Map<String, String> response = new HashMap<>();
+        response.put("message", message);
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+    }
+
+    private boolean isRateLimited(String email, String ip) {
+        Instant now = Instant.now();
+        Instant windowStart = now.minus(java.time.Duration.ofMinutes(10));
+
+        // Limitar por email: máximo 3 solicitudes en 10 minutos
+        List<Instant> emailTimes = emailRateLimits.computeIfAbsent(email, k -> new java.util.concurrent.CopyOnWriteArrayList<>());
+        emailTimes.removeIf(time -> time.isBefore(windowStart));
+        if (emailTimes.size() >= 3) {
+            return true;
+        }
+
+        // Limitar por IP: máximo 3 solicitudes en 10 minutos
+        List<Instant> ipTimes = ipRateLimits.computeIfAbsent(ip, k -> new java.util.concurrent.CopyOnWriteArrayList<>());
+        ipTimes.removeIf(time -> time.isBefore(windowStart));
+        if (ipTimes.size() >= 3) {
+            return true;
+        }
+
+        emailTimes.add(now);
+        ipTimes.add(now);
+        return false;
+    }
+
+    private String getClientIp(HttpServletRequest request) {
+        String xff = request.getHeader("X-Forwarded-For");
+        if (xff != null && !xff.isBlank()) {
+            return xff.split(",")[0].trim();
+        }
+        return request.getRemoteAddr();
+    }
+
+    private String hashToken(String rawToken) {
+        try {
+            java.security.MessageDigest digest = java.security.MessageDigest.getInstance("SHA-256");
+            byte[] hash = digest.digest(rawToken.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            StringBuilder hexString = new StringBuilder(2 * hash.length);
+            for (byte b : hash) {
+                String hex = Integer.toHexString(0xff & b);
+                if (hex.length() == 1) {
+                    hexString.append('0');
+                }
+                hexString.append(hex);
+            }
+            return hexString.toString();
+        } catch (Exception e) {
+            throw new RuntimeException("Error al hashear el token", e);
+        }
+    }
+
+    private void sendResetEmail(String to, String firstName, String resetUrl) {
+        String subject = "Restablecer tu contraseña en PEZ";
+        String htmlContent = "<div style=\"font-family: 'Segoe UI', Roboto, Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #1f2937;\">" +
+                "  <div style=\"text-align: center; margin-bottom: 25px;\">" +
+                "    <h1 style=\"color: #2563eb; font-size: 26px; font-weight: 800; margin: 0;\">Restablecer Contraseña</h1>" +
+                "    <p style=\"color: #6b7280; font-size: 14px; margin-top: 5px;\">Sistema de Gestión PEZ</p>" +
+                "  </div>" +
+                "  <div style=\"background-color: #f9fafb; border-radius: 16px; padding: 30px; border: 1px solid #f3f4f6;\">" +
+                "    <p style=\"font-size: 16px;\">Hola, <strong>" + firstName + "</strong>:</p>" +
+                "    <p style=\"font-size: 15px; line-height: 1.5; color: #4b5563;\">Hemos recibido una solicitud para restablecer la contraseña de tu cuenta de empleado de PEZ.</p>" +
+                "    <p style=\"font-size: 15px; line-height: 1.5; color: #4b5563;\">Haz clic en el siguiente botón para restablecer tu contraseña:</p>" +
+                "    <div style=\"text-align: center; margin: 30px 0;\">" +
+                "      <a href=\"" + resetUrl + "\" style=\"background-color: #2563eb; color: #ffffff; padding: 12px 30px; text-decoration: none; border-radius: 10px; font-weight: bold; display: inline-block; box-shadow: 0 4px 6px -1px rgba(37,99,235,0.2);\">Restablecer Contraseña</a>" +
+                "    </div>" +
+                "    <p style=\"font-size: 12px; color: #9ca3af; text-align: center; margin-top: 20px;\">Este enlace es de un solo uso y expirará en 30 minutos.</p>" +
+                "    <p style=\"font-size: 12px; color: #9ca3af; text-align: center;\">Si no solicitaste este cambio, puedes ignorar este correo de forma segura.</p>" +
+                "  </div>" +
+                "</div>";
+
+        emailService.sendEmail(to, subject, htmlContent);
+    }
+
+    private void sendConfirmationEmail(String to, String firstName) {
+        String subject = "Tu contraseña ha sido restablecida - PEZ";
+        String htmlContent = "<div style=\"font-family: 'Segoe UI', Roboto, Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #1f2937;\">" +
+                "  <div style=\"text-align: center; margin-bottom: 25px;\">" +
+                "    <h1 style=\"color: #10b981; font-size: 26px; font-weight: 800; margin: 0;\">Contraseña Cambiada</h1>" +
+                "    <p style=\"color: #6b7280; font-size: 14px; margin-top: 5px;\">Sistema de Gestión PEZ</p>" +
+                "  </div>" +
+                "  <div style=\"background-color: #f9fafb; border-radius: 16px; padding: 30px; border: 1px solid #f3f4f6;\">" +
+                "    <p style=\"font-size: 16px;\">Hola, <strong>" + firstName + "</strong>:</p>" +
+                "    <p style=\"font-size: 15px; line-height: 1.5; color: #4b5563;\">Te informamos que la contraseña de tu cuenta de empleado de PEZ ha sido restablecida exitosamente.</p>" +
+                "    <p style=\"font-size: 15px; line-height: 1.5; color: #4b5563;\">Si realizaste este cambio, puedes ignorar este correo.</p>" +
+                "    <div style=\"background-color: #fef3c7; border: 1px solid #fde68a; border-radius: 8px; padding: 15px; margin-top: 25px;\">" +
+                "      <p style=\"font-size: 13px; color: #b45309; margin: 0; font-weight: bold;\">⚠️ IMPORTANTE:</p>" +
+                "      <p style=\"font-size: 13px; color: #b45309; margin: 5px 0 0 0;\">Si tú NO solicitaste ni realizaste este cambio, por favor contacta de inmediato con el administrador del sistema.</p>" +
+                "    </div>" +
+                "  </div>" +
+                "</div>";
+
+        emailService.sendEmail(to, subject, htmlContent);
+    }
+}

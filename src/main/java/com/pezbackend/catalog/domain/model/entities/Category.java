@@ -1,5 +1,6 @@
 package com.pezbackend.catalog.domain.model.entities;
 
+import org.hibernate.annotations.Filter;
 import com.pezbackend.shared.domain.model.entities.AbstractTenantEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -11,6 +12,7 @@ import lombok.Setter;
 @Table(name = "categories")
 @Getter
 @Setter
+@Filter(name = "tenantFilter", condition = "restaurant_id = :restaurantId")
 public class Category extends AbstractTenantEntity {
 
     @Column(nullable = false, length = 100)

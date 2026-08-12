@@ -12,6 +12,9 @@ import java.util.Map;
 public record ItemCancelledEvent(
         Long orderId,
         Long itemId,
+        Long productId,
+        Integer quantity,
+        java.math.BigDecimal unitPriceSnapshot,
         Long originalWaiterId,
         String cancellationReason,
         String detail,
@@ -19,8 +22,8 @@ public record ItemCancelledEvent(
         LocalDateTime timestamp
 ) implements DomainEvent {
 
-    public ItemCancelledEvent(Long orderId, Long itemId, Long originalWaiterId, String cancellationReason, String detail, String cancelledBy) {
-        this(orderId, itemId, originalWaiterId, cancellationReason, detail, cancelledBy, LocalDateTime.now());
+    public ItemCancelledEvent(Long orderId, Long itemId, Long productId, Integer quantity, java.math.BigDecimal unitPriceSnapshot, Long originalWaiterId, String cancellationReason, String detail, String cancelledBy) {
+        this(orderId, itemId, productId, quantity, unitPriceSnapshot, originalWaiterId, cancellationReason, detail, cancelledBy, LocalDateTime.now());
     }
 
     @Override
@@ -43,6 +46,9 @@ public record ItemCancelledEvent(
         return Map.of(
                 "orderId", orderId,
                 "itemId", itemId,
+                "productId", productId,
+                "quantity", quantity,
+                "unitPriceSnapshot", unitPriceSnapshot,
                 "originalWaiterId", originalWaiterId,
                 "cancellationReason", cancellationReason,
                 "detail", detail != null ? detail : ""

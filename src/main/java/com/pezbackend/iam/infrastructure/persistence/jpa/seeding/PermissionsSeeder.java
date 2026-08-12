@@ -74,8 +74,8 @@ public class PermissionsSeeder {
             new PermissionSeed("inventory.restock", "inventory", "Registrar ingresos de mercadería por compras", true, false, false, false),
 
             // --- Kitchen ---
-            new PermissionSeed("kitchen.view_own_zone", "kitchen", "Ver monitor de pedidos de la zona asignada", false, false, false, true),
-            new PermissionSeed("kitchen.change_item_status", "kitchen", "Cambiar estado de platos (en preparación, listo)", false, false, false, true),
+            new PermissionSeed("kitchen.view_own_zone", "kitchen", "Ver monitor de pedidos de la zona asignada", true, false, false, true),
+            new PermissionSeed("kitchen.change_item_status", "kitchen", "Cambiar estado de platos (en preparación, listo)", true, false, false, true),
             new PermissionSeed("kitchen.view_zones", "kitchen", "Visualizar el catálogo de zonas de cocina", true, false, true, true),
 
             // --- Staff ---
@@ -101,6 +101,7 @@ public class PermissionsSeeder {
             new PermissionSeed("analytics.manage_config", "analytics", "Gestionar la configuración del módulo de analítica", true, false, false, false),
             new PermissionSeed("audit.view", "audit", "Visualizar historial y traza de eventos de auditoría", true, false, false, false),
             new PermissionSeed("permissions.manage", "permissions", "Administrar permisos y overrides de usuarios", true, false, false, false),
+            new PermissionSeed("iam.manage_accounts", "iam", "Administrar cuentas de usuario del personal", true, false, false, false),
 
             // --- Fase 10 Extensions ---
             new PermissionSeed("orders.merge_tables", "orders", "Unir o fusionar mesas del salón", true, true, false, false),

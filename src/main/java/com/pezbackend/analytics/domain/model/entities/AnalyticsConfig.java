@@ -1,5 +1,6 @@
 package com.pezbackend.analytics.domain.model.entities;
 
+import org.hibernate.annotations.Filter;
 import com.pezbackend.shared.domain.model.entities.AuditableModel;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -17,6 +18,7 @@ import com.pezbackend.shared.domain.model.entities.AbstractTenantEntity;
 @Table(name = "analytics_configs")
 @Getter
 @Setter
+@Filter(name = "tenantFilter", condition = "restaurant_id = :restaurantId")
 public class AnalyticsConfig extends AbstractTenantEntity {
 
     @NotNull

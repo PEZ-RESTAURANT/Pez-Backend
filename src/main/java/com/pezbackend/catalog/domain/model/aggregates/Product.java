@@ -1,5 +1,6 @@
 package com.pezbackend.catalog.domain.model.aggregates;
 
+import org.hibernate.annotations.Filter;
 import com.pezbackend.catalog.domain.model.exceptions.InvalidProductCategoryException;
 import com.pezbackend.catalog.domain.model.exceptions.InvalidProductNameException;
 import com.pezbackend.catalog.domain.model.exceptions.InvalidProductPriceException;
@@ -15,6 +16,7 @@ import java.math.BigDecimal;
 @Getter
 @Entity
 @Table(name = "product")
+@Filter(name = "tenantFilter", condition = "restaurant_id = :restaurantId")
 public class Product extends AbstractTenantAggregateRoot<Product> {
 
     @NotBlank
