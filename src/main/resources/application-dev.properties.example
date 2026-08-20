@@ -1,0 +1,14 @@
+# Local Development Configuration Profile Template
+# Copy this file to application-dev.properties and fill in the values.
+# Do NOT commit application-dev.properties containing real secrets!
+
+authorization.onboarding.invite-code=PEZ-INVITE-LOCAL-DEV-2026
+
+# Spring Mail (SMTP) Configuration
+spring.mail.host=smtp.gmail.com
+spring.mail.port=587
+spring.mail.username=tu_correo_gmail@gmail.com
+spring.mail.password=tu_contraseña_de_aplicacion_aqui
+spring.mail.properties.mail.smtp.auth=true
+spring.mail.properties.mail.smtp.starttls.enable=true
+spring.mail.from=tu_correo_gmail@gmail.com
