@@ -59,10 +59,8 @@ public class WebSecurityIntegrationTests {
         String email = "sec_admin_" + suffix + "@test.com";
 
         // 1. Onboarding del restaurante y usuario administrador
-        OnboardingResource onboarding = new OnboardingResource(
-                "Sec Restaurant " + suffix, doc, "sec_info_" + suffix + "@test.com", "999888777",
-                email, "password123", "Admin", "Sec"
-        );
+        OnboardingResource onboarding = new OnboardingResource("Sec Restaurant " + suffix, doc, "sec_info_" + suffix + "@test.com", "999888777",
+                email, "password123", "Admin", "Sec", "TEST-INVITE-CODE");
 
         String onboardingResponse = mockMvc.perform(post("/api/v1/restaurants/onboarding")
                         .contentType(MediaType.APPLICATION_JSON)

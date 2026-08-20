@@ -20,7 +20,7 @@ public class KitchenZoneCommandServiceImpl implements KitchenZoneCommandService 
 
     @Override
     @Transactional
-    public KitchenZone createZone(String name) {
+    public KitchenZone createZone(String name, boolean printingEnabled) {
         if (name == null || name.strip().isEmpty()) {
             throw new BusinessRuleViolationException("INVALID_NAME", "El nombre de la zona de cocina no puede estar vacío.");
         }
@@ -29,12 +29,13 @@ public class KitchenZoneCommandServiceImpl implements KitchenZoneCommandService 
         }
 
         KitchenZone zone = new KitchenZone(name);
+        zone.setPrintingEnabled(printingEnabled);
         return repository.save(zone);
     }
 
     @Override
     @Transactional
-    public KitchenZone updateZone(Long id, String name) {
+    public KitchenZone updateZone(Long id, String name, boolean printingEnabled) {
         if (name == null || name.strip().isEmpty()) {
             throw new BusinessRuleViolationException("INVALID_NAME", "El nombre de la zona de cocina no puede estar vacío.");
         }
@@ -49,6 +50,7 @@ public class KitchenZoneCommandServiceImpl implements KitchenZoneCommandService 
         });
 
         zone.setName(name);
+        zone.setPrintingEnabled(printingEnabled);
         return repository.save(zone);
     }
 

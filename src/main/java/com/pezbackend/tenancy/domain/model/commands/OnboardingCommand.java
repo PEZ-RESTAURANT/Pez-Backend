@@ -10,12 +10,14 @@ public record OnboardingCommand(
         String businessDocumentNumber,
         String contactEmail,
         String contactPhone,
+        String address,
         String adminEmail,
         String adminPassword,
         String adminFirstName,
         String adminLastName,
         String inviteCode
 ) {
+
     public OnboardingCommand(
             String name,
             String businessDocumentNumber,
@@ -24,9 +26,10 @@ public record OnboardingCommand(
             String adminEmail,
             String adminPassword,
             String adminFirstName,
-            String adminLastName
+            String adminLastName,
+            String inviteCode
     ) {
-        this(name, businessDocumentNumber, contactEmail, contactPhone, adminEmail, adminPassword, adminFirstName, adminLastName, "TEST-INVITE-CODE");
+        this(name, businessDocumentNumber, contactEmail, contactPhone, null, adminEmail, adminPassword, adminFirstName, adminLastName, inviteCode);
     }
 
     public OnboardingCommand {

@@ -6,6 +6,8 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Map;
 
+import com.pezbackend.inventory.domain.model.entities.StockLevel;
+
 /**
  * Evento emitido cuando el stock de un insumo desciende por debajo de su umbral mínimo de seguridad.
  */
@@ -14,11 +16,12 @@ public record LowStockAlertTriggered(
         String supplyName,
         BigDecimal currentStock,
         BigDecimal threshold,
+        StockLevel level,
         LocalDateTime timestamp
 ) implements DomainEvent {
 
-    public LowStockAlertTriggered(Long supplyId, String supplyName, BigDecimal currentStock, BigDecimal threshold) {
-        this(supplyId, supplyName, currentStock, threshold, LocalDateTime.now());
+    public LowStockAlertTriggered(Long supplyId, String supplyName, BigDecimal currentStock, BigDecimal threshold, StockLevel level) {
+        this(supplyId, supplyName, currentStock, threshold, level, LocalDateTime.now());
     }
 
     @Override
@@ -42,7 +45,8 @@ public record LowStockAlertTriggered(
                 "supplyId", supplyId,
                 "supplyName", supplyName,
                 "currentStock", currentStock,
-                "threshold", threshold
+                "threshold", threshold,
+                "level", level != null ? level.name() : ""
         );
     }
 }

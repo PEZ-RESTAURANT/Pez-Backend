@@ -79,10 +79,8 @@ public class CatalogIntegrationTests {
     @Test
     public void testOnboardingCreatesSeededCategories() throws Exception {
         // 1. Registrar un nuevo restaurante A
-        OnboardingResource onboardingResource = new OnboardingResource(
-                "Restaurante Test Seeding", "20777777777", "contacto@testseeding.com", "555-777",
-                "admin@testseeding.com", "securePass123", "Carlos", "Soto"
-        );
+        OnboardingResource onboardingResource = new OnboardingResource("Restaurante Test Seeding", "20777777777", "contacto@testseeding.com", "555-777",
+                "admin@testseeding.com", "securePass123", "Carlos", "Soto", "TEST-INVITE-CODE");
 
         String response = mockMvc.perform(post("/api/v1/restaurants/onboarding")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -107,10 +105,8 @@ public class CatalogIntegrationTests {
     @Test
     public void testCannotDeleteCategoryWithProducts() throws Exception {
         // 1. Registrar un restaurante para tener un tenant context limpio
-        OnboardingResource onboardingResource = new OnboardingResource(
-                "Restaurante Test Delete", "20888888888", "contacto@testdel.com", "555-888",
-                "admin@testdel.com", "securePass123", "Pedro", "Gomez"
-        );
+        OnboardingResource onboardingResource = new OnboardingResource("Restaurante Test Delete", "20888888888", "contacto@testdel.com", "555-888",
+                "admin@testdel.com", "securePass123", "Pedro", "Gomez", "TEST-INVITE-CODE");
 
         String response = mockMvc.perform(post("/api/v1/restaurants/onboarding")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -152,10 +148,8 @@ public class CatalogIntegrationTests {
     @Test
     public void testTenantIsolationBetweenCategories() throws Exception {
         // 1. Crear Restaurante A (Tenant A)
-        OnboardingResource resourceA = new OnboardingResource(
-                "Restaurante A Isolation", "20111111111", "contacto@resta.com", "555-111",
-                "admin@resta.com", "securePassA", "Ana", "Ruiz"
-        );
+        OnboardingResource resourceA = new OnboardingResource("Restaurante A Isolation", "20111111111", "contacto@resta.com", "555-111",
+                "admin@resta.com", "securePassA", "Ana", "Ruiz", "TEST-INVITE-CODE");
         String responseA = mockMvc.perform(post("/api/v1/restaurants/onboarding")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(resourceA)))
@@ -166,10 +160,8 @@ public class CatalogIntegrationTests {
         String tokenA = tokenService.generateToken(adminA.getId(), Roles.ADMIN.name(), tenantIdA);
 
         // 2. Crear Restaurante B (Tenant B)
-        OnboardingResource resourceB = new OnboardingResource(
-                "Restaurante B Isolation", "20222222222", "contacto@restb.com", "555-222",
-                "admin@restb.com", "securePassB", "Beto", "Diaz"
-        );
+        OnboardingResource resourceB = new OnboardingResource("Restaurante B Isolation", "20222222222", "contacto@restb.com", "555-222",
+                "admin@restb.com", "securePassB", "Beto", "Diaz", "TEST-INVITE-CODE");
         String responseB = mockMvc.perform(post("/api/v1/restaurants/onboarding")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(resourceB)))
@@ -222,10 +214,8 @@ public class CatalogIntegrationTests {
     @Test
     public void testProductKitchenZoneAssignment() throws Exception {
         // 1. Setup Tenant/User
-        OnboardingResource onboardingResource = new OnboardingResource(
-                "Restaurante Test Kitchen", "20999999999", "contacto@testkitchen.com", "555-999",
-                "admin@testkitchen.com", "securePass123", "Carlos", "Soto"
-        );
+        OnboardingResource onboardingResource = new OnboardingResource("Restaurante Test Kitchen", "20999999999", "contacto@testkitchen.com", "555-999",
+                "admin@testkitchen.com", "securePass123", "Carlos", "Soto", "TEST-INVITE-CODE");
 
         String response = mockMvc.perform(post("/api/v1/restaurants/onboarding")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -307,10 +297,8 @@ public class CatalogIntegrationTests {
     @Test
     public void testTenantIsolationOnCoreEntities() throws Exception {
         // 1. Crear Restaurante Tenant A
-        OnboardingResource onboardingA = new OnboardingResource(
-                "Restaurante Tenant A", "20111111111", "contacto@tenanta.com", "555-111",
-                "admin@tenanta.com", "secureA123", "Admin", "A"
-        );
+        OnboardingResource onboardingA = new OnboardingResource("Restaurante Tenant A", "20111111111", "contacto@tenanta.com", "555-111",
+                "admin@tenanta.com", "secureA123", "Admin", "A", "TEST-INVITE-CODE");
         String responseA = mockMvc.perform(post("/api/v1/restaurants/onboarding")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(onboardingA)))
@@ -323,10 +311,8 @@ public class CatalogIntegrationTests {
         String tokenA = tokenService.generateToken(adminA.getId(), Roles.ADMIN.name(), tenantIdA);
 
         // 2. Crear Restaurante Tenant B
-        OnboardingResource onboardingB = new OnboardingResource(
-                "Restaurante Tenant B", "20222222222", "contacto@tenantb.com", "555-222",
-                "admin@tenantb.com", "secureB123", "Admin", "B"
-        );
+        OnboardingResource onboardingB = new OnboardingResource("Restaurante Tenant B", "20222222222", "contacto@tenantb.com", "555-222",
+                "admin@tenantb.com", "secureB123", "Admin", "B", "TEST-INVITE-CODE");
         String responseB = mockMvc.perform(post("/api/v1/restaurants/onboarding")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(onboardingB)))
@@ -401,14 +387,14 @@ public class CatalogIntegrationTests {
         // ==========================================
         // 5. AISLAMIENTO DE ZONAS DE COCINA (KitchenZone)
         // ==========================================
-        CreateKitchenZoneResource zoneA = new CreateKitchenZoneResource("Cocina Principal A");
+        CreateKitchenZoneResource zoneA = new CreateKitchenZoneResource("Cocina Principal A", false);
         mockMvc.perform(post("/api/v1/kitchen/zones")
                         .header("Authorization", "Bearer " + tokenA)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(zoneA)))
                 .andExpect(status().isOk());
 
-        CreateKitchenZoneResource zoneB = new CreateKitchenZoneResource("Bar B");
+        CreateKitchenZoneResource zoneB = new CreateKitchenZoneResource("Bar B", false);
         mockMvc.perform(post("/api/v1/kitchen/zones")
                         .header("Authorization", "Bearer " + tokenB)
                         .contentType(MediaType.APPLICATION_JSON)

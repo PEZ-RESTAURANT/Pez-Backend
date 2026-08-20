@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title th:text="${title}">Notificación de Al Toque</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: #f3f4f6;
+      color: #1f2937;
+    }
+    .wrapper {
+      width: 100%;
+      table-layout: fixed;
+      background-color: #f3f4f6;
+      padding: 40px 0;
+    }
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      background-color: #ffffff;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    }
+    .header {
+      background-color: #1e3a8a;
+      padding: 32px;
+      text-align: center;
+      color: #ffffff;
+    }
+    .header h1 {
+      margin: 0;
+      font-size: 24px;
+      font-weight: 800;
+      letter-spacing: 0.05em;
+    }
+    .header p {
+      margin: 4px 0 0 0;
+      font-size: 14px;
+      opacity: 0.85;
+      font-weight: 500;
+    }
+    .content {
+      padding: 32px;
+    }
+    .greeting {
+      font-size: 18px;
+      font-weight: 700;
+      margin-top: 0;
+      margin-bottom: 16px;
+      color: #111827;
+    }
+    .paragraph {
+      font-size: 15px;
+      line-height: 1.6;
+      color: #4b5563;
+      margin-top: 0;
+      margin-bottom: 16px;
+    }
+    .alert-banner {
+      padding: 16px 20px;
+      border-radius: 12px;
+      margin-bottom: 24px;
+      font-size: 14px;
+      line-height: 1.5;
+      font-weight: 600;
+    }
+    .alert-banner-error {
+      background-color: #fef2f2;
+      border-left: 4px solid #ef4444;
+      color: #991b1b;
+    }
+    .alert-banner-warning {
+      background-color: #fffbeb;
+      border-left: 4px solid #f59e0b;
+      color: #92400e;
+    }
+    .alert-banner-success {
+      background-color: #ecfdf5;
+      border-left: 4px solid #10b981;
+      color: #065f46;
+    }
+    .highlight-box {
+      background-color: #f9fafb;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 24px;
+      text-align: center;
+    }
+    .highlight-label {
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #9ca3af;
+      margin-bottom: 4px;
+    }
+    .highlight-value {
+      font-size: 28px;
+      font-weight: 900;
+      color: #1e3a8a;
+      margin: 0;
+    }
+    .details-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 24px;
+    }
+    .details-table th, .details-table td {
+      padding: 12px 16px;
+      text-align: left;
+      font-size: 14px;
+      border-bottom: 1px solid #f3f4f6;
+    }
+    .details-table th {
+      background-color: #f9fafb;
+      font-weight: 700;
+      color: #374151;
+      width: 35%;
+    }
+    .details-table td {
+      color: #4b5563;
+      font-weight: 500;
+    }
+    .button-container {
+      text-align: center;
+      margin: 32px 0 16px 0;
+    }
+    .btn {
+      display: inline-block;
+      padding: 14px 32px;
+      background-color: #2563eb;
+      color: #ffffff !important;
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 700;
+      border-radius: 12px;
+      box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2), 0 2px 4px -1px rgba(37, 99, 235, 0.1);
+    }
+    .btn:hover {
+      background-color: #1d4ed8;
+    }
+    .footer {
+      padding: 24px 32px;
+      background-color: #f9fafb;
+      border-top: 1px solid #e5e7eb;
+      text-align: center;
+      font-size: 12px;
+      color: #9ca3af;
+      line-height: 1.5;
+    }
+    .footer p {
+      margin: 4px 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <div class="container">
+      
+      <!-- HEADER -->
+      <div class="header">
+        <h1 th:text="${title}">Notificación</h1>
+        <p th:text="${subtitle != null ? subtitle : 'Sistema de Gestión Al Toque'}">Sistema de Gestión Al Toque</p>
+      </div>
+
+      <!-- CONTENT -->
+      <div class="content">
+        
+        <!-- GREETING -->
+        <div class="greeting" th:if="${greeting != null}" th:text="${greeting}">Hola:</div>
+
+        <!-- ALERT BANNER -->
+        <div th:if="${alertText != null}" 
+             th:classappend="${isError != null && isError ? 'alert-banner alert-banner-error' : (isWarning != null && isWarning ? 'alert-banner alert-banner-warning' : 'alert-banner alert-banner-success')}">
+          <span th:if="${alertTitle != null}" th:text="${alertTitle} + ' '">⚠️</span>
+          <span th:text="${alertText}">Mensaje de alerta de prueba.</span>
+        </div>
+
+        <!-- PARAGRAPHS -->
+        <p class="paragraph" th:each="para : ${paragraphs}" th:text="${para}"></p>
+
+        <!-- HIGHLIGHT BOX -->
+        <div class="highlight-box" th:if="${highlightValue != null}">
+          <div class="highlight-label" th:text="${highlightLabel != null ? highlightLabel : 'Información clave'}">Clave</div>
+          <div class="highlight-value" th:text="${highlightValue}">VALOR</div>
+        </div>
+
+        <!-- KEY DETAILS TABLE -->
+        <table class="details-table" th:if="${keyDetails != null}">
+          <tr th:each="detail : ${keyDetails}">
+            <th th:text="${detail.key}">Clave</th>
+            <td th:text="${detail.value}">Valor</td>
+          </tr>
+        </table>
+
+        <!-- BUTTON -->
+        <div class="button-container" th:if="${buttonText != null && buttonUrl != null}">
+          <a th:href="${buttonUrl}" class="btn" th:text="${buttonText}">Acceder</a>
+        </div>
+
+      </div>
+
+      <!-- FOOTER -->
+      <div class="footer">
+        <p>&copy; 2026 Al Toque. Todos los derechos reservados.</p>
+        <p>Este es un correo automático generado por el sistema de control del restaurante. Por favor, no respondas a este mensaje.</p>
+      </div>
+
+    </div>
+  </div>
+</body>
+</html>

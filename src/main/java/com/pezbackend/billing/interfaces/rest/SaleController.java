@@ -9,6 +9,7 @@ import com.pezbackend.billing.domain.services.SaleQueryService;
 import com.pezbackend.billing.interfaces.rest.resources.CreateSaleResource;
 import com.pezbackend.billing.interfaces.rest.resources.RegisterPaymentsResource;
 import com.pezbackend.billing.interfaces.rest.resources.SaleResource;
+import com.pezbackend.billing.interfaces.rest.resources.VoidSaleResource;
 import com.pezbackend.billing.interfaces.rest.transform.CreateSaleCommandFromResourceAssembler;
 import com.pezbackend.billing.interfaces.rest.transform.SaleResourceFromEntityAssembler;
 import com.pezbackend.iam.infrastructure.authorization.sfs.annotations.RequiresPermission;
@@ -31,11 +32,16 @@ public class SaleController {
     private final SaleCommandService commandService;
     private final SaleQueryService queryService;
     private final SaleRepository saleRepository;
+    private final SaleResourceFromEntityAssembler assembler;
 
-    public SaleController(SaleCommandService commandService, SaleQueryService queryService, SaleRepository saleRepository) {
+    public SaleController(SaleCommandService commandService, 
+                          SaleQueryService queryService, 
+                          SaleRepository saleRepository,
+                          SaleResourceFromEntityAssembler assembler) {
         this.commandService = commandService;
         this.queryService = queryService;
         this.saleRepository = saleRepository;
+        this.assembler = assembler;
     }
 
     // Emitir comprobante
@@ -60,6 +66,18 @@ public class SaleController {
 
         String executor = SecurityContextHolder.getContext().getAuthentication().getName();
         commandService.registerPayments(id, payments, executor);
+        return ResponseEntity.ok().build();
+    }
+
+    // Anular una venta
+    @PostMapping("/{id}/void")
+    @RequiresPermission("billing.void_sale")
+    public ResponseEntity<Void> voidSale(
+            @PathVariable Long id,
+            @RequestBody VoidSaleResource resource
+    ) {
+        String executor = SecurityContextHolder.getContext().getAuthentication().getName();
+        commandService.voidSale(id, resource.voidedReason(), executor);
         return ResponseEntity.ok().build();
     }
 
@@ -88,7 +106,7 @@ public class SaleController {
 
         return ResponseEntity.ok(
                 sales.stream()
-                        .map(SaleResourceFromEntityAssembler::toResourceFromEntity)
+                        .map(assembler::toResourceFromEntity)
                         .toList()
         );
     }
@@ -98,7 +116,7 @@ public class SaleController {
     @RequiresPermission("cashregister.view")
     public ResponseEntity<SaleResource> getById(@PathVariable Long id) {
         Sale sale = queryService.handle(new GetSaleByIdQuery(id));
-        return ResponseEntity.ok(SaleResourceFromEntityAssembler.toResourceFromEntity(sale));
+        return ResponseEntity.ok(assembler.toResourceFromEntity(sale));
     }
 
     // Obtener por tipo de documento
@@ -110,7 +128,7 @@ public class SaleController {
         ));
         return ResponseEntity.ok(
                 sales.stream()
-                        .map(SaleResourceFromEntityAssembler::toResourceFromEntity)
+                        .map(assembler::toResourceFromEntity)
                         .toList()
         );
     }
@@ -124,7 +142,7 @@ public class SaleController {
         ));
         return ResponseEntity.ok(
                 sales.stream()
-                        .map(SaleResourceFromEntityAssembler::toResourceFromEntity)
+                        .map(assembler::toResourceFromEntity)
                         .toList()
         );
     }
@@ -136,7 +154,7 @@ public class SaleController {
         List<Sale> sales = queryService.handle(new GetSalesByStaffQuery(staffId));
         return ResponseEntity.ok(
                 sales.stream()
-                        .map(SaleResourceFromEntityAssembler::toResourceFromEntity)
+                        .map(assembler::toResourceFromEntity)
                         .toList()
         );
     }

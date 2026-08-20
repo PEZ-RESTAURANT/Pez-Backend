@@ -39,6 +39,7 @@ public class LoyaltyController {
         Customer customer = commandService.registerCustomer(
                 resource.phone(),
                 resource.fullName(),
+                resource.email(),
                 birthday,
                 resource.address(),
                 resource.dataConsentAccepted()
@@ -131,5 +132,12 @@ public class LoyaltyController {
                 resource.googleReviewUrl()
         );
         return ResponseEntity.ok(LoyaltyConfigResourceAssembler.toResource(config));
+    }
+
+    @PostMapping("/customers/{id}/send-promotion")
+    @RequiresPermission("loyalty.register_customer")
+    public ResponseEntity<Void> sendPromotion(@PathVariable Long id, @RequestBody SendPromotionResource resource) {
+        commandService.sendManualPromotion(id, resource.subject(), resource.message());
+        return ResponseEntity.ok().build();
     }
 }

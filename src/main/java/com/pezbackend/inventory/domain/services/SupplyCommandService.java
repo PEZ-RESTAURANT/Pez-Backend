@@ -12,23 +12,25 @@ public interface SupplyCommandService {
     /**
      * Crea un nuevo insumo en el sistema.
      *
-     * @param name         nombre único del insumo
-     * @param unit         unidad de medida
-     * @param minThreshold umbral mínimo de alertas
+     * @param name             nombre único del insumo
+     * @param unit             unidad de medida
+     * @param minThreshold     umbral mínimo de alertas
+     * @param criticalThreshold umbral crítico de alertas
      * @return el insumo creado
      */
-    Supply createSupply(String name, String unit, BigDecimal minThreshold);
+    Supply createSupply(String name, String unit, BigDecimal minThreshold, BigDecimal criticalThreshold);
 
     /**
      * Actualiza los datos de un insumo existente.
      *
-     * @param id           ID del insumo
-     * @param name         nuevo nombre del insumo
-     * @param unit         nueva unidad de medida
-     * @param minThreshold nuevo umbral mínimo de alertas
+     * @param id               ID del insumo
+     * @param name             nuevo nombre del insumo
+     * @param unit             nueva unidad de medida
+     * @param minThreshold     nuevo umbral mínimo de alertas
+     * @param criticalThreshold nuevo umbral crítico de alertas
      * @return el insumo actualizado
      */
-    Supply updateSupply(Long id, String name, String unit, BigDecimal minThreshold);
+    Supply updateSupply(Long id, String name, String unit, BigDecimal minThreshold, BigDecimal criticalThreshold);
 
     /**
      * Elimina un insumo del sistema.
@@ -50,9 +52,9 @@ public interface SupplyCommandService {
      * Realiza un ajuste de inventario manual.
      *
      * @param id           ID del insumo
-     * @param quantity     cantidad de ajuste (puede ser positiva para incrementar o negativa para disminuir)
+     * @param targetStock  cantidad física exacta actual en almacén
      * @param reason       justificación obligatoria del ajuste
      * @param registeredBy usuario ejecutor
      */
-    void adjustManual(Long id, BigDecimal quantity, String reason, String registeredBy);
+    void adjustManual(Long id, BigDecimal targetStock, String reason, String registeredBy);
 }

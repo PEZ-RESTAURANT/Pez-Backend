@@ -7,4 +7,5 @@ import java.util.List;
 public interface SaleCommandService {
     Long handle(CreateSaleCommand command);
     void registerPayments(Long saleId, List<PaymentDetail> payments, String executor);
+    void voidSale(Long saleId, String reason, String executor);
 }

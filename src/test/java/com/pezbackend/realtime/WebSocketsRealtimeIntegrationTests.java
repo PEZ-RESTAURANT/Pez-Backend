@@ -93,10 +93,8 @@ public class WebSocketsRealtimeIntegrationTests {
         emailOther = "other_waiter_" + suffix + "@tenanta.com";
 
         // Onboarding Tenant A
-        OnboardingResource resourceA = new OnboardingResource(
-                "Ws Tenant A " + suffix, docA, "ws_info_" + suffix + "@tenanta.com", "999111222",
-                emailA, "passA", "Admin", "A"
-        );
+        OnboardingResource resourceA = new OnboardingResource("Ws Tenant A " + suffix, docA, "ws_info_" + suffix + "@tenanta.com", "999111222",
+                emailA, "passA", "Admin", "A", "TEST-INVITE-CODE");
         String responseA = mockMvc.perform(post("/api/v1/restaurants/onboarding")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(resourceA)))
@@ -105,10 +103,8 @@ public class WebSocketsRealtimeIntegrationTests {
         idA = objectMapper.readTree(responseA).get("id").asLong();
 
         // Onboarding Tenant B
-        OnboardingResource resourceB = new OnboardingResource(
-                "Ws Tenant B " + suffix, docB, "ws_info_" + suffix + "@tenantb.com", "999333444",
-                emailB, "passB", "Admin", "B"
-        );
+        OnboardingResource resourceB = new OnboardingResource("Ws Tenant B " + suffix, docB, "ws_info_" + suffix + "@tenantb.com", "999333444",
+                emailB, "passB", "Admin", "B", "TEST-INVITE-CODE");
         String responseB = mockMvc.perform(post("/api/v1/restaurants/onboarding")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(resourceB)))

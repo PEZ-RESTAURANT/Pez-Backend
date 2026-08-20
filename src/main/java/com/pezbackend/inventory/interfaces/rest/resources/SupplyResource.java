@@ -10,5 +10,7 @@ public record SupplyResource(
         String name,
         String unit,
         BigDecimal currentStock,
-        BigDecimal minThreshold
+        BigDecimal minThreshold,
+        BigDecimal criticalThreshold,
+        String stockLevel
 ) {}

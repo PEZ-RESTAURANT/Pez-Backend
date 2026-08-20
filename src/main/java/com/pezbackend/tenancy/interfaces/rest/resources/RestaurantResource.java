@@ -11,6 +11,7 @@ public record RestaurantResource(
         String businessDocumentNumber,
         String contactEmail,
         String contactPhone,
+        String address,
         Boolean active,
         LocalDateTime createdAt
 ) {

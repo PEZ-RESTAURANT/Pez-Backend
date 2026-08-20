@@ -79,10 +79,8 @@ public class OrdersExtensionsIntegrationTests {
         }
 
         // Onboarding Tenant A
-        OnboardingResource resourceA = new OnboardingResource(
-                "Tenant A", "20123456789", "info@tenanta.com", "999111222",
-                "admin@tenanta.com", "passA", "Admin", "A"
-        );
+        OnboardingResource resourceA = new OnboardingResource("Tenant A", "20123456789", "info@tenanta.com", "999111222",
+                "admin@tenanta.com", "passA", "Admin", "A", "TEST-INVITE-CODE");
         String responseA = mockMvc.perform(post("/api/v1/restaurants/onboarding")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(resourceA)))
@@ -91,10 +89,8 @@ public class OrdersExtensionsIntegrationTests {
         idA = objectMapper.readTree(responseA).get("id").asLong();
 
         // Onboarding Tenant B
-        OnboardingResource resourceB = new OnboardingResource(
-                "Tenant B", "20987654321", "info@tenantb.com", "999333444",
-                "admin@tenantb.com", "passB", "Admin", "B"
-        );
+        OnboardingResource resourceB = new OnboardingResource("Tenant B", "20987654321", "info@tenantb.com", "999333444",
+                "admin@tenantb.com", "passB", "Admin", "B", "TEST-INVITE-CODE");
         String responseB = mockMvc.perform(post("/api/v1/restaurants/onboarding")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(resourceB)))

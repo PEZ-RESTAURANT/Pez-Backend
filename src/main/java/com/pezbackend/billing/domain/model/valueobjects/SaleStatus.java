@@ -5,5 +5,6 @@ package com.pezbackend.billing.domain.model.valueobjects;
  */
 public enum SaleStatus {
     ISSUED_UNPAID,
-    PAID
+    PAID,
+    VOIDED
 }

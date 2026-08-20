@@ -32,4 +32,14 @@ public class ProductKitchenZoneQueryServiceImpl implements ProductKitchenZoneQue
                 .map(ProductKitchenZone::getProductId)
                 .collect(Collectors.toSet());
     }
+
+    @Override
+    public java.util.Map<Long, Long> getAllProductZoneIds() {
+        return repository.findAll().stream()
+                .collect(Collectors.toMap(
+                        ProductKitchenZone::getProductId,
+                        ProductKitchenZone::getZoneId,
+                        (v1, v2) -> v1
+                ));
+    }
 }

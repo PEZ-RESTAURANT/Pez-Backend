@@ -29,7 +29,9 @@ public class OperationalConfigController {
                 config.getCutoffHour(),
                 config.getCutoffMinute(),
                 config.getUnattendedThresholdMinutes(),
-                config.getWaitingDishesThresholdMinutes()
+                config.getWaitingDishesThresholdMinutes(),
+                config.getAnnulmentNotificationPref(),
+                config.getDailySummaryTime()
         ));
     }
 
@@ -43,7 +45,9 @@ public class OperationalConfigController {
                     resource.cutoffHour(),
                     resource.cutoffMinute(),
                     resource.unattendedThresholdMinutes(),
-                    resource.waitingDishesThresholdMinutes()
+                    resource.waitingDishesThresholdMinutes(),
+                    resource.annulmentNotificationPref() != null ? resource.annulmentNotificationPref() : "INSTANT",
+                    resource.dailySummaryTime() != null ? resource.dailySummaryTime() : "22:00"
             );
         } else {
             config = configs.get(0);
@@ -51,13 +55,21 @@ public class OperationalConfigController {
             config.setCutoffMinute(resource.cutoffMinute());
             config.setUnattendedThresholdMinutes(resource.unattendedThresholdMinutes());
             config.setWaitingDishesThresholdMinutes(resource.waitingDishesThresholdMinutes());
+            if (resource.annulmentNotificationPref() != null) {
+                config.setAnnulmentNotificationPref(resource.annulmentNotificationPref());
+            }
+            if (resource.dailySummaryTime() != null) {
+                config.setDailySummaryTime(resource.dailySummaryTime());
+            }
         }
         config = operationalConfigRepository.save(config);
         return ResponseEntity.ok(new OperationalConfigResource(
                 config.getCutoffHour(),
                 config.getCutoffMinute(),
                 config.getUnattendedThresholdMinutes(),
-                config.getWaitingDishesThresholdMinutes()
+                config.getWaitingDishesThresholdMinutes(),
+                config.getAnnulmentNotificationPref(),
+                config.getDailySummaryTime()
         ));
     }
 }

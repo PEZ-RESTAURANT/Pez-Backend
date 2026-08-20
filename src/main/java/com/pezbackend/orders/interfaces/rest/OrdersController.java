@@ -118,6 +118,25 @@ public class OrdersController {
         return ResponseEntity.noContent().build();
     }
 
+    @PostMapping("/{id}/items/batch")
+    @RequiresPermission("orders.modify_item")
+    public ResponseEntity<Void> addItemsBatch(
+            @PathVariable Long id,
+            @Valid @RequestBody com.pezbackend.orders.interfaces.rest.resources.AddOrderItemBatchResource resource
+    ) {
+        String waiter = SecurityContextHolder.getContext().getAuthentication().getName();
+        java.util.List<com.pezbackend.orders.domain.model.valueobjects.AddOrderItemCommand> cmds = resource.items().stream()
+                .map(item -> new com.pezbackend.orders.domain.model.valueobjects.AddOrderItemCommand(
+                        item.productId(),
+                        item.quantity(),
+                        item.note(),
+                        item.waiterId()
+                ))
+                .toList();
+        orderCommandService.addItemsToOrderBatch(id, cmds, waiter);
+        return ResponseEntity.noContent().build();
+    }
+
     @PostMapping("/{orderId}/items/{itemId}/increase")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Void> increaseItemQuantity(

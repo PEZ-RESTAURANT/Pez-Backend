@@ -7,6 +7,7 @@ public record CustomerResource(
         Long id,
         String phone,
         String fullName,
+        String email,
         String birthday,
         String address,
         boolean dataConsentAccepted,

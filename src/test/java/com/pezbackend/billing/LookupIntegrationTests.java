@@ -96,10 +96,8 @@ public class LookupIntegrationTests {
             String doc = String.format("%011d", (long) (Math.random() * 10000000000L));
             String email = "lookup_admin_" + suffix + "@test.com";
 
-            OnboardingResource onboarding = new OnboardingResource(
-                    "Lookup Restaurant " + suffix, doc, "lookup_info_" + suffix + "@test.com", "999888777",
-                    email, "password123", "Admin", "Lookup"
-            );
+            OnboardingResource onboarding = new OnboardingResource("Lookup Restaurant " + suffix, doc, "lookup_info_" + suffix + "@test.com", "999888777",
+                    email, "password123", "Admin", "Lookup", "TEST-INVITE-CODE");
 
             String onboardingResponse = mockMvc.perform(post("/api/v1/restaurants/onboarding")
                             .contentType(MediaType.APPLICATION_JSON)

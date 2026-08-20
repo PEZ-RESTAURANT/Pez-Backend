@@ -108,7 +108,8 @@ public class PermissionsSeeder {
             new PermissionSeed("orders.transfer_order", "orders", "Trasladar pedido activo a otra mesa", true, true, true, false),
             new PermissionSeed("reservations.manage", "reservations", "Gestionar y operar reservas de mesas", true, true, false, false),
             new PermissionSeed("reservations.view", "reservations", "Visualizar reservas de mesas", true, true, true, false),
-            new PermissionSeed("orders.force_unlock_table", "orders", "Forzar la liberación del bloqueo de una mesa", true, true, false, false)
+            new PermissionSeed("orders.force_unlock_table", "orders", "Forzar la liberación del bloqueo de una mesa", true, true, false, false),
+            new PermissionSeed("billing.void_sale", "billing", "Anular documentos de venta y generar reverso", true, true, false, false)
     );
 
     /**

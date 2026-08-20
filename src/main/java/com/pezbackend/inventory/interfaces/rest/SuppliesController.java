@@ -66,7 +66,7 @@ public class SuppliesController {
     @PostMapping
     @RequiresPermission("catalog.edit_supplies_recipes")
     public ResponseEntity<SupplyResource> create(@RequestBody CreateSupplyResource resource) {
-        Supply supply = supplyCommandService.createSupply(resource.name(), resource.unit(), resource.minThreshold());
+        Supply supply = supplyCommandService.createSupply(resource.name(), resource.unit(), resource.minThreshold(), resource.criticalThreshold());
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(SupplyResourceFromEntityAssembler.toResourceFromEntity(supply));
     }
@@ -81,7 +81,7 @@ public class SuppliesController {
     @PutMapping("/{id}")
     @RequiresPermission("catalog.edit_supplies_recipes")
     public ResponseEntity<SupplyResource> update(@PathVariable Long id, @RequestBody UpdateSupplyResource resource) {
-        Supply supply = supplyCommandService.updateSupply(id, resource.name(), resource.unit(), resource.minThreshold());
+        Supply supply = supplyCommandService.updateSupply(id, resource.name(), resource.unit(), resource.minThreshold(), resource.criticalThreshold());
         return ResponseEntity.ok(SupplyResourceFromEntityAssembler.toResourceFromEntity(supply));
     }
 

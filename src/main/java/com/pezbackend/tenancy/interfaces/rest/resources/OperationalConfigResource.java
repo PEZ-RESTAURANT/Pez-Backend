@@ -4,5 +4,7 @@ public record OperationalConfigResource(
         Integer cutoffHour,
         Integer cutoffMinute,
         Integer unattendedThresholdMinutes,
-        Integer waitingDishesThresholdMinutes
+        Integer waitingDishesThresholdMinutes,
+        String annulmentNotificationPref,
+        String dailySummaryTime
 ) {}

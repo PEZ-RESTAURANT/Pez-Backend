@@ -308,14 +308,14 @@ public class InventoryIntegrationTests {
         eventCollector.clear();
 
         // Ajustar Lomo Fino a una cantidad que cruza por debajo de minThreshold (10 -> 1.5000, cruza minThreshold de 2.0000)
-        // Restar 8.5 kg
+        // Ajustar a 1.5 kg (absoluto)
         mockMvc.perform(post("/api/v1/inventory/supplies/" + supplyCarne.getId() + "/adjust")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"quantity\": -8.5000, \"reason\": \"Mermas por refrigeración fallida\"}")
+                        .content("{\"quantity\": 1.5000, \"reason\": \"Mermas por refrigeración fallida\"}")
                         .with(user(adminDetails)))
                 .andExpect(status().isOk());
 
-        // Validar nuevo stock de carne = 10 - 8.5 = 1.5 kg
+        // Validar nuevo stock de carne = 1.5 kg
         Supply finalCarne = supplyRepository.findById(supplyCarne.getId()).orElseThrow();
         assertThat(finalCarne.getCurrentStock()).isEqualByComparingTo("1.5000");
 

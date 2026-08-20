@@ -7,10 +7,14 @@ import java.math.BigDecimal;
  *
  * @param productId    ID del producto
  * @param supplyId     ID del insumo
+ * @param supplyName   Nombre del insumo
+ * @param supplyUnit   Unidad de medida del insumo
  * @param quantityUsed cantidad de insumo utilizada
  */
 public record RecipeResource(
         Long productId,
         Long supplyId,
+        String supplyName,
+        String supplyUnit,
         BigDecimal quantityUsed
 ) {}

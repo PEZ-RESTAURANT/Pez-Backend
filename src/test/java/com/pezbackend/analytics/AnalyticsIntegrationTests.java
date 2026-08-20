@@ -158,7 +158,7 @@ public class AnalyticsIntegrationTests {
         // 2. Crear mesa y comanda
         RestaurantTable table = restaurantTableRepository.save(new RestaurantTable(15, 4, "Salon Principal", 100, 100));
         Order order = orderCommandService.createOrder(table.getId(), "DINE_IN", null);
-        orderCommandService.addItemsToOrder(order.getId(), ceviche.getId(), 2, "Con ají limo", 1L, adminUser.getEmail());
+        orderCommandService.addItemsToOrder(order.getId(), ceviche.getId(), 2, "Con ají limo", adminUser.getId(), adminUser.getEmail());
 
         order = orderQueryService.getOrderById(order.getId());
         OrderItem item = order.getItems().get(0);

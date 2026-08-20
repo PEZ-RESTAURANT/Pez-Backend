@@ -14,6 +14,7 @@ public class RestaurantResourceFromEntityAssembler {
                 entity.getBusinessDocumentNumber(),
                 entity.getContactEmail(),
                 entity.getContactPhone(),
+                entity.getAddress(),
                 entity.getActive(),
                 entity.getCreatedAt()
         );

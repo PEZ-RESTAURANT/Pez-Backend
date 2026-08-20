@@ -16,6 +16,8 @@ public interface SaleRepository extends JpaRepository<Sale, Long> {
 
     List<Sale> findByDocumentType(DocumentType documentType);
 
+    java.util.Optional<Sale> findFirstByRestaurantIdAndDocumentTypeOrderByIdDesc(Long restaurantId, DocumentType documentType);
+
     @Query("""
     SELECT DISTINCT s FROM Sale s
     JOIN s.payments p

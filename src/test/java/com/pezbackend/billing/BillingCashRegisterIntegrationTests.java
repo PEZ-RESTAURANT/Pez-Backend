@@ -159,7 +159,8 @@ public class BillingCashRegisterIntegrationTests {
         Role adminRole = roleRepository.findByName(Roles.ADMIN)
                 .orElseGet(() -> roleRepository.save(new Role(Roles.ADMIN)));
 
-        userRepository.findByEmail("admin@pez.com").ifPresent(userRepository::delete);
+        jdbcTemplate.update("DELETE FROM user_roles WHERE user_id IN (SELECT id FROM user WHERE email = ?)", "admin@pez.com");
+        jdbcTemplate.update("DELETE FROM user WHERE email = ?", "admin@pez.com");
 
         adminUser = new User("admin@pez.com", "pw", "Admin", "User", true);
         adminUser.addRole(adminRole);
@@ -359,5 +360,89 @@ public class BillingCashRegisterIntegrationTests {
         // Verificar evento ForcedCloseByCutoff
         assertThat(eventCollector.getEvents().stream()
                 .anyMatch(e -> e.eventType().equals("ForcedCloseByCutoff"))).isTrue();
+    }
+
+    @Test
+    public void testConcurrentSaleTicketNumberGeneration() throws Exception {
+        // Setup two tables and two orders in ALL_DELIVERED
+        RestaurantTable table1 = restaurantTableRepository.save(new RestaurantTable(20, 1, "Zona A", 0, 0));
+        Order order1 = orderCommandService.createOrder(table1.getId(), "DINE_IN", null);
+        orderCommandService.addItemsToOrder(order1.getId(), productCeviche.getId(), 1, "Nota 1", 1L, "admin_user");
+        Order updatedOrder1 = orderQueryService.getOrderById(order1.getId());
+        OrderItem item1 = updatedOrder1.getItems().get(0);
+        mockMvc.perform(post("/api/v1/orders/" + order1.getId() + "/items/" + item1.getId() + "/status")
+                        .param("status", "DELIVERED")
+                        .with(user(adminDetails)))
+                .andExpect(status().isNoContent());
+
+        RestaurantTable table2 = restaurantTableRepository.save(new RestaurantTable(21, 1, "Zona A", 0, 0));
+        Order order2 = orderCommandService.createOrder(table2.getId(), "DINE_IN", null);
+        orderCommandService.addItemsToOrder(order2.getId(), productCeviche.getId(), 1, "Nota 2", 1L, "admin_user");
+        Order updatedOrder2 = orderQueryService.getOrderById(order2.getId());
+        OrderItem item2 = updatedOrder2.getItems().get(0);
+        mockMvc.perform(post("/api/v1/orders/" + order2.getId() + "/items/" + item2.getId() + "/status")
+                        .param("status", "DELIVERED")
+                        .with(user(adminDetails)))
+                .andExpect(status().isNoContent());
+
+        // We will execute the sale creation command concurrently using threads
+        java.util.concurrent.ExecutorService executor = java.util.concurrent.Executors.newFixedThreadPool(2);
+        java.util.concurrent.CyclicBarrier barrier = new java.util.concurrent.CyclicBarrier(2);
+
+        java.util.concurrent.Future<String> future1 = executor.submit(() -> {
+            try {
+                barrier.await();
+                String createSaleJson = String.format(
+                        "{\"orderId\": %d, \"documentType\": \"BOLETA\", \"customerDocumentNumber\": \"10000001\"}",
+                        order1.getId()
+                );
+                return mockMvc.perform(post("/api/v1/sales")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(createSaleJson)
+                                .with(user(adminDetails)))
+                        .andExpect(status().isOk())
+                        .andReturn().getResponse().getContentAsString();
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        });
+
+        java.util.concurrent.Future<String> future2 = executor.submit(() -> {
+            try {
+                barrier.await();
+                String createSaleJson = String.format(
+                        "{\"orderId\": %d, \"documentType\": \"BOLETA\", \"customerDocumentNumber\": \"10000002\"}",
+                        order2.getId()
+                );
+                return mockMvc.perform(post("/api/v1/sales")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(createSaleJson)
+                                .with(user(adminDetails)))
+                        .andExpect(status().isOk())
+                        .andReturn().getResponse().getContentAsString();
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        });
+
+        String saleId1 = future1.get();
+        String saleId2 = future2.get();
+
+        executor.shutdown();
+
+        Sale s1 = saleRepository.findById(Long.parseLong(saleId1)).orElseThrow();
+        Sale s2 = saleRepository.findById(Long.parseLong(saleId2)).orElseThrow();
+
+        assertThat(s1.getTicketNumber()).isNotNull();
+        assertThat(s2.getTicketNumber()).isNotNull();
+        assertThat(s1.getTicketNumber()).isNotEqualTo(s2.getTicketNumber());
+
+        // Verify correlatives are sequential
+        String num1 = s1.getTicketNumber().split("-")[1];
+        String num2 = s2.getTicketNumber().split("-")[1];
+        int val1 = Integer.parseInt(num1);
+        int val2 = Integer.parseInt(num2);
+        
+        assertThat(Math.abs(val1 - val2)).isEqualTo(1);
     }
 }

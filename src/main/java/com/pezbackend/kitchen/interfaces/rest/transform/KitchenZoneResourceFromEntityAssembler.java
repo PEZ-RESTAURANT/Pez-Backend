@@ -15,6 +15,6 @@ public class KitchenZoneResourceFromEntityAssembler {
      * @return el recurso DTO correspondiente
      */
     public static KitchenZoneResource toResourceFromEntity(KitchenZone entity) {
-        return new KitchenZoneResource(entity.getId(), entity.getName());
+        return new KitchenZoneResource(entity.getId(), entity.getName(), entity.isPrintingEnabled());
     }
 }

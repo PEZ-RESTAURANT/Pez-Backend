@@ -40,7 +40,13 @@ public class Sale extends AbstractTenantAggregateRoot<Sale> {
 
     private Long orderId;
 
+    private String ticketNumber;
+
     private BigDecimal total;
+
+    private String voidedReason;
+    private String voidedBy;
+    private java.time.LocalDateTime voidedAt;
 
     @OneToMany(mappedBy = "sale", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     private List<SaleDetail> details = new ArrayList<>();
@@ -117,5 +123,17 @@ public class Sale extends AbstractTenantAggregateRoot<Sale> {
 
         if (paymentTotal.compareTo(this.total) != 0)
             throw new PaymentMismatchException();
-    }
+     }
+
+     public void voidSale(String reason, String username) {
+         if (this.saleStatus == SaleStatus.VOIDED) {
+             throw new com.pezbackend.shared.domain.exceptions.BusinessRuleViolationException(
+                     "SALE_ALREADY_VOIDED", "La venta ya está anulada."
+             );
+         }
+         this.saleStatus = SaleStatus.VOIDED;
+         this.voidedReason = reason;
+         this.voidedBy = username;
+         this.voidedAt = java.time.LocalDateTime.now();
+     }
 }

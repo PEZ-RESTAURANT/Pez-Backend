@@ -30,6 +30,9 @@ public class Customer extends AbstractTenantAggregateRoot<Customer> {
     private String fullName;
 
     @Column
+    private String email;
+
+    @Column
     private LocalDate birthday;
 
     @Column(length = 255)
@@ -51,12 +54,6 @@ public class Customer extends AbstractTenantAggregateRoot<Customer> {
 
     /**
      * Construye un nuevo cliente afiliado.
-     *
-     * @param phone               número telefónico único del cliente
-     * @param fullName            nombre completo
-     * @param birthday            fecha de cumpleaños (opcional)
-     * @param address             dirección del cliente (opcional)
-     * @param dataConsentAccepted consentimiento explícito para el uso de datos (obligatorio true)
      */
     public Customer(String phone, String fullName, LocalDate birthday, String address, boolean dataConsentAccepted) {
         if (!dataConsentAccepted) {
@@ -69,6 +66,11 @@ public class Customer extends AbstractTenantAggregateRoot<Customer> {
         this.dataConsentAccepted = true;
         this.dataConsentDate = LocalDateTime.now();
         this.pointsBalance = 0;
+    }
+
+    public Customer(String phone, String fullName, String email, LocalDate birthday, String address, boolean dataConsentAccepted) {
+        this(phone, fullName, birthday, address, dataConsentAccepted);
+        this.email = email;
     }
 
     /**

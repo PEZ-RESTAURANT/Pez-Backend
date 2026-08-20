@@ -30,6 +30,9 @@ public class Restaurant extends AuditableModel {
     @Column(length = 50)
     private String contactPhone;
 
+    @Column(length = 255)
+    private String address;
+
     @NotNull
     @Column(nullable = false)
     private Boolean active = true;
@@ -42,5 +45,10 @@ public class Restaurant extends AuditableModel {
         this.contactEmail = contactEmail;
         this.contactPhone = contactPhone;
         this.active = true;
+    }
+
+    public Restaurant(String name, String businessDocumentNumber, String contactEmail, String contactPhone, String address) {
+        this(name, businessDocumentNumber, contactEmail, contactPhone);
+        this.address = address;
     }
 }

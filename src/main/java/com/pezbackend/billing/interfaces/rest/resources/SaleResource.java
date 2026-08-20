@@ -12,13 +12,21 @@ public record SaleResource(
         Long id,
         String name,
         Long staffId,
+        String cashierName,
+        String waiterName,
         String customerName,
         String customerDocumentNumber,
         DocumentType documentType,
         String saleStatus,
         Long orderId,
+        LocalDateTime orderCreatedAt,
+        LocalDateTime orderDeliveredAt,
+        String ticketNumber,
         BigDecimal total,
         LocalDateTime createdAt,
         List<SaleDetailResource> details,
-        List<SalePaymentResource> payments
+        List<SalePaymentResource> payments,
+        String voidedReason,
+        String voidedBy,
+        LocalDateTime voidedAt
 ) {}

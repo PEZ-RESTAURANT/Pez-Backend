@@ -266,4 +266,27 @@ public class OrdersIntegrationTests {
         org.assertj.core.api.Assertions.assertThatThrownBy(() -> commandService.deleteTable(anchor.getId()))
                 .isInstanceOf(com.pezbackend.shared.domain.exceptions.BusinessRuleViolationException.class);
     }
+
+    @Test
+    public void testAddItemsToOrderBatch() {
+        RestaurantTable table = commandService.createTable(80, 1, "Mesa 80", 100, 100);
+        Order order = commandService.createOrder(table.getId(), "DINE_IN", null);
+
+        List<com.pezbackend.orders.domain.model.valueobjects.AddOrderItemCommand> batchItems = List.of(
+                new com.pezbackend.orders.domain.model.valueobjects.AddOrderItemCommand(ceviche.getId(), 1, null, 1L),
+                new com.pezbackend.orders.domain.model.valueobjects.AddOrderItemCommand(ceviche.getId(), 1, "Con bastante ají", 1L),
+                new com.pezbackend.orders.domain.model.valueobjects.AddOrderItemCommand(ceviche.getId(), 1, null, 1L)
+        );
+
+        commandService.addItemsToOrderBatch(order.getId(), batchItems, "waiter_user");
+
+        Order finalOrder = queryService.getOrderById(order.getId());
+        assertThat(finalOrder.getItems()).hasSize(3);
+
+        long withNoteCount = finalOrder.getItems().stream().filter(i -> "Con bastante ají".equals(i.getNote())).count();
+        long withoutNoteCount = finalOrder.getItems().stream().filter(i -> i.getNote() == null).count();
+
+        assertThat(withNoteCount).isEqualTo(1);
+        assertThat(withoutNoteCount).isEqualTo(2);
+    }
 }

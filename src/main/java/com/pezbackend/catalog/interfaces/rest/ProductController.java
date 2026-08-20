@@ -35,8 +35,9 @@ import com.pezbackend.catalog.interfaces.rest.resources.AddRecipeItemResource;
 import com.pezbackend.catalog.interfaces.rest.resources.RecipeResource;
 import com.pezbackend.catalog.interfaces.rest.transform.RecipeResourceFromEntityAssembler;
 import com.pezbackend.catalog.infrastructure.persistence.jpa.repositories.CategoryRepository;
-
 import com.pezbackend.catalog.domain.services.ProductKitchenZoneQueryService;
+import com.pezbackend.inventory.infrastructure.persistence.jpa.repositories.SupplyRepository;
+import com.pezbackend.inventory.domain.model.entities.Supply;
 
 @RestController
 @RequestMapping("/api/v1/products")
@@ -49,6 +50,7 @@ public class ProductController {
     private final RecipeCommandService recipeCommandService;
     private final RecipeQueryService recipeQueryService;
     private final CategoryRepository categoryRepository;
+    private final SupplyRepository supplyRepository;
 
     public ProductController(ProductCommandService commandService,
                              ProductQueryService queryService,
@@ -56,7 +58,8 @@ public class ProductController {
                              ProductKitchenZoneQueryService productKitchenZoneQueryService,
                              RecipeCommandService recipeCommandService,
                              RecipeQueryService recipeQueryService,
-                             CategoryRepository categoryRepository) {
+                             CategoryRepository categoryRepository,
+                             SupplyRepository supplyRepository) {
         this.commandService = commandService;
         this.queryService = queryService;
         this.productKitchenZoneCommandService = productKitchenZoneCommandService;
@@ -64,6 +67,7 @@ public class ProductController {
         this.recipeCommandService = recipeCommandService;
         this.recipeQueryService = recipeQueryService;
         this.categoryRepository = categoryRepository;
+        this.supplyRepository = supplyRepository;
     }
 
     private void validateCategoryTenant(Category category) {
@@ -120,9 +124,11 @@ public class ProductController {
             products = queryService.handle(new GetAllProductsQuery());
         }
 
+        java.util.Map<Long, Long> zoneMap = productKitchenZoneQueryService.getAllProductZoneIds();
+
         return ResponseEntity.ok(
                 products.stream()
-                        .map(ProductResourceFromEntityAssembler::toResourceFromEntity)
+                        .map(p -> ProductResourceFromEntityAssembler.toResourceFromEntity(p, zoneMap.get(p.getId())))
                         .toList()
         );
     }
@@ -134,8 +140,10 @@ public class ProductController {
         Product product = queryService.handle(new GetProductByIdQuery(id));
         validateProductTenant(product);
 
+        Long zoneId = productKitchenZoneQueryService.getZoneIdForProduct(id).orElse(null);
+
         return ResponseEntity.ok(
-                ProductResourceFromEntityAssembler.toResourceFromEntity(product)
+                ProductResourceFromEntityAssembler.toResourceFromEntity(product, zoneId)
         );
     }
 
@@ -153,9 +161,11 @@ public class ProductController {
                 new GetProductsByCategoryQuery(category)
         );
 
+        java.util.Map<Long, Long> zoneMap = productKitchenZoneQueryService.getAllProductZoneIds();
+
         return ResponseEntity.ok(
                 products.stream()
-                        .map(ProductResourceFromEntityAssembler::toResourceFromEntity)
+                        .map(p -> ProductResourceFromEntityAssembler.toResourceFromEntity(p, zoneMap.get(p.getId())))
                         .toList()
         );
     }
@@ -247,7 +257,12 @@ public class ProductController {
         List<Recipe> recipe = recipeQueryService.getRecipeForProduct(id);
         return ResponseEntity.ok(
                 recipe.stream()
-                        .map(RecipeResourceFromEntityAssembler::toResourceFromEntity)
+                        .map(item -> {
+                            java.util.Optional<com.pezbackend.inventory.domain.model.entities.Supply> supplyOpt = supplyRepository.findById(item.getSupplyId());
+                            String supplyName = supplyOpt.map(com.pezbackend.inventory.domain.model.entities.Supply::getName).orElse("Insumo desconocido");
+                            String supplyUnit = supplyOpt.map(com.pezbackend.inventory.domain.model.entities.Supply::getUnit).orElse("u");
+                            return RecipeResourceFromEntityAssembler.toResourceFromEntity(item, supplyName, supplyUnit);
+                        })
                         .toList()
         );
     }

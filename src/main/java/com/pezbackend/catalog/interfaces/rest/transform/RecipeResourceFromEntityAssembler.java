@@ -14,10 +14,12 @@ public class RecipeResourceFromEntityAssembler {
      * @param entity la entidad Recipe
      * @return el recurso DTO correspondiente
      */
-    public static RecipeResource toResourceFromEntity(Recipe entity) {
+    public static RecipeResource toResourceFromEntity(Recipe entity, String supplyName, String supplyUnit) {
         return new RecipeResource(
                 entity.getProductId(),
                 entity.getSupplyId(),
+                supplyName,
+                supplyUnit,
                 entity.getQuantityUsed()
         );
     }

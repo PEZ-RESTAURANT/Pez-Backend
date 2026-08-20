@@ -81,6 +81,8 @@ public class WebSecurityConfiguration {
                         .requestMatchers("/api/v1/users/signup", "/api/v1/users/signup/**").permitAll()
                         .requestMatchers("/api/v1/users/signin", "/api/v1/users/signin/**").permitAll()
                         .requestMatchers("/api/v1/restaurants/onboarding", "/api/v1/restaurants/onboarding/**").permitAll()
+                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/staff/invites/*").permitAll()
+                        .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/staff/invites/*/accept").permitAll()
                         .requestMatchers("/api/v1/auth/**").permitAll()
                         .requestMatchers(
                                 "/api/v1/users/available-roles",

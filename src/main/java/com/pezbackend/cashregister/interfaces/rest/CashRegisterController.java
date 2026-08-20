@@ -29,11 +29,14 @@ public class CashRegisterController {
 
     private final CashRegisterCommandService commandService;
     private final CashRegisterQueryService queryService;
+    private final CashRegisterResourceAssembler assembler;
 
     public CashRegisterController(CashRegisterCommandService commandService,
-                                   CashRegisterQueryService queryService) {
+                                   CashRegisterQueryService queryService,
+                                   CashRegisterResourceAssembler assembler) {
         this.commandService = commandService;
         this.queryService = queryService;
+        this.assembler = assembler;
     }
 
     // Abrir caja
@@ -81,7 +84,7 @@ public class CashRegisterController {
     @RequiresPermission("cashregister.view")
     public ResponseEntity<CashRegisterResource> getCurrentCashRegister() {
         CashRegister cashRegister = queryService.handle(new GetCurrentCashRegisterQuery());
-        return ResponseEntity.ok(CashRegisterResourceAssembler.toResource(cashRegister));
+        return ResponseEntity.ok(assembler.toResource(cashRegister));
     }
 
     // Obtener caja por id
@@ -89,7 +92,7 @@ public class CashRegisterController {
     @RequiresPermission("cashregister.view")
     public ResponseEntity<CashRegisterResource> getCashRegisterById(@PathVariable Long id) {
         CashRegister cashRegister = queryService.handle(new GetCashRegisterByIdQuery(id));
-        return ResponseEntity.ok(CashRegisterResourceAssembler.toResource(cashRegister));
+        return ResponseEntity.ok(assembler.toResource(cashRegister));
     }
 
     // Movimientos filtrados por tipo
@@ -137,7 +140,7 @@ public class CashRegisterController {
 
         return ResponseEntity.ok(
                 cashRegisters.stream()
-                        .map(CashRegisterResourceAssembler::toResource)
+                        .map(assembler::toResource)
                         .toList()
         );
     }

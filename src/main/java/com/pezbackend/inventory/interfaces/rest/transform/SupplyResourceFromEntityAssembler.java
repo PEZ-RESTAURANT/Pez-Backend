@@ -20,7 +20,9 @@ public class SupplyResourceFromEntityAssembler {
                 entity.getName(),
                 entity.getUnit(),
                 entity.getCurrentStock(),
-                entity.getMinThreshold()
+                entity.getMinThreshold(),
+                entity.getCriticalThreshold(),
+                entity.getStockLevel() != null ? entity.getStockLevel().name() : null
         );
     }
 }

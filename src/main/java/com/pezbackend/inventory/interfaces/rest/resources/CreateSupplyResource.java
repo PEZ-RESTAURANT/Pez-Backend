@@ -8,5 +8,6 @@ import java.math.BigDecimal;
 public record CreateSupplyResource(
         String name,
         String unit,
-        BigDecimal minThreshold
+        BigDecimal minThreshold,
+        BigDecimal criticalThreshold
 ) {}

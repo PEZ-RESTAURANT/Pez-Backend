@@ -4,6 +4,7 @@ import com.pezbackend.catalog.domain.model.entities.Recipe;
 import com.pezbackend.catalog.infrastructure.persistence.jpa.repositories.RecipeRepository;
 import com.pezbackend.inventory.domain.model.entities.StockMovement;
 import com.pezbackend.inventory.domain.model.entities.Supply;
+import com.pezbackend.inventory.domain.model.entities.StockLevel;
 import com.pezbackend.inventory.domain.model.events.LowStockAlertTriggered;
 import com.pezbackend.inventory.domain.model.events.SupplyDeductedBySale;
 import com.pezbackend.inventory.domain.model.events.StockMismatchDetected;
@@ -88,9 +89,13 @@ public class InventoryEventListener {
                         eventPublisher.publishEvent(new SupplyDeductedBySale(supply.getId(), event.productId(), totalDeduction, newStock));
 
                         // Publicar alerta de stock bajo
-                        if (supply.getMinThreshold() != null && newStock.compareTo(supply.getMinThreshold()) < 0 && oldStock.compareTo(supply.getMinThreshold()) >= 0) {
-                            log.warn("Inventory: Low stock alert triggered for supply {}.", supply.getName());
-                            eventPublisher.publishEvent(new LowStockAlertTriggered(supply.getId(), supply.getName(), newStock, supply.getMinThreshold()));
+                        StockLevel oldLevel = supply.getStockLevelFor(oldStock);
+                        StockLevel newLevel = supply.getStockLevelFor(newStock);
+                        if (oldLevel != newLevel && (newLevel == StockLevel.AGOTADO || newLevel == StockLevel.CRITICO || newLevel == StockLevel.BAJO)) {
+                            if (newLevel.ordinal() < oldLevel.ordinal()) {
+                                log.warn("Inventory: Low stock alert triggered for supply {} (Level: {}).", supply.getName(), newLevel);
+                                eventPublisher.publishEvent(new LowStockAlertTriggered(supply.getId(), supply.getName(), newStock, supply.getMinThreshold(), newLevel));
+                            }
                         }
 
                         // Publicar descuadre si el stock queda en negativo

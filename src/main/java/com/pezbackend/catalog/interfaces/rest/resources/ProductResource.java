@@ -8,5 +8,6 @@ public record ProductResource(
         BigDecimal price,
         CategoryResource category,
         Integer estimatedPrepTimeMinutes,
-        Boolean active
+        Boolean active,
+        Long kitchenZoneId
 ) {}

@@ -49,7 +49,8 @@ public class KitchenZonesController {
     @PostMapping
     @RequiresPermission("catalog.edit_kitchen_zones")
     public ResponseEntity<KitchenZoneResource> createZone(@RequestBody CreateKitchenZoneResource resource) {
-        KitchenZone zone = commandService.createZone(resource.name());
+        boolean printingEnabled = resource.printingEnabled() != null ? resource.printingEnabled() : false;
+        KitchenZone zone = commandService.createZone(resource.name(), printingEnabled);
         return ResponseEntity.ok(
                 KitchenZoneResourceFromEntityAssembler.toResourceFromEntity(zone)
         );
@@ -68,7 +69,8 @@ public class KitchenZonesController {
             @PathVariable Long id,
             @RequestBody CreateKitchenZoneResource resource
     ) {
-        KitchenZone zone = commandService.updateZone(id, resource.name());
+        boolean printingEnabled = resource.printingEnabled() != null ? resource.printingEnabled() : false;
+        KitchenZone zone = commandService.updateZone(id, resource.name(), printingEnabled);
         return ResponseEntity.ok(
                 KitchenZoneResourceFromEntityAssembler.toResourceFromEntity(zone)
         );

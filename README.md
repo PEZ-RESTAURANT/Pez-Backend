@@ -166,9 +166,11 @@ git clone https://github.com/tuusuario/pez-backend.git
 CREATE DATABASE pez;
 ```
 
-## 3. Configurar application.properties
+## 3. Configurar application.properties / Variables de Entorno
 
-Configurar usuario y contraseña de MySQL.
+1. Configurar usuario y contraseña de MySQL.
+2. Para que la aplicación pueda iniciar, es **obligatorio** configurar un código de invitación para el registro de restaurantes. En desarrollo, esto se maneja mediante el perfil `dev` (`application-dev.properties` creado automáticamente en local con un código de prueba). En producción, se debe setear la siguiente variable de entorno:
+   * `RESTAURANT_ONBOARDING_INVITE_CODE`: Código secreto requerido para el onboarding público. Si esta variable no está presente en el entorno, la aplicación fallará al arrancar por diseño de seguridad.
 
 ## 4. Ejecutar el proyecto
 

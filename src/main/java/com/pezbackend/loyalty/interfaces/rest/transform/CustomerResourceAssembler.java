@@ -13,6 +13,7 @@ public class CustomerResourceAssembler {
                 customer.getId(),
                 customer.getPhone(),
                 customer.getFullName(),
+                customer.getEmail(),
                 customer.getBirthday() != null ? customer.getBirthday().toString() : null,
                 customer.getAddress(),
                 customer.isDataConsentAccepted(),

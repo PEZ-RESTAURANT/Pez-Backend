@@ -2,6 +2,7 @@ package com.pezbackend.inventory.application.internal.services;
 
 import com.pezbackend.inventory.domain.model.entities.StockMovement;
 import com.pezbackend.inventory.domain.model.entities.Supply;
+import com.pezbackend.inventory.domain.model.entities.StockLevel;
 import com.pezbackend.inventory.domain.model.events.LowStockAlertTriggered;
 import com.pezbackend.inventory.domain.model.events.StockAdjustedManually;
 import com.pezbackend.inventory.domain.model.events.StockMismatchDetected;
@@ -31,7 +32,7 @@ public class SupplyCommandServiceImpl implements SupplyCommandService {
     private final ApplicationEventPublisher eventPublisher;
 
     @Override
-    public Supply createSupply(String name, String unit, BigDecimal minThreshold) {
+    public Supply createSupply(String name, String unit, BigDecimal minThreshold, BigDecimal criticalThreshold) {
         if (name == null || name.isBlank()) {
             throw new BusinessRuleViolationException("INVALID_SUPPLY_NAME", "El nombre del insumo no puede estar vacío.");
         }
@@ -41,13 +42,16 @@ public class SupplyCommandServiceImpl implements SupplyCommandService {
         if (minThreshold != null && minThreshold.compareTo(BigDecimal.ZERO) < 0) {
             throw new BusinessRuleViolationException("INVALID_MIN_THRESHOLD", "El umbral mínimo no puede ser negativo.");
         }
+        if (criticalThreshold != null && criticalThreshold.compareTo(BigDecimal.ZERO) < 0) {
+            throw new BusinessRuleViolationException("INVALID_CRITICAL_THRESHOLD", "El umbral crítico no puede ser negativo.");
+        }
 
-        Supply supply = new Supply(name.trim(), unit != null ? unit.trim() : null, minThreshold);
+        Supply supply = new Supply(name.trim(), unit != null ? unit.trim() : null, minThreshold, criticalThreshold);
         return supplyRepository.save(supply);
     }
 
     @Override
-    public Supply updateSupply(Long id, String name, String unit, BigDecimal minThreshold) {
+    public Supply updateSupply(Long id, String name, String unit, BigDecimal minThreshold, BigDecimal criticalThreshold) {
         Supply supply = supplyRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("SUPPLY_NOT_FOUND", "Insumo no encontrado con ID: " + id));
 
@@ -64,10 +68,14 @@ public class SupplyCommandServiceImpl implements SupplyCommandService {
         if (minThreshold != null && minThreshold.compareTo(BigDecimal.ZERO) < 0) {
             throw new BusinessRuleViolationException("INVALID_MIN_THRESHOLD", "El umbral mínimo no puede ser negativo.");
         }
+        if (criticalThreshold != null && criticalThreshold.compareTo(BigDecimal.ZERO) < 0) {
+            throw new BusinessRuleViolationException("INVALID_CRITICAL_THRESHOLD", "El umbral crítico no puede ser negativo.");
+        }
 
         supply.setName(name.trim());
         supply.setUnit(unit != null ? unit.trim() : null);
         supply.setMinThreshold(minThreshold);
+        supply.setCriticalThreshold(criticalThreshold);
 
         return supplyRepository.save(supply);
     }
@@ -95,39 +103,60 @@ public class SupplyCommandServiceImpl implements SupplyCommandService {
 
         StockMovement movement = new StockMovement(id, StockMovementType.RESTOCK, quantity, registeredBy, "Reabastecimiento de insumo");
         stockMovementRepository.save(movement);
+
+        StockLevel oldLevel = supply.getStockLevelFor(oldStock);
+        StockLevel newLevel = supply.getStockLevelFor(newStock);
+        if (oldLevel != newLevel && (newLevel == StockLevel.AGOTADO || newLevel == StockLevel.CRITICO || newLevel == StockLevel.BAJO)) {
+            if (newLevel.ordinal() < oldLevel.ordinal()) {
+                eventPublisher.publishEvent(new LowStockAlertTriggered(id, supply.getName(), newStock, supply.getMinThreshold(), newLevel));
+            }
+        }
     }
 
     @Override
-    public void adjustManual(Long id, BigDecimal quantity, String reason, String registeredBy) {
+    public void adjustManual(Long id, BigDecimal targetStock, String reason, String registeredBy) {
         Supply supply = supplyRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("SUPPLY_NOT_FOUND", "Insumo no encontrado con ID: " + id));
 
-        if (quantity == null || quantity.compareTo(BigDecimal.ZERO) == 0) {
-            throw new BusinessRuleViolationException("INVALID_QUANTITY", "La cantidad de ajuste no puede ser cero.");
+        if (targetStock == null || targetStock.compareTo(BigDecimal.ZERO) < 0) {
+            throw new BusinessRuleViolationException("INVALID_QUANTITY", "La cantidad física actual no puede ser menor que cero.");
         }
         if (reason == null || reason.isBlank()) {
             throw new BusinessRuleViolationException("REASON_REQUIRED", "Debe proporcionar un motivo para realizar el ajuste manual.");
         }
 
         BigDecimal oldStock = supply.getCurrentStock();
-        BigDecimal newStock = oldStock.add(quantity);
-        supply.setCurrentStock(newStock);
+        BigDecimal delta = targetStock.subtract(oldStock);
+
+        supply.setCurrentStock(targetStock);
         supplyRepository.save(supply);
 
-        StockMovement movement = new StockMovement(id, StockMovementType.MANUAL_ADJUSTMENT, quantity, registeredBy, reason);
+        // Format detailed reason containing previous value, new value and net difference
+        String formattedReason = String.format("Ajuste manual: %s → %s (%s%s) | Motivo: %s",
+                oldStock.stripTrailingZeros().toPlainString(),
+                targetStock.stripTrailingZeros().toPlainString(),
+                delta.compareTo(BigDecimal.ZERO) >= 0 ? "+" : "",
+                delta.stripTrailingZeros().toPlainString(),
+                reason
+        );
+
+        StockMovement movement = new StockMovement(id, StockMovementType.MANUAL_ADJUSTMENT, delta, registeredBy, formattedReason);
         stockMovementRepository.save(movement);
 
-        // Publicar eventos de dominio correspondientes
-        eventPublisher.publishEvent(new StockAdjustedManually(id, quantity, newStock, registeredBy, reason));
+        // Publicar eventos de dominio correspondientes con la diferencia calculada
+        eventPublisher.publishEvent(new StockAdjustedManually(id, delta, targetStock, registeredBy, reason));
 
-        // Alerta de stock bajo si cruza el umbral
-        if (supply.getMinThreshold() != null && newStock.compareTo(supply.getMinThreshold()) < 0 && oldStock.compareTo(supply.getMinThreshold()) >= 0) {
-            eventPublisher.publishEvent(new LowStockAlertTriggered(id, supply.getName(), newStock, supply.getMinThreshold()));
+        StockLevel oldLevel = supply.getStockLevelFor(oldStock);
+        StockLevel newLevel = supply.getStockLevelFor(targetStock);
+        if (oldLevel != newLevel && (newLevel == StockLevel.AGOTADO || newLevel == StockLevel.CRITICO || newLevel == StockLevel.BAJO)) {
+            if (newLevel.ordinal() < oldLevel.ordinal()) {
+                eventPublisher.publishEvent(new LowStockAlertTriggered(id, supply.getName(), targetStock, supply.getMinThreshold(), newLevel));
+            }
         }
 
         // Alerta de descuadre si queda en negativo
-        if (newStock.compareTo(BigDecimal.ZERO) < 0) {
-            eventPublisher.publishEvent(new StockMismatchDetected(id, supply.getName(), quantity.abs(), oldStock));
+        if (targetStock.compareTo(BigDecimal.ZERO) < 0) {
+            eventPublisher.publishEvent(new StockMismatchDetected(id, supply.getName(), delta.abs(), oldStock));
         }
     }
 }

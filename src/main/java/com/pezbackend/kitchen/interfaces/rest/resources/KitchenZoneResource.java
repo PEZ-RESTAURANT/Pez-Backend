@@ -5,5 +5,6 @@ package com.pezbackend.kitchen.interfaces.rest.resources;
  *
  * @param id   ID de la zona de cocina
  * @param name nombre de la zona
+ * @param printingEnabled indicador de si las comandas de esta zona se imprimen en ticket físico
  */
-public record KitchenZoneResource(Long id, String name) {}
+public record KitchenZoneResource(Long id, String name, boolean printingEnabled) {}

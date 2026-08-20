@@ -13,7 +13,7 @@ import java.time.LocalDate;
  */
 public interface LoyaltyCommandService {
 
-    Customer registerCustomer(String phone, String fullName, LocalDate birthday, String address, boolean dataConsentAccepted);
+    Customer registerCustomer(String phone, String fullName, String email, LocalDate birthday, String address, boolean dataConsentAccepted);
 
     void deleteCustomer(Long id);
 
@@ -22,4 +22,6 @@ public interface LoyaltyCommandService {
     PointsTransaction redeemPoints(Long customerId, int points, LocalDate date);
 
     LoyaltyConfig updateConfig(BigDecimal minPurchaseAmountForPoints, BigDecimal pointsPerCurrencyUnit, int reviewSatisfactionThreshold, String googleReviewUrl);
+
+    void sendManualPromotion(Long customerId, String subject, String message);
 }

@@ -35,6 +35,9 @@ public class Supply extends AbstractTenantBaseEntity {
     @Column(name = "min_threshold", precision = 15, scale = 4)
     private BigDecimal minThreshold;
 
+    @Column(name = "critical_threshold", precision = 15, scale = 4)
+    private BigDecimal criticalThreshold;
+
     /**
      * Constructor requerido por la especificación de JPA. No debe ser utilizado directamente.
      */
@@ -42,15 +45,48 @@ public class Supply extends AbstractTenantBaseEntity {
 
     /**
      * Construye un nuevo insumo con stock inicial en cero.
-     *
-     * @param name         nombre descriptivo del insumo
-     * @param unit         unidad de medida (ej: kg, L, un)
-     * @param minThreshold umbral mínimo de stock para alertas
      */
     public Supply(String name, String unit, BigDecimal minThreshold) {
         this.name = name;
         this.unit = unit;
         this.currentStock = BigDecimal.ZERO;
         this.minThreshold = minThreshold;
+    }
+
+    public Supply(String name, String unit, BigDecimal minThreshold, BigDecimal criticalThreshold) {
+        this.name = name;
+        this.unit = unit;
+        this.currentStock = BigDecimal.ZERO;
+        this.minThreshold = minThreshold;
+        this.criticalThreshold = criticalThreshold;
+    }
+
+    public StockLevel getStockLevel() {
+        return getStockLevelFor(this.currentStock);
+    }
+
+    public StockLevel getStockLevelFor(BigDecimal stock) {
+        if (stock == null) return StockLevel.ESTABLE;
+        if (stock.compareTo(BigDecimal.ZERO) <= 0) {
+            return StockLevel.AGOTADO;
+        }
+        BigDecimal crit = getEffectiveCriticalThreshold();
+        if (stock.compareTo(crit) <= 0) {
+            return StockLevel.CRITICO;
+        }
+        if (minThreshold != null && stock.compareTo(minThreshold) <= 0) {
+            return StockLevel.BAJO;
+        }
+        return StockLevel.ESTABLE;
+    }
+
+    public BigDecimal getEffectiveCriticalThreshold() {
+        if (criticalThreshold != null) {
+            return criticalThreshold;
+        }
+        if (minThreshold != null) {
+            return minThreshold.multiply(new BigDecimal("0.25")).setScale(4, java.math.RoundingMode.HALF_UP);
+        }
+        return BigDecimal.ZERO;
     }
 }

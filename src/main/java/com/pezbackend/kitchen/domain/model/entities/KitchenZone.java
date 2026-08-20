@@ -24,6 +24,9 @@ public class KitchenZone extends AbstractTenantBaseEntity {
     @Column(nullable = false, unique = true, length = 100)
     private String name;
 
+    @Column(name = "printing_enabled", nullable = false)
+    private boolean printingEnabled = false;
+
     /**
      * Constructor requerido por la especificación de JPA. No debe ser utilizado directamente.
      */

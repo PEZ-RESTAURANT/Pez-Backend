@@ -30,18 +30,18 @@ public class AuthController {
     private final UserRepository userRepository;
     private final PasswordResetTokenRepository passwordResetTokenRepository;
     private final HashingService hashingService;
-    private final EmailService emailService;
+    private final com.pezbackend.shared.infrastructure.notification.EmailNotificationChannel emailNotificationChannel;
 
     public AuthController(
             UserRepository userRepository,
             PasswordResetTokenRepository passwordResetTokenRepository,
             @org.springframework.beans.factory.annotation.Qualifier("hashingServiceImpl") HashingService hashingService,
-            EmailService emailService
+            com.pezbackend.shared.infrastructure.notification.EmailNotificationChannel emailNotificationChannel
     ) {
         this.userRepository = userRepository;
         this.passwordResetTokenRepository = passwordResetTokenRepository;
         this.hashingService = hashingService;
-        this.emailService = emailService;
+        this.emailNotificationChannel = emailNotificationChannel;
     }
 
     public void resetRateLimits() {
@@ -220,45 +220,35 @@ public class AuthController {
     }
 
     private void sendResetEmail(String to, String firstName, String resetUrl) {
-        String subject = "Restablecer tu contraseña en PEZ";
-        String htmlContent = "<div style=\"font-family: 'Segoe UI', Roboto, Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #1f2937;\">" +
-                "  <div style=\"text-align: center; margin-bottom: 25px;\">" +
-                "    <h1 style=\"color: #2563eb; font-size: 26px; font-weight: 800; margin: 0;\">Restablecer Contraseña</h1>" +
-                "    <p style=\"color: #6b7280; font-size: 14px; margin-top: 5px;\">Sistema de Gestión PEZ</p>" +
-                "  </div>" +
-                "  <div style=\"background-color: #f9fafb; border-radius: 16px; padding: 30px; border: 1px solid #f3f4f6;\">" +
-                "    <p style=\"font-size: 16px;\">Hola, <strong>" + firstName + "</strong>:</p>" +
-                "    <p style=\"font-size: 15px; line-height: 1.5; color: #4b5563;\">Hemos recibido una solicitud para restablecer la contraseña de tu cuenta de empleado de PEZ.</p>" +
-                "    <p style=\"font-size: 15px; line-height: 1.5; color: #4b5563;\">Haz clic en el siguiente botón para restablecer tu contraseña:</p>" +
-                "    <div style=\"text-align: center; margin: 30px 0;\">" +
-                "      <a href=\"" + resetUrl + "\" style=\"background-color: #2563eb; color: #ffffff; padding: 12px 30px; text-decoration: none; border-radius: 10px; font-weight: bold; display: inline-block; box-shadow: 0 4px 6px -1px rgba(37,99,235,0.2);\">Restablecer Contraseña</a>" +
-                "    </div>" +
-                "    <p style=\"font-size: 12px; color: #9ca3af; text-align: center; margin-top: 20px;\">Este enlace es de un solo uso y expirará en 30 minutos.</p>" +
-                "    <p style=\"font-size: 12px; color: #9ca3af; text-align: center;\">Si no solicitaste este cambio, puedes ignorar este correo de forma segura.</p>" +
-                "  </div>" +
-                "</div>";
-
-        emailService.sendEmail(to, subject, htmlContent);
+        Map<String, Object> model = Map.of(
+            "title", "Restablecer Contraseña",
+            "subtitle", "Sistema de Gestión Al Toque",
+            "greeting", "Hola, " + firstName + ":",
+            "paragraphs", List.of(
+                "Hemos recibido una solicitud para restablecer la contraseña de tu cuenta de empleado de Al Toque.",
+                "Haz clic en el siguiente botón para continuar:"
+            ),
+            "buttonText", "Restablecer Contraseña",
+            "buttonUrl", resetUrl,
+            "isWarning", true,
+            "alertText", "Este enlace es de un solo uso y expirará en 30 minutos. Si no solicitaste este cambio, puedes ignorar este correo de forma segura."
+        );
+        emailNotificationChannel.send(to, "Restablecer tu contraseña en Al Toque", "email-template", model);
     }
 
     private void sendConfirmationEmail(String to, String firstName) {
-        String subject = "Tu contraseña ha sido restablecida - PEZ";
-        String htmlContent = "<div style=\"font-family: 'Segoe UI', Roboto, Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #1f2937;\">" +
-                "  <div style=\"text-align: center; margin-bottom: 25px;\">" +
-                "    <h1 style=\"color: #10b981; font-size: 26px; font-weight: 800; margin: 0;\">Contraseña Cambiada</h1>" +
-                "    <p style=\"color: #6b7280; font-size: 14px; margin-top: 5px;\">Sistema de Gestión PEZ</p>" +
-                "  </div>" +
-                "  <div style=\"background-color: #f9fafb; border-radius: 16px; padding: 30px; border: 1px solid #f3f4f6;\">" +
-                "    <p style=\"font-size: 16px;\">Hola, <strong>" + firstName + "</strong>:</p>" +
-                "    <p style=\"font-size: 15px; line-height: 1.5; color: #4b5563;\">Te informamos que la contraseña de tu cuenta de empleado de PEZ ha sido restablecida exitosamente.</p>" +
-                "    <p style=\"font-size: 15px; line-height: 1.5; color: #4b5563;\">Si realizaste este cambio, puedes ignorar este correo.</p>" +
-                "    <div style=\"background-color: #fef3c7; border: 1px solid #fde68a; border-radius: 8px; padding: 15px; margin-top: 25px;\">" +
-                "      <p style=\"font-size: 13px; color: #b45309; margin: 0; font-weight: bold;\">⚠️ IMPORTANTE:</p>" +
-                "      <p style=\"font-size: 13px; color: #b45309; margin: 5px 0 0 0;\">Si tú NO solicitaste ni realizaste este cambio, por favor contacta de inmediato con el administrador del sistema.</p>" +
-                "    </div>" +
-                "  </div>" +
-                "</div>";
-
-        emailService.sendEmail(to, subject, htmlContent);
+        Map<String, Object> model = Map.of(
+            "title", "Contraseña Cambiada",
+            "subtitle", "Sistema de Gestión Al Toque",
+            "greeting", "Hola, " + firstName + ":",
+            "paragraphs", List.of(
+                "Te informamos que la contraseña de tu cuenta de empleado de Al Toque ha sido restablecida exitosamente.",
+                "Si realizaste este cambio, puedes ignorar este correo."
+            ),
+            "isSuccess", true,
+            "alertTitle", "⚠️ IMPORTANTE:",
+            "alertText", "Si tú NO solicitaste ni realizaste este cambio, por favor contacta de inmediato con el administrador del sistema."
+        );
+        emailNotificationChannel.send(to, "Tu contraseña ha sido restablecida - Al Toque", "email-template", model);
     }
 }

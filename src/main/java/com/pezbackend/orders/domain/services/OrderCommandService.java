@@ -52,6 +52,11 @@ public interface OrderCommandService {
     void addItemsToOrder(Long orderId, Long productId, Integer quantity, String note, Long waiterId, String waiterUsername);
 
     /**
+     * Comanda un lote de platos a un pedido de forma atómica en una única transacción.
+     */
+    void addItemsToOrderBatch(Long orderId, java.util.List<com.pezbackend.orders.domain.model.valueobjects.AddOrderItemCommand> items, String waiterUsername);
+
+    /**
      * Incrementa en 1 la cantidad de un ítem comandado.
      */
     void increaseItemQuantity(Long orderId, Long itemId, String executorUsername);
@@ -87,6 +92,11 @@ public interface OrderCommandService {
      * Emite la precuenta y cambia el estado a ISSUED_UNPAID (transición ALL_DELIVERED -> ISSUED_UNPAID).
      */
     void issueReceipt(Long orderId, String executorUsername);
+
+    /**
+     * Revierte la emisión de la precuenta regresando el estado del pedido y la mesa a ALL_DELIVERED.
+     */
+    void revertReceipt(Long orderId);
 
     /**
      * Registra el pago del pedido (transición ISSUED_UNPAID -> PAID -> FREE automático).

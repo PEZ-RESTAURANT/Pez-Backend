@@ -14,6 +14,7 @@ import com.pezbackend.tenancy.domain.model.aggregates.Restaurant;
 import com.pezbackend.tenancy.domain.model.commands.OnboardingCommand;
 import com.pezbackend.tenancy.infrastructure.persistence.jpa.repositories.RestaurantRepository;
 import com.pezbackend.tenancy.interfaces.rest.resources.OnboardingResource;
+import com.pezbackend.tenancy.interfaces.rest.RestaurantController;
 import com.pezbackend.billing.infrastructure.persistence.jpa.repositories.PaymentMethodConfigRepository;
 import com.pezbackend.catalog.infrastructure.persistence.jpa.repositories.CategoryRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -46,6 +47,9 @@ public class TenantIsolationIntegrationTests {
     @Autowired
     private MockMvc mockMvc;
 
+    @Autowired
+    private RestaurantController restaurantController;
+
     private final ObjectMapper objectMapper = new ObjectMapper()
             .registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
 
@@ -72,10 +76,8 @@ public class TenantIsolationIntegrationTests {
     @Test
     public void testOnboardingFlow() throws Exception {
         // Onboarding sin código de invitación -> 201 Created
-        OnboardingResource validResource = new OnboardingResource(
-                "Restaurante A", "123456789", "contacto@restaurantea.com", "555-1234",
-                "admin@restaurantea.com", "securePassword123", "Juan", "Perez"
-        );
+        OnboardingResource validResource = new OnboardingResource("Restaurante A", "123456789", "contacto@restaurantea.com", "555-1234",
+                "admin@restaurantea.com", "securePassword123", "Juan", "Perez", "TEST-INVITE-CODE");
 
         mockMvc.perform(post("/api/v1/restaurants/onboarding")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -88,10 +90,8 @@ public class TenantIsolationIntegrationTests {
     @Test
     public void testTenantIsolationBetweenInquilinos() throws Exception {
         // 1. Crear Tenant A mediante onboarding directo
-        OnboardingResource resourceA = new OnboardingResource(
-                "Tenant A", "20123456789", "info@tenanta.com", "999111222",
-                "admin@tenanta.com", "passA", "Admin", "A"
-        );
+        OnboardingResource resourceA = new OnboardingResource("Tenant A", "20123456789", "info@tenanta.com", "999111222",
+                "admin@tenanta.com", "passA", "Admin", "A", "TEST-INVITE-CODE");
         String responseA = mockMvc.perform(post("/api/v1/restaurants/onboarding")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(resourceA)))
@@ -101,10 +101,8 @@ public class TenantIsolationIntegrationTests {
         Long idA = objectMapper.readTree(responseA).get("id").asLong();
 
         // 2. Crear Tenant B mediante onboarding directo
-        OnboardingResource resourceB = new OnboardingResource(
-                "Tenant B", "20987654321", "info@tenantb.com", "999333444",
-                "admin@tenantb.com", "passB", "Admin", "B"
-        );
+        OnboardingResource resourceB = new OnboardingResource("Tenant B", "20987654321", "info@tenantb.com", "999333444",
+                "admin@tenantb.com", "passB", "Admin", "B", "TEST-INVITE-CODE");
         String responseB = mockMvc.perform(post("/api/v1/restaurants/onboarding")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(resourceB)))
@@ -152,15 +150,15 @@ public class TenantIsolationIntegrationTests {
         HashingService mockHashingService = mock(HashingService.class);
         PaymentMethodConfigRepository mockPaymentMethodConfigRepository = mock(PaymentMethodConfigRepository.class);
         CategoryRepository mockCategoryRepository = mock(CategoryRepository.class);
+        com.pezbackend.billing.infrastructure.persistence.jpa.repositories.BillingSequenceRepository mockBillingSequenceRepository = mock(com.pezbackend.billing.infrastructure.persistence.jpa.repositories.BillingSequenceRepository.class);
 
         RestaurantCommandServiceImpl service = new RestaurantCommandServiceImpl(
-                mockRestaurantRepository, mockUserRepository, mockRoleRepository, mockHashingService, mockPaymentMethodConfigRepository, mockCategoryRepository
+                mockRestaurantRepository, mockUserRepository, mockRoleRepository, mockHashingService, mockPaymentMethodConfigRepository, mockCategoryRepository, mockBillingSequenceRepository
         );
+        org.springframework.test.util.ReflectionTestUtils.setField(service, "configuredInviteCode", "TEST-INVITE-CODE");
 
-        OnboardingCommand command = new OnboardingCommand(
-                "Mock Rest", "111", "mock@mock.com", "000",
-                "admin@mock.com", "pass", "A", "B"
-        );
+        OnboardingCommand command = new OnboardingCommand("Mock Rest", "111", "mock@mock.com", "000",
+                "admin@mock.com", "pass", "A", "B", "TEST-INVITE-CODE");
 
         Restaurant savedRestaurant = new Restaurant("Mock Rest", "111", "mock@mock.com", "000");
         ReflectionTestUtils.setField(savedRestaurant, "id", 100L); // Asignar ID simulado 100
@@ -188,5 +186,54 @@ public class TenantIsolationIntegrationTests {
         // Validar que el contexto se limpie correctamente al terminar el método
         assertNull(TenantContext.getCurrentTenantId(),
                 "TenantContext debe limpiarse tras finalizar el flujo de onboarding");
+    }
+
+    @Test
+    public void testOnboardingWithInvalidInviteCode() throws Exception {
+        OnboardingResource invalidResource = new OnboardingResource(
+                "Restaurante Fails", "111222333", "fail@rest.com", "555-9999",
+                "admin@fail.com", "pass", "A", "B", "WRONG-CODE"
+        );
+
+        mockMvc.perform(post("/api/v1/restaurants/onboarding")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(invalidResource)))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.message").value("El código de invitación proporcionado es inválido."));
+    }
+
+    @Test
+    public void testOnboardingRateLimiting() throws Exception {
+        // Reset rate limits and activeProfile to simulate production behavior
+        restaurantController.resetRateLimits();
+        org.springframework.test.util.ReflectionTestUtils.setField(restaurantController, "activeProfile", "prod");
+
+        try {
+            // Perform 5 requests (all should pass successfully)
+            for (int i = 0; i < 5; i++) {
+                OnboardingResource uniqueResource = new OnboardingResource(
+                        "Restaurante Rate " + i, "99999999" + i, "rate" + i + "@rest.com", "555-5555",
+                        "admin" + i + "@rate.com", "pass", "A", "B", "TEST-INVITE-CODE"
+                );
+                mockMvc.perform(post("/api/v1/restaurants/onboarding")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(uniqueResource)))
+                        .andExpect(status().isCreated());
+            }
+
+            // 6th request should trigger rate limit (429)
+            OnboardingResource limitResource = new OnboardingResource(
+                    "Restaurante Limit", "888888888", "limit@rest.com", "555-5555",
+                    "admin_limit@rate.com", "pass", "A", "B", "TEST-INVITE-CODE"
+            );
+
+            mockMvc.perform(post("/api/v1/restaurants/onboarding")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(limitResource)))
+                    .andExpect(status().is4xxClientError()); // TOO_MANY_REQUESTS (429)
+        } finally {
+            // Restore activeProfile to test to avoid affecting other tests
+            org.springframework.test.util.ReflectionTestUtils.setField(restaurantController, "activeProfile", "test");
+        }
     }
 }

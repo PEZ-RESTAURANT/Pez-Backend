@@ -25,15 +25,21 @@ import java.util.function.Function;
  */
 import com.pezbackend.iam.infrastructure.persistence.jpa.repositories.BlacklistedTokenRepository;
 import com.pezbackend.iam.domain.model.entities.BlacklistedToken;
+import com.pezbackend.tenancy.infrastructure.persistence.jpa.repositories.RestaurantRepository;
 
 @Service
 public class TokenServiceImpl implements BearerTokenService {
     private final Logger LOGGER = LoggerFactory.getLogger(TokenServiceImpl.class);
 
     private final BlacklistedTokenRepository blacklistedTokenRepository;
+    private final RestaurantRepository restaurantRepository;
 
-    public TokenServiceImpl(BlacklistedTokenRepository blacklistedTokenRepository) {
+    public TokenServiceImpl(
+            BlacklistedTokenRepository blacklistedTokenRepository,
+            RestaurantRepository restaurantRepository
+    ) {
         this.blacklistedTokenRepository = blacklistedTokenRepository;
+        this.restaurantRepository = restaurantRepository;
     }
 
     private static final String AUTHORIZATION_PARAMETER_NAME = "Authorization";
@@ -42,6 +48,7 @@ public class TokenServiceImpl implements BearerTokenService {
     private static final String WORKSHOP_ID_CLAIM = "workshop_id";
     private static final String ROLE_CLAIM = "role";
     private static final String RESTAURANT_ID_CLAIM = "restaurantId";
+    private static final String RESTAURANT_NAME_CLAIM = "restaurantName";
     private static final int TOKEN_BEGIN_INDEX = 7;
 
     @Value("${authorization.jwt.secret}")
@@ -68,10 +75,22 @@ public class TokenServiceImpl implements BearerTokenService {
         var expiration = DateUtils.addDays(issuedAt, expirationDays);
         var key = getSigningKey();
 
+        String restaurantName = null;
+        if (restaurantId != null) {
+            try {
+                restaurantName = restaurantRepository.findById(restaurantId)
+                        .map(com.pezbackend.tenancy.domain.model.aggregates.Restaurant::getName)
+                        .orElse(null);
+            } catch (Exception e) {
+                LOGGER.warn("Could not load restaurant name for token claim: {}", e.getMessage());
+            }
+        }
+
         var builder = Jwts.builder()
                 .subject(userId.toString())
                 .claim(ROLE_CLAIM, userRole)
                 .claim(RESTAURANT_ID_CLAIM, restaurantId)
+                .claim(RESTAURANT_NAME_CLAIM, restaurantName)
                 .issuedAt(issuedAt)
                 .expiration(expiration)
                 .signWith(key);

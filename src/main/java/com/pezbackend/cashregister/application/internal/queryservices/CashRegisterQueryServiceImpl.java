@@ -56,13 +56,18 @@ public class CashRegisterQueryServiceImpl implements CashRegisterQueryService {
             throw new CashRegisterHasNoMovementsException(cashRegister.getId());
         }
 
-        BigDecimal totalIncome = cashRegister.getMovements().stream()
-                .filter(m -> m.getType() == CashMovementType.INCOME)
+        BigDecimal totalSales = cashRegister.getMovements().stream()
+                .filter(m -> m.getType() == CashMovementType.INCOME && m.getReason() == null)
                 .map(CashMovement::getAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        BigDecimal totalExpense = cashRegister.getMovements().stream()
-                .filter(m -> m.getType() == CashMovementType.EXPENSE)
+        BigDecimal totalManualIncome = cashRegister.getMovements().stream()
+                .filter(m -> m.getType() == CashMovementType.INCOME && m.getReason() != null)
+                .map(CashMovement::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal totalManualExpense = cashRegister.getMovements().stream()
+                .filter(m -> m.getType() == CashMovementType.EXPENSE && m.getReason() != null)
                 .map(CashMovement::getAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
@@ -75,8 +80,9 @@ public class CashRegisterQueryServiceImpl implements CashRegisterQueryService {
                 .count();
 
         return new MovementsSummary(
-                totalIncome,
-                totalExpense,
+                totalSales,
+                totalManualIncome,
+                totalManualExpense,
                 countExpense,
                 countIncome,
                 cashRegister.getCurrentBalance()

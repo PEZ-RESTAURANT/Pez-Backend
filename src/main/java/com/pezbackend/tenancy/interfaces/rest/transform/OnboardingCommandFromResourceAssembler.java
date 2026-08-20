@@ -13,6 +13,7 @@ public class OnboardingCommandFromResourceAssembler {
                 resource.businessDocumentNumber(),
                 resource.contactEmail(),
                 resource.contactPhone(),
+                resource.address(),
                 resource.adminEmail(),
                 resource.adminPassword(),
                 resource.adminFirstName(),

@@ -6,7 +6,7 @@ import com.pezbackend.catalog.interfaces.rest.resources.ProductResource;
 
 public class ProductResourceFromEntityAssembler {
 
-    public static ProductResource toResourceFromEntity(Product entity) {
+    public static ProductResource toResourceFromEntity(Product entity, Long kitchenZoneId) {
         CategoryResource categoryResource = null;
         if (entity.getCategory() != null) {
             categoryResource = new CategoryResource(
@@ -20,7 +20,8 @@ public class ProductResourceFromEntityAssembler {
                 entity.getPrice(),
                 categoryResource,
                 entity.getEstimatedPrepTimeMinutes(),
-                entity.isActive()
+                entity.isActive(),
+                kitchenZoneId
         );
     }
 }

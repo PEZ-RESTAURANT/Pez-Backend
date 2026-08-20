@@ -71,7 +71,7 @@ public class RestaurantController {
     private String activeProfile;
 
     private boolean isRateLimited(String ip) {
-        if (activeProfile != null && activeProfile.contains("test")) {
+        if (activeProfile == null || activeProfile.isBlank() || activeProfile.contains("test") || !activeProfile.contains("prod")) {
             return false;
         }
         java.time.Instant now = java.time.Instant.now();
@@ -135,6 +135,7 @@ public class RestaurantController {
         restaurant.setBusinessDocumentNumber(resource.businessDocumentNumber());
         restaurant.setContactEmail(resource.contactEmail());
         restaurant.setContactPhone(resource.contactPhone());
+        restaurant.setAddress(resource.address());
         restaurant = restaurantRepository.save(restaurant);
 
         RestaurantResource response = RestaurantResourceFromEntityAssembler.toResourceFromEntity(restaurant);

@@ -17,7 +17,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Implementación de LoyaltyCommandService encargada de gestionar los comandos de fidelización.
@@ -30,16 +32,18 @@ public class LoyaltyCommandServiceImpl implements LoyaltyCommandService {
     private final SatisfactionSurveyRepository satisfactionSurveyRepository;
     private final PointsTransactionRepository pointsTransactionRepository;
     private final LoyaltyConfigRepository loyaltyConfigRepository;
+    private final MarketingNotificationLogRepository marketingNotificationLogRepository;
+    private final com.pezbackend.shared.infrastructure.notification.EmailNotificationChannel emailNotificationChannel;
     private final ApplicationEventPublisher eventPublisher;
 
     @Override
     @Transactional
-    public Customer registerCustomer(String phone, String fullName, LocalDate birthday, String address, boolean dataConsentAccepted) {
+    public Customer registerCustomer(String phone, String fullName, String email, LocalDate birthday, String address, boolean dataConsentAccepted) {
         if (customerRepository.findByPhone(phone).isPresent()) {
             throw new BusinessRuleViolationException("CUSTOMER_ALREADY_EXISTS", "Un cliente con el número de teléfono " + phone + " ya está afiliado.");
         }
 
-        Customer customer = new Customer(phone, fullName, birthday, address, dataConsentAccepted);
+        Customer customer = new Customer(phone, fullName, email, birthday, address, dataConsentAccepted);
         customer = customerRepository.save(customer);
 
         eventPublisher.publishEvent(new CustomerRegistered(customer.getId(), customer.getPhone(), customer.getFullName()));
@@ -122,5 +126,42 @@ public class LoyaltyCommandServiceImpl implements LoyaltyCommandService {
             config.setGoogleReviewUrl(googleReviewUrl);
         }
         return loyaltyConfigRepository.save(config);
+    }
+
+    @Override
+    @Transactional
+    public void sendManualPromotion(Long customerId, String subject, String message) {
+        Customer customer = customerRepository.findById(customerId)
+                .orElseThrow(() -> new ResourceNotFoundException("CUSTOMER_NOT_FOUND", "Cliente no encontrado con ID: " + customerId));
+
+        if (!customer.isDataConsentAccepted()) {
+            throw new BusinessRuleViolationException("DATA_CONSENT_REQUIRED", "El cliente no ha aceptado el consentimiento de tratamiento de datos.");
+        }
+        if (customer.getEmail() == null || customer.getEmail().isBlank()) {
+            throw new BusinessRuleViolationException("CUSTOMER_EMAIL_MISSING", "El cliente no tiene un correo electrónico registrado.");
+        }
+
+        // Validar límite: Máximo 2 promociones por mes calendario
+        LocalDateTime startOfMonth = LocalDate.now().withDayOfMonth(1).atStartOfDay();
+        List<com.pezbackend.loyalty.domain.model.entities.MarketingNotificationLog> logs = 
+                marketingNotificationLogRepository.findAllByCustomerIdAndSentAtAfter(customerId, startOfMonth);
+        if (logs.size() >= 2) {
+            throw new BusinessRuleViolationException("PROMOTION_LIMIT_EXCEEDED", "Se ha superado el límite de 2 promociones en este mes para el cliente.");
+        }
+
+        // Despachar email
+        Map<String, Object> model = Map.of(
+            "title", "Promoción Especial",
+            "subtitle", "Al Toque - Club de Fidelización",
+            "greeting", "Hola, " + customer.getFullName() + ":",
+            "paragraphs", List.of(message),
+            "isSuccess", true
+        );
+        emailNotificationChannel.send(customer.getEmail(), subject, "email-template", model);
+
+        // Registrar log
+        com.pezbackend.loyalty.domain.model.entities.MarketingNotificationLog log = 
+                new com.pezbackend.loyalty.domain.model.entities.MarketingNotificationLog(customerId, "PROMO");
+        marketingNotificationLogRepository.save(log);
     }
 }

@@ -22,7 +22,7 @@ public class EmailService implements CommandLineRunner {
     @Value("${spring.mail.host:}")
     private String smtpHost;
 
-    @Value("${spring.mail.from:noreply@pezrestaurante.pe}")
+    @Value("${spring.mail.from:noreply@altoque.pe}")
     private String fromEmail;
 
     @Override

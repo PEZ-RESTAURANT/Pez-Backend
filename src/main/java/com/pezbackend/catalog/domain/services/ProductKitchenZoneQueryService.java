@@ -23,4 +23,10 @@ public interface ProductKitchenZoneQueryService {
      * @return conjunto de IDs de productos asociados a la zona
      */
     Set<Long> getProductIdsForZone(Long zoneId);
+    /**
+     * Obtiene todos los IDs de producto y sus zonas de cocina asignadas en forma de mapa.
+     *
+     * @return mapa de ID de producto a ID de zona de cocina
+     */
+    java.util.Map<Long, Long> getAllProductZoneIds();
 }

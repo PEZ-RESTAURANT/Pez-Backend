@@ -165,8 +165,8 @@ public class KitchenIntegrationTests {
         cookDetails = UserDetailsImpl.build(cookUser);
 
         // Crear zonas de cocina
-        zoneA = kitchenZoneCommandService.createZone("Cocina Caliente");
-        zoneB = kitchenZoneCommandService.createZone("Bar");
+        zoneA = kitchenZoneCommandService.createZone("Cocina Caliente", false);
+        zoneB = kitchenZoneCommandService.createZone("Bar", false);
 
         // Crear productos
         Category marina = categoryRepository.save(new Category("Marina"));

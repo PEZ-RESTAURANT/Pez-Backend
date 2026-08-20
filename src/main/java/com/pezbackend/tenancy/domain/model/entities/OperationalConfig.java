@@ -9,6 +9,8 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.LocalDate;
+
 /**
  * Entidad JPA que almacena la configuración operativa general del restaurante.
  */
@@ -35,6 +37,17 @@ public class OperationalConfig extends AbstractTenantEntity {
     @Column(nullable = false)
     private Integer waitingDishesThresholdMinutes = 30;
 
+    @NotNull
+    @Column(name = "annulment_notification_pref", nullable = false, length = 50)
+    private String annulmentNotificationPref = "INSTANT"; // INSTANT or DAILY
+
+    @NotNull
+    @Column(name = "daily_summary_time", nullable = false, length = 5)
+    private String dailySummaryTime = "22:00"; // HH:mm format
+
+    @Column(name = "last_daily_summary_sent_at")
+    private LocalDate lastDailySummarySentAt;
+
     protected OperationalConfig() {}
 
     public OperationalConfig(Integer cutoffHour, Integer cutoffMinute, Integer unattendedThresholdMinutes, Integer waitingDishesThresholdMinutes) {
@@ -42,5 +55,16 @@ public class OperationalConfig extends AbstractTenantEntity {
         this.cutoffMinute = cutoffMinute;
         this.unattendedThresholdMinutes = unattendedThresholdMinutes;
         this.waitingDishesThresholdMinutes = waitingDishesThresholdMinutes;
+        this.annulmentNotificationPref = "INSTANT";
+        this.dailySummaryTime = "22:00";
+    }
+
+    public OperationalConfig(Integer cutoffHour, Integer cutoffMinute, Integer unattendedThresholdMinutes, Integer waitingDishesThresholdMinutes, String annulmentNotificationPref, String dailySummaryTime) {
+        this.cutoffHour = cutoffHour;
+        this.cutoffMinute = cutoffMinute;
+        this.unattendedThresholdMinutes = unattendedThresholdMinutes;
+        this.waitingDishesThresholdMinutes = waitingDishesThresholdMinutes;
+        this.annulmentNotificationPref = annulmentNotificationPref;
+        this.dailySummaryTime = dailySummaryTime;
     }
 }

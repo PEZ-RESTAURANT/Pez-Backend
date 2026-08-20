@@ -111,7 +111,7 @@ public class Order extends AbstractTenantBaseEntity {
             case TAKING_ORDER -> next == OrderStatus.WAITING_DISHES;
             case WAITING_DISHES -> next == OrderStatus.ALL_DELIVERED;
             case ALL_DELIVERED -> next == OrderStatus.ISSUED_UNPAID || next == OrderStatus.WAITING_DISHES;
-            case ISSUED_UNPAID -> next == OrderStatus.PAID;
+            case ISSUED_UNPAID -> next == OrderStatus.PAID || next == OrderStatus.ALL_DELIVERED;
             case PAID -> next == OrderStatus.FREE;
         };
     }

@@ -7,5 +7,6 @@ public enum CashMovementReason {
     SUPPLIER_PAYMENT,
     CASH_WITHDRAWAL,
     PETTY_CASH,
-    OTHER
+    OTHER,
+    REVERSO_ANULACION_VENTA
 }

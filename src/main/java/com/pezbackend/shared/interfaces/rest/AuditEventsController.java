@@ -11,6 +11,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -26,10 +28,44 @@ import java.time.LocalDateTime;
  */
 @RestController
 @RequestMapping("/api/v1/audit-events")
-@RequiredArgsConstructor
 public class AuditEventsController {
 
     private final AuditQueryService auditQueryService;
+    private final com.pezbackend.shared.infrastructure.persistence.jpa.repositories.AuditEventRepository auditEventRepository;
+
+    public AuditEventsController(
+            AuditQueryService auditQueryService,
+            com.pezbackend.shared.infrastructure.persistence.jpa.repositories.AuditEventRepository auditEventRepository
+    ) {
+        this.auditQueryService = auditQueryService;
+        this.auditEventRepository = auditEventRepository;
+    }
+
+    /**
+     * Registra un nuevo evento de auditoría en el sistema (por ejemplo, acciones de impresión en el cliente).
+     */
+    @PostMapping
+    public ResponseEntity<?> createAuditEvent(@jakarta.validation.Valid @RequestBody com.pezbackend.shared.interfaces.rest.resources.CreateAuditEventResource resource) {
+        String username = "system";
+        var auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null) {
+            username = auth.getName();
+        }
+
+        AuditEvent auditEvent = new AuditEvent(
+                resource.eventType(),
+                resource.module(),
+                username,
+                resource.deviceId(),
+                resource.payload() != null ? resource.payload() : java.util.Map.of(),
+                resource.reason(),
+                LocalDateTime.now()
+        );
+
+        AuditEvent saved = auditEventRepository.save(auditEvent);
+        return ResponseEntity.status(org.springframework.http.HttpStatus.CREATED)
+                .body(AuditEventResourceFromEntityAssembler.toResourceFromEntity(saved));
+    }
 
     /**
      * Consulta y filtra el historial de auditoría de forma paginada.

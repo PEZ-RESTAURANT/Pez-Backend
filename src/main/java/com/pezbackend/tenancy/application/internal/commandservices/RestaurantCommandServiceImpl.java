@@ -40,6 +40,7 @@ public class RestaurantCommandServiceImpl implements RestaurantCommandService {
     private final HashingService hashingService;
     private final PaymentMethodConfigRepository paymentMethodConfigRepository;
     private final CategoryRepository categoryRepository;
+    private final com.pezbackend.billing.infrastructure.persistence.jpa.repositories.BillingSequenceRepository billingSequenceRepository;
 
     public RestaurantCommandServiceImpl(
             RestaurantRepository restaurantRepository,
@@ -47,7 +48,8 @@ public class RestaurantCommandServiceImpl implements RestaurantCommandService {
             RoleRepository roleRepository,
             HashingService hashingService,
             PaymentMethodConfigRepository paymentMethodConfigRepository,
-            CategoryRepository categoryRepository
+            CategoryRepository categoryRepository,
+            com.pezbackend.billing.infrastructure.persistence.jpa.repositories.BillingSequenceRepository billingSequenceRepository
     ) {
         this.restaurantRepository = restaurantRepository;
         this.userRepository = userRepository;
@@ -55,10 +57,18 @@ public class RestaurantCommandServiceImpl implements RestaurantCommandService {
         this.hashingService = hashingService;
         this.paymentMethodConfigRepository = paymentMethodConfigRepository;
         this.categoryRepository = categoryRepository;
+        this.billingSequenceRepository = billingSequenceRepository;
     }
 
     @Value("${authorization.onboarding.invite-code}")
-    private String configuredInviteCode = "TEST-INVITE-CODE";
+    private String configuredInviteCode;
+
+    @jakarta.annotation.PostConstruct
+    public void validateInviteCode() {
+        if (configuredInviteCode == null || configuredInviteCode.trim().isBlank()) {
+            throw new IllegalStateException("CRITICAL ERROR: 'authorization.onboarding.invite-code' property must be configured. Application cannot start without a valid invite code.");
+        }
+    }
 
     @Override
     public Restaurant handleOnboarding(OnboardingCommand command) {
@@ -81,7 +91,8 @@ public class RestaurantCommandServiceImpl implements RestaurantCommandService {
                 command.name(),
                 command.businessDocumentNumber(),
                 command.contactEmail(),
-                command.contactPhone()
+                command.contactPhone(),
+                command.address()
         );
         restaurant = restaurantRepository.save(restaurant);
 
@@ -114,7 +125,10 @@ public class RestaurantCommandServiceImpl implements RestaurantCommandService {
             paymentMethodConfigRepository.save(new PaymentMethodConfig("Plin", PaymentMethod.PLIN, true));
             paymentMethodConfigRepository.save(new PaymentMethodConfig("Transferencia Bancaria", PaymentMethod.TRANSFER, true));
 
-
+            // Seed active billing sequences for the new tenant
+            LOGGER.info("Seeding billing sequences for new restaurant tenant: {}", restaurant.getId());
+            billingSequenceRepository.save(new com.pezbackend.billing.domain.model.entities.BillingSequence(restaurant.getId(), com.pezbackend.billing.domain.model.valueobjects.DocumentType.BOLETA, 0));
+            billingSequenceRepository.save(new com.pezbackend.billing.domain.model.entities.BillingSequence(restaurant.getId(), com.pezbackend.billing.domain.model.valueobjects.DocumentType.FACTURA_ELECTRONICA, 0));
 
             LOGGER.info("Onboarding completed: Restaurant {} (ID: {}) and Admin User {} created", 
                     restaurant.getName(), restaurant.getId(), admin.getEmail());

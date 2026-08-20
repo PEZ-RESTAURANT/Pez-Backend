@@ -283,6 +283,61 @@ public class OrderCommandServiceImpl implements OrderCommandService {
     }
 
     @Override
+    public void addItemsToOrderBatch(Long orderId, java.util.List<com.pezbackend.orders.domain.model.valueobjects.AddOrderItemCommand> items, String waiterUsername) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new ResourceNotFoundException("ORDER_NOT_FOUND", "Pedido no encontrado con ID: " + orderId));
+
+        if (order.getStatus() == OrderStatus.PAID || order.getStatus() == OrderStatus.FREE) {
+            throw new BusinessRuleViolationException("ORDER_NOT_EDITABLE", "No se pueden agregar platos a una comanda cerrada o pagada.");
+        }
+
+        boolean transitionNeeded = false;
+
+        for (com.pezbackend.orders.domain.model.valueobjects.AddOrderItemCommand cmd : items) {
+            Product product = productRepository.findById(cmd.productId())
+                    .orElseThrow(() -> new ResourceNotFoundException("PRODUCT_NOT_FOUND", "Producto no encontrado con ID: " + cmd.productId()));
+
+            if (cmd.quantity() == null || cmd.quantity() <= 0) {
+                throw new BusinessRuleViolationException("INVALID_QUANTITY", "La cantidad debe ser mayor que cero.");
+            }
+
+            OrderItem item = new OrderItem(product.getId(), cmd.quantity(), cmd.note(), cmd.waiterId(), product.getPrice());
+            order.addItem(item);
+
+            if (order.getStatus() == OrderStatus.TAKING_ORDER || order.getStatus() == OrderStatus.ALL_DELIVERED) {
+                transitionNeeded = true;
+            }
+        }
+
+        if (transitionNeeded) {
+            order.transitionTo(OrderStatus.WAITING_DISHES);
+            if (order.getTableId() != null) {
+                RestaurantTable table = restaurantTableRepository.findById(order.getTableId()).orElseThrow();
+                table.setStatus(TableStatus.WAITING_DISHES);
+                syncMergedTablesStatus(table.getId(), TableStatus.WAITING_DISHES);
+                restaurantTableRepository.save(table);
+            }
+        }
+
+        orderRepository.save(order);
+
+        // Publicar eventos de dominio para cada item después de guardar
+        for (com.pezbackend.orders.domain.model.valueobjects.AddOrderItemCommand cmd : items) {
+            Long assignedItemId = order.getItems().stream()
+                    .filter(i -> i.getProductId().equals(cmd.productId()) 
+                              && i.getQuantity().equals(cmd.quantity()) 
+                              && i.getWaiterId().equals(cmd.waiterId())
+                              && java.util.Objects.equals(i.getNote(), cmd.note()))
+                    .map(OrderItem::getId)
+                    .findFirst()
+                    .orElse(null);
+
+            log.info("Ítem agregado a la comanda en lote: Producto ID {}, Cantidad {}.", cmd.productId(), cmd.quantity());
+            eventPublisher.publishEvent(new ItemOrderedEvent(order.getId(), assignedItemId, cmd.productId(), cmd.quantity(), cmd.waiterId(), waiterUsername));
+        }
+    }
+
+    @Override
     public void increaseItemQuantity(Long orderId, Long itemId, String executorUsername) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new ResourceNotFoundException("ORDER_NOT_FOUND", "Pedido no encontrado con ID: " + orderId));
@@ -506,6 +561,25 @@ public class OrderCommandServiceImpl implements OrderCommandService {
         orderRepository.save(order);
         log.info("Precuenta emitida para comanda {}. Cambiado a ISSUED_UNPAID.", orderId);
         eventPublisher.publishEvent(new ReceiptIssuedEvent(order.getId(), executorUsername));
+    }
+
+    @Override
+    @Transactional
+    public void revertReceipt(Long orderId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new ResourceNotFoundException("ORDER_NOT_FOUND", "Pedido no encontrado con ID: " + orderId));
+
+        order.transitionTo(OrderStatus.ALL_DELIVERED);
+
+        if (order.getTableId() != null) {
+            RestaurantTable table = restaurantTableRepository.findById(order.getTableId()).orElseThrow();
+            table.setStatus(TableStatus.ALL_DELIVERED);
+            syncMergedTablesStatus(table.getId(), TableStatus.ALL_DELIVERED);
+            restaurantTableRepository.save(table);
+        }
+
+        orderRepository.save(order);
+        log.info("Precuenta revertida para comanda {}. Cambiado a ALL_DELIVERED.", orderId);
     }
 
     @Override
