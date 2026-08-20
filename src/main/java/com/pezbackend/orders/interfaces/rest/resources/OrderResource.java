@@ -18,5 +18,10 @@ public record OrderResource(
         LocalDateTime attendedAt,
         LocalDateTime createdAt,
         List<OrderItemResource> items,
-        List<PriceAdjustmentResource> priceAdjustments
+        List<PriceAdjustmentResource> priceAdjustments,
+        String deliveryCustomerName,
+        String deliveryCustomerPhone,
+        String deliveryAddress,
+        String deliveryMapsLink,
+        String declaredPaymentMethod
 ) {}

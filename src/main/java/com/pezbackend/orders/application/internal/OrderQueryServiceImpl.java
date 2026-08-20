@@ -13,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
@@ -62,14 +63,14 @@ public class OrderQueryServiceImpl implements OrderQueryService {
     @Override
     public List<OrderItem> getKitchenQueue(Long zoneId) {
         // En esta fase ignoramos el filtrado por zoneId ya que no existe catálogo de zonas integrado en el ítem.
-        // Recuperamos todos los pedidos activos.
-        List<Order> activeOrders = orderRepository.findAll().stream()
-                .filter(o -> o.getStatus() != OrderStatus.FREE && o.getStatus() != OrderStatus.PAID)
-                .toList();
+        // Recuperamos todas las comandas creadas para obtener activos y recientemente completados.
+        List<Order> allOrders = orderRepository.findAll();
 
-        return activeOrders.stream()
+        return allOrders.stream()
                 .flatMap(o -> o.getItems().stream())
-                .filter(item -> item.getStatus() == OrderItemStatus.PENDING || item.getStatus() == OrderItemStatus.IN_PREPARATION)
+                .filter(item -> item.getStatus() == OrderItemStatus.PENDING 
+                             || item.getStatus() == OrderItemStatus.IN_PREPARATION
+                             || (item.getStatus() == OrderItemStatus.READY && item.getReadyAt() != null && item.getReadyAt().isAfter(LocalDateTime.now().minusHours(12))))
                 .sorted(Comparator.comparing(OrderItem::getCreatedAt))
                 .toList();
     }

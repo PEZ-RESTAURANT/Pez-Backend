@@ -23,7 +23,12 @@ public class OrderResourceFromEntityAssembler {
                         .toList(),
                 entity.getPriceAdjustments().stream()
                         .map(PriceAdjustmentResourceFromEntityAssembler::toResourceFromEntity)
-                        .toList()
+                        .toList(),
+                entity.getDeliveryCustomerName(),
+                entity.getDeliveryCustomerPhone(),
+                entity.getDeliveryAddress(),
+                entity.getDeliveryMapsLink(),
+                entity.getDeclaredPaymentMethod()
         );
     }
 }

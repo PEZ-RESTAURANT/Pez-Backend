@@ -11,5 +11,11 @@ public record CreateOrderResource(
         @NotBlank(message = "El tipo de pedido (DINE_IN, TAKEAWAY, DELIVERY) es obligatorio.")
         String type,
         
-        Long customerId
+        Long customerId,
+        
+        String deliveryCustomerName,
+        String deliveryCustomerPhone,
+        String deliveryAddress,
+        String deliveryMapsLink,
+        String declaredPaymentMethod
 ) {}

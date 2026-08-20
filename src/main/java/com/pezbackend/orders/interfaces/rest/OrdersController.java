@@ -94,7 +94,12 @@ public class OrdersController {
         Order order = orderCommandService.createOrder(
                 resource.tableId(),
                 resource.type(),
-                resource.customerId()
+                resource.customerId(),
+                resource.deliveryCustomerName(),
+                resource.deliveryCustomerPhone(),
+                resource.deliveryAddress(),
+                resource.deliveryMapsLink(),
+                resource.declaredPaymentMethod()
         );
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(OrderResourceFromEntityAssembler.toResourceFromEntity(order));

@@ -50,6 +50,21 @@ public class Order extends AbstractTenantBaseEntity {
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
+    @Column(name = "delivery_customer_name")
+    private String deliveryCustomerName;
+
+    @Column(name = "delivery_customer_phone", length = 50)
+    private String deliveryCustomerPhone;
+
+    @Column(name = "delivery_address", length = 500)
+    private String deliveryAddress;
+
+    @Column(name = "delivery_maps_link", length = 1000)
+    private String deliveryMapsLink;
+
+    @Column(name = "declared_payment_method", length = 50)
+    private String declaredPaymentMethod;
+
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     private List<OrderItem> items = new ArrayList<>();
 

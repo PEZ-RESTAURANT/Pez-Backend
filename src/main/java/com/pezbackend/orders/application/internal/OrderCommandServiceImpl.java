@@ -183,6 +183,14 @@ public class OrderCommandServiceImpl implements OrderCommandService {
 
     @Override
     public Order createOrder(Long tableId, String typeStr, Long customerId) {
+        return createOrder(tableId, typeStr, customerId, null, null, null, null, null);
+    }
+
+    @Override
+    public Order createOrder(Long tableId, String typeStr, Long customerId,
+                             String deliveryCustomerName, String deliveryCustomerPhone,
+                             String deliveryAddress, String deliveryMapsLink,
+                             String declaredPaymentMethod) {
         OrderType type = OrderType.valueOf(typeStr.toUpperCase());
         
         if (type == OrderType.DINE_IN) {
@@ -233,9 +241,33 @@ public class OrderCommandServiceImpl implements OrderCommandService {
             if (tableId != null) {
                 throw new BusinessRuleViolationException("TABLE_NOT_ALLOWED", "No se permite asociar mesa para pedidos TAKEAWAY o DELIVERY.");
             }
+            
+            // Si es DELIVERY, validar campos obligatorios
+            if (type == OrderType.DELIVERY) {
+                if (deliveryCustomerName == null || deliveryCustomerName.isBlank()) {
+                    throw new BusinessRuleViolationException("DELIVERY_CUSTOMER_NAME_REQUIRED", "El nombre del cliente es obligatorio para pedidos DELIVERY.");
+                }
+                if (deliveryCustomerPhone == null || deliveryCustomerPhone.isBlank()) {
+                    throw new BusinessRuleViolationException("DELIVERY_CUSTOMER_PHONE_REQUIRED", "El teléfono del cliente es obligatorio para pedidos DELIVERY.");
+                }
+                if (deliveryAddress == null || deliveryAddress.isBlank()) {
+                    throw new BusinessRuleViolationException("DELIVERY_ADDRESS_REQUIRED", "La dirección de entrega es obligatoria para pedidos DELIVERY.");
+                }
+                if (declaredPaymentMethod == null || declaredPaymentMethod.isBlank()) {
+                    throw new BusinessRuleViolationException("DELIVERY_PAYMENT_METHOD_REQUIRED", "El método de pago declarado es obligatorio para pedidos DELIVERY.");
+                }
+            }
+
             Order order = new Order(null, type, customerId);
             order.setStatus(OrderStatus.TAKING_ORDER);
             order.setAttendedAt(LocalDateTime.now());
+            
+            order.setDeliveryCustomerName(deliveryCustomerName);
+            order.setDeliveryCustomerPhone(deliveryCustomerPhone);
+            order.setDeliveryAddress(deliveryAddress);
+            order.setDeliveryMapsLink(deliveryMapsLink);
+            order.setDeclaredPaymentMethod(declaredPaymentMethod);
+
             return orderRepository.save(order);
         }
     }

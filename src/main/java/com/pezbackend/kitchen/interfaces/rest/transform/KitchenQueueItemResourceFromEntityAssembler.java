@@ -23,7 +23,9 @@ public class KitchenQueueItemResourceFromEntityAssembler {
                 entity.getNote(),
                 entity.getStatus().name(),
                 entity.getCreatedAt(),
-                tableNumber
+                tableNumber,
+                entity.getReadyAt(),
+                entity.getOrder() != null && entity.getOrder().getType() != null ? entity.getOrder().getType().name() : "DINE_IN"
         );
     }
 }
