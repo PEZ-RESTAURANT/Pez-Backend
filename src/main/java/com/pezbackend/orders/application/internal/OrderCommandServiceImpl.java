@@ -435,8 +435,22 @@ public class OrderCommandServiceImpl implements OrderCommandService {
         // Remover de la colección (gatilla orphanRemoval)
         order.getItems().remove(item);
 
-        // Verificar si la comanda queda vacía, o si todos los platos restantes ya fueron entregados
-        checkAndTriggerAllDelivered(order);
+        if (order.getItems().isEmpty()) {
+            order.transitionTo(OrderStatus.FREE);
+            if (order.getTableId() != null) {
+                RestaurantTable table = restaurantTableRepository.findById(order.getTableId()).orElse(null);
+                if (table != null) {
+                    table.setStatus(TableStatus.FREE);
+                    restaurantTableRepository.save(table);
+                    log.info("Mesa {} liberada por comanda vacía.", table.getNumber());
+                    releaseMergedTables(table.getId());
+                    eventPublisher.publishEvent(new TableReleasedEvent(table.getId(), table.getNumber()));
+                }
+            }
+        } else {
+            // Verificar si todos los platos restantes ya fueron entregados
+            checkAndTriggerAllDelivered(order);
+        }
 
         orderRepository.save(order);
         log.info("Ítem ID {} removido/cancelado de la comanda {} por {}.", itemId, orderId, executorUsername);
