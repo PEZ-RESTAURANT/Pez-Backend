@@ -31,3 +31,7 @@ build/
 
 ### VS Code ###
 .vscode/
+
+# Local Dev Configuration with Secrets
+src/main/resources/application-dev.properties
+
