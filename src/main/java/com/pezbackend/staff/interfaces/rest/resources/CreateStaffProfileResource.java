@@ -8,5 +8,7 @@ import java.math.BigDecimal;
 public record CreateStaffProfileResource(
         Long accountId,
         String paymentType,
-        BigDecimal agreedAmount
+        BigDecimal agreedAmount,
+        BigDecimal overtimeHourlyRate,
+        Integer fingerprintId
 ) {}

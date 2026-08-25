@@ -34,6 +34,10 @@ public class AttendanceRecord extends AbstractTenantEntity {
     private LocalDateTime checkOutAt;
 
     @NotNull
+    @Column(name = "is_unresolved", nullable = false)
+    private boolean isUnresolved = false;
+
+    @NotNull
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 50)
     private AttendanceMethod method;

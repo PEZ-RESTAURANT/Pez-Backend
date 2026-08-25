@@ -33,7 +33,8 @@ public class RealtimeEventForwarder {
     );
 
     private static final Set<String> ALERTS_EVENTS = Set.of(
-            "LowStockAlertTriggered", "StockMismatchDetected", "CashRegisterMismatched", "ForcedCloseByCutoff"
+            "LowStockAlertTriggered", "StockMismatchDetected", "CashRegisterMismatched", "ForcedCloseByCutoff",
+            "AttendanceRecorded", "UnmappedFingerprintEventOccurred", "UnresolvedAttendanceDetected"
     );
 
     /**

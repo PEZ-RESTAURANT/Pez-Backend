@@ -14,8 +14,10 @@ public class StaffProfileResourceAssembler {
                 profile.getAccountId(),
                 profile.getPaymentType().name(),
                 profile.getAgreedAmount(),
+                profile.getOvertimeHourlyRate(),
                 profile.isFingerprintConsent(),
-                profile.getFingerprintConsentDate() != null ? profile.getFingerprintConsentDate().toString() : null
+                profile.getFingerprintConsentDate() != null ? profile.getFingerprintConsentDate().toString() : null,
+                profile.getFingerprintId()
         );
     }
 }

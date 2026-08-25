@@ -14,6 +14,11 @@ public class PaymentSummaryResourceAssembler {
                 summary.totalAdvances(),
                 summary.totalDeductions(),
                 summary.totalOvertimeHours(),
+                summary.regularHourlyRate(),
+                summary.regularHours(),
+                summary.overtimeHourlyRate(),
+                summary.basePay(),
+                summary.overtimePay(),
                 summary.netPending()
         );
     }

@@ -48,6 +48,10 @@ public class OperationalConfig extends AbstractTenantEntity {
     @Column(name = "last_daily_summary_sent_at")
     private LocalDate lastDailySummarySentAt;
 
+    @NotNull
+    @Column(name = "unresolved_attendance_notification_pref", nullable = false, length = 50)
+    private String unresolvedAttendanceNotificationPref = "BOTH"; // ADMIN, CASHIER, or BOTH
+
     protected OperationalConfig() {}
 
     public OperationalConfig(Integer cutoffHour, Integer cutoffMinute, Integer unattendedThresholdMinutes, Integer waitingDishesThresholdMinutes) {
@@ -57,6 +61,7 @@ public class OperationalConfig extends AbstractTenantEntity {
         this.waitingDishesThresholdMinutes = waitingDishesThresholdMinutes;
         this.annulmentNotificationPref = "INSTANT";
         this.dailySummaryTime = "22:00";
+        this.unresolvedAttendanceNotificationPref = "BOTH";
     }
 
     public OperationalConfig(Integer cutoffHour, Integer cutoffMinute, Integer unattendedThresholdMinutes, Integer waitingDishesThresholdMinutes, String annulmentNotificationPref, String dailySummaryTime) {
@@ -66,5 +71,16 @@ public class OperationalConfig extends AbstractTenantEntity {
         this.waitingDishesThresholdMinutes = waitingDishesThresholdMinutes;
         this.annulmentNotificationPref = annulmentNotificationPref;
         this.dailySummaryTime = dailySummaryTime;
+        this.unresolvedAttendanceNotificationPref = "BOTH";
+    }
+
+    public OperationalConfig(Integer cutoffHour, Integer cutoffMinute, Integer unattendedThresholdMinutes, Integer waitingDishesThresholdMinutes, String annulmentNotificationPref, String dailySummaryTime, String unresolvedAttendanceNotificationPref) {
+        this.cutoffHour = cutoffHour;
+        this.cutoffMinute = cutoffMinute;
+        this.unattendedThresholdMinutes = unattendedThresholdMinutes;
+        this.waitingDishesThresholdMinutes = waitingDishesThresholdMinutes;
+        this.annulmentNotificationPref = annulmentNotificationPref;
+        this.dailySummaryTime = dailySummaryTime;
+        this.unresolvedAttendanceNotificationPref = unresolvedAttendanceNotificationPref;
     }
 }

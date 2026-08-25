@@ -14,6 +14,8 @@ import com.pezbackend.orders.infrastructure.persistence.jpa.repositories.Restaur
 import com.pezbackend.shared.domain.exceptions.BusinessRuleViolationException;
 import com.pezbackend.shared.domain.exceptions.InvalidStateTransitionException;
 import com.pezbackend.shared.domain.exceptions.ResourceNotFoundException;
+import com.pezbackend.loyalty.domain.model.aggregates.Customer;
+import com.pezbackend.loyalty.infrastructure.persistence.jpa.repositories.CustomerRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -37,6 +39,7 @@ public class OrderCommandServiceImpl implements OrderCommandService {
     private final RestaurantTableRepository restaurantTableRepository;
     private final OrderRepository orderRepository;
     private final ProductRepository productRepository;
+    private final CustomerRepository customerRepository;
     private final ApplicationEventPublisher eventPublisher;
 
     @Override
@@ -242,7 +245,7 @@ public class OrderCommandServiceImpl implements OrderCommandService {
                 throw new BusinessRuleViolationException("TABLE_NOT_ALLOWED", "No se permite asociar mesa para pedidos TAKEAWAY o DELIVERY.");
             }
             
-            // Si es DELIVERY, validar campos obligatorios
+            // Si es DELIVERY, validar campos obligatorios y guardar/actualizar cliente
             if (type == OrderType.DELIVERY) {
                 if (deliveryCustomerName == null || deliveryCustomerName.isBlank()) {
                     throw new BusinessRuleViolationException("DELIVERY_CUSTOMER_NAME_REQUIRED", "El nombre del cliente es obligatorio para pedidos DELIVERY.");
@@ -255,6 +258,25 @@ public class OrderCommandServiceImpl implements OrderCommandService {
                 }
                 if (declaredPaymentMethod == null || declaredPaymentMethod.isBlank()) {
                     throw new BusinessRuleViolationException("DELIVERY_PAYMENT_METHOD_REQUIRED", "El método de pago declarado es obligatorio para pedidos DELIVERY.");
+                }
+
+                // Guardar/Actualizar cliente de forma automática para autocompletado y obligaciones de registro
+                java.util.Optional<Customer> customerOpt = customerRepository.findByPhone(deliveryCustomerPhone);
+                Customer customer;
+                if (customerOpt.isPresent()) {
+                    customer = customerOpt.get();
+                    customer.setFullName(deliveryCustomerName);
+                    customer.setAddress(deliveryAddress);
+                    customer.setLastPaymentMethod(declaredPaymentMethod);
+                    customer = customerRepository.save(customer);
+                } else {
+                    customer = new Customer(deliveryCustomerPhone, deliveryCustomerName, null, deliveryAddress, false);
+                    customer.setLastPaymentMethod(declaredPaymentMethod);
+                    customer = customerRepository.save(customer);
+                }
+                
+                if (customerId == null) {
+                    customerId = customer.getId();
                 }
             }
 

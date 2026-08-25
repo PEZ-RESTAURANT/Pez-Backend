@@ -6,6 +6,7 @@ import com.pezbackend.staff.domain.model.entities.PayrollAdjustment;
 import com.pezbackend.staff.domain.model.entities.Sanction;
 import com.pezbackend.staff.domain.model.entities.OvertimeRecord;
 import com.pezbackend.staff.domain.model.valueobjects.PayrollAdjustmentType;
+import com.pezbackend.staff.domain.model.valueobjects.StaffPaymentType;
 import com.pezbackend.staff.domain.model.valueobjects.PaymentSummary;
 import com.pezbackend.staff.domain.services.StaffQueryService;
 import com.pezbackend.staff.infrastructure.persistence.jpa.repositories.*;
@@ -60,6 +61,12 @@ public class StaffQueryServiceImpl implements StaffQueryService {
 
     @Override
     @Transactional(readOnly = true)
+    public List<AttendanceRecord> getUnresolvedAttendance() {
+        return attendanceRecordRepository.findAllByIsUnresolvedTrue();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public List<PayrollAdjustment> getPayrollAdjustmentsByProfileId(Long profileId) {
         if (!staffProfileRepository.existsById(profileId)) {
             throw new ResourceNotFoundException("STAFF_PROFILE_NOT_FOUND", "Perfil de personal no encontrado.");
@@ -109,13 +116,41 @@ public class StaffQueryServiceImpl implements StaffQueryService {
             totalOvertimeHours = totalOvertimeHours.add(ov.getHours());
         }
 
-        BigDecimal netPending = profile.getAgreedAmount().subtract(totalAdvances).subtract(totalDeductions);
+        BigDecimal agreedAmount = profile.getAgreedAmount();
+        BigDecimal regularHourlyRate = profile.getAgreedAmount();
+        BigDecimal overtimeHourlyRate = profile.getOvertimeHourlyRate() != null ? profile.getOvertimeHourlyRate() : profile.getAgreedAmount();
+
+        // Calcular horas cumplidas (regulares) a partir de AttendanceRecord
+        List<AttendanceRecord> attendances = attendanceRecordRepository.findAllByStaffProfileId(profileId);
+        double regularHoursSum = 0.0;
+        for (AttendanceRecord record : attendances) {
+            if (record.getCheckInAt() != null && record.getCheckOutAt() != null && !record.isUnresolved()) {
+                long minutes = java.time.Duration.between(record.getCheckInAt(), record.getCheckOutAt()).toMinutes();
+                regularHoursSum += minutes / 60.0;
+            }
+        }
+        BigDecimal regularHours = BigDecimal.valueOf(regularHoursSum).setScale(2, java.math.RoundingMode.HALF_UP);
+
+        BigDecimal basePay;
+        if (profile.getPaymentType() == StaffPaymentType.HOURLY) {
+            basePay = regularHours.multiply(regularHourlyRate);
+        } else {
+            basePay = agreedAmount;
+        }
+
+        BigDecimal overtimePay = totalOvertimeHours.multiply(overtimeHourlyRate);
+        BigDecimal netPending = basePay.add(overtimePay).subtract(totalAdvances).subtract(totalDeductions);
 
         return new PaymentSummary(
                 profile.getAgreedAmount(),
                 totalAdvances,
                 totalDeductions,
                 totalOvertimeHours,
+                regularHourlyRate,
+                regularHours,
+                overtimeHourlyRate,
+                basePay,
+                overtimePay,
                 netPending
         );
     }

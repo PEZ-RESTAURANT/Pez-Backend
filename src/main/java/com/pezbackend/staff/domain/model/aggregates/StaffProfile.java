@@ -9,6 +9,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 
 /**
@@ -34,11 +35,17 @@ public class StaffProfile extends AbstractTenantAggregateRoot<StaffProfile> {
     @Column(nullable = false, precision = 19, scale = 4)
     private BigDecimal agreedAmount;
 
+    @Column(name = "overtime_hourly_rate", precision = 19, scale = 4)
+    private BigDecimal overtimeHourlyRate;
+
     @Column(nullable = false)
     private boolean fingerprintConsent = false;
 
     @Column
     private LocalDateTime fingerprintConsentDate;
+
+    @Column(name = "fingerprint_id")
+    private Integer fingerprintId;
 
     /**
      * Constructor requerido por la especificación de JPA. No debe ser utilizado directamente.
@@ -56,7 +63,33 @@ public class StaffProfile extends AbstractTenantAggregateRoot<StaffProfile> {
         this.accountId = accountId;
         this.paymentType = paymentType;
         this.agreedAmount = agreedAmount;
+        this.overtimeHourlyRate = calculateDefaultOvertimeRate(paymentType, agreedAmount);
         this.fingerprintConsent = false;
+    }
+
+    public StaffProfile(Long accountId, StaffPaymentType paymentType, BigDecimal agreedAmount, BigDecimal overtimeHourlyRate) {
+        this.accountId = accountId;
+        this.paymentType = paymentType;
+        this.agreedAmount = agreedAmount;
+        this.overtimeHourlyRate = overtimeHourlyRate != null ? overtimeHourlyRate : calculateDefaultOvertimeRate(paymentType, agreedAmount);
+        this.fingerprintConsent = false;
+    }
+
+    public BigDecimal getOvertimeHourlyRate() {
+        if (overtimeHourlyRate == null) {
+            return calculateDefaultOvertimeRate(paymentType, agreedAmount);
+        }
+        return overtimeHourlyRate;
+    }
+
+    private BigDecimal calculateDefaultOvertimeRate(StaffPaymentType paymentType, BigDecimal agreedAmount) {
+        if (agreedAmount == null || paymentType == null) return BigDecimal.ZERO;
+        return switch (paymentType) {
+            case HOURLY -> agreedAmount;
+            case DAILY -> agreedAmount.divide(BigDecimal.valueOf(8), 4, RoundingMode.HALF_UP);
+            case BIWEEKLY -> agreedAmount.divide(BigDecimal.valueOf(120), 4, RoundingMode.HALF_UP);
+            case MONTHLY -> agreedAmount.divide(BigDecimal.valueOf(240), 4, RoundingMode.HALF_UP);
+        };
     }
 
     /**
@@ -68,6 +101,13 @@ public class StaffProfile extends AbstractTenantAggregateRoot<StaffProfile> {
     public void updateProfile(StaffPaymentType paymentType, BigDecimal agreedAmount) {
         this.paymentType = paymentType;
         this.agreedAmount = agreedAmount;
+        this.overtimeHourlyRate = calculateDefaultOvertimeRate(paymentType, agreedAmount);
+    }
+
+    public void updateProfile(StaffPaymentType paymentType, BigDecimal agreedAmount, BigDecimal overtimeHourlyRate) {
+        this.paymentType = paymentType;
+        this.agreedAmount = agreedAmount;
+        this.overtimeHourlyRate = overtimeHourlyRate != null ? overtimeHourlyRate : calculateDefaultOvertimeRate(paymentType, agreedAmount);
     }
 
     /**

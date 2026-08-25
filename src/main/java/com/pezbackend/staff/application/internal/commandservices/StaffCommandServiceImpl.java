@@ -12,6 +12,8 @@ import com.pezbackend.staff.domain.model.valueobjects.AttendanceMethod;
 import com.pezbackend.staff.domain.model.valueobjects.PayrollAdjustmentType;
 import com.pezbackend.staff.domain.model.valueobjects.SanctionType;
 import com.pezbackend.staff.domain.model.events.AttendanceRecorded;
+import com.pezbackend.staff.domain.model.events.UnmappedFingerprintEventOccurred;
+import com.pezbackend.staff.domain.model.entities.UnmappedFingerprintEvent;
 import com.pezbackend.staff.domain.model.events.PayrollAdjustmentRegistered;
 import com.pezbackend.staff.domain.model.events.SanctionRegistered;
 import com.pezbackend.staff.domain.model.events.OvertimeRegistered;
@@ -19,6 +21,8 @@ import com.pezbackend.staff.domain.services.StaffCommandService;
 import com.pezbackend.staff.infrastructure.persistence.jpa.repositories.*;
 import com.pezbackend.shared.domain.exceptions.BusinessRuleViolationException;
 import com.pezbackend.shared.domain.exceptions.ResourceNotFoundException;
+import com.pezbackend.shared.domain.model.AuditEvent;
+import com.pezbackend.shared.infrastructure.persistence.jpa.repositories.AuditEventRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
@@ -38,16 +42,24 @@ public class StaffCommandServiceImpl implements StaffCommandService {
 
     private final StaffProfileRepository staffProfileRepository;
     private final AttendanceRecordRepository attendanceRecordRepository;
+    private final UnmappedFingerprintEventRepository unmappedFingerprintEventRepository;
     private final PayrollAdjustmentRepository payrollAdjustmentRepository;
     private final SanctionRepository sanctionRepository;
     private final OvertimeRecordRepository overtimeRecordRepository;
     private final UserRepository userRepository;
     private final SaleRepository saleRepository;
+    private final AuditEventRepository auditEventRepository;
     private final ApplicationEventPublisher eventPublisher;
 
     @Override
     @Transactional
-    public StaffProfile createProfile(Long accountId, StaffPaymentType paymentType, BigDecimal agreedAmount) {
+    public StaffProfile createProfile(Long accountId, StaffPaymentType paymentType, BigDecimal agreedAmount, Integer fingerprintId) {
+        return createProfile(accountId, paymentType, agreedAmount, agreedAmount, fingerprintId);
+    }
+
+    @Override
+    @Transactional
+    public StaffProfile createProfile(Long accountId, StaffPaymentType paymentType, BigDecimal agreedAmount, BigDecimal overtimeHourlyRate, Integer fingerprintId) {
         if (!userRepository.existsById(accountId)) {
             throw new ResourceNotFoundException("USER_NOT_FOUND", "La cuenta de usuario con ID " + accountId + " no existe.");
         }
@@ -60,13 +72,34 @@ public class StaffCommandServiceImpl implements StaffCommandService {
             throw new BusinessRuleViolationException("INVALID_AMOUNT", "El monto acordado debe ser igual o mayor a cero.");
         }
 
-        StaffProfile profile = new StaffProfile(accountId, paymentType, agreedAmount);
+        if (overtimeHourlyRate != null && overtimeHourlyRate.compareTo(BigDecimal.ZERO) < 0) {
+            throw new BusinessRuleViolationException("INVALID_OVERTIME_RATE", "La tarifa de hora extra debe ser igual o mayor a cero.");
+        }
+
+        if (fingerprintId != null) {
+            java.util.Optional<StaffProfile> existing = staffProfileRepository.findByFingerprintId(fingerprintId);
+            if (existing.isPresent()) {
+                throw new BusinessRuleViolationException("FINGERPRINT_ID_ALREADY_IN_USE", "El ID de huella " + fingerprintId + " ya está asignado a otro colaborador.");
+            }
+        }
+
+        StaffProfile profile = new StaffProfile(accountId, paymentType, agreedAmount, overtimeHourlyRate);
+        profile.setFingerprintId(fingerprintId);
+        if (fingerprintId != null) {
+            profile.recordFingerprintConsent(true);
+        }
         return staffProfileRepository.save(profile);
     }
 
     @Override
     @Transactional
-    public StaffProfile updateProfile(Long profileId, StaffPaymentType paymentType, BigDecimal agreedAmount) {
+    public StaffProfile updateProfile(Long profileId, StaffPaymentType paymentType, BigDecimal agreedAmount, Integer fingerprintId) {
+        return updateProfile(profileId, paymentType, agreedAmount, agreedAmount, fingerprintId);
+    }
+
+    @Override
+    @Transactional
+    public StaffProfile updateProfile(Long profileId, StaffPaymentType paymentType, BigDecimal agreedAmount, BigDecimal overtimeHourlyRate, Integer fingerprintId) {
         StaffProfile profile = staffProfileRepository.findById(profileId)
                 .orElseThrow(() -> new ResourceNotFoundException("STAFF_PROFILE_NOT_FOUND", "Perfil de personal no encontrado."));
 
@@ -74,7 +107,22 @@ public class StaffCommandServiceImpl implements StaffCommandService {
             throw new BusinessRuleViolationException("INVALID_AMOUNT", "El monto acordado debe ser igual o mayor a cero.");
         }
 
-        profile.updateProfile(paymentType, agreedAmount);
+        if (overtimeHourlyRate != null && overtimeHourlyRate.compareTo(BigDecimal.ZERO) < 0) {
+            throw new BusinessRuleViolationException("INVALID_OVERTIME_RATE", "La tarifa de hora extra debe ser igual o mayor a cero.");
+        }
+
+        if (fingerprintId != null) {
+            java.util.Optional<StaffProfile> existing = staffProfileRepository.findByFingerprintId(fingerprintId);
+            if (existing.isPresent() && !existing.get().getId().equals(profileId)) {
+                throw new BusinessRuleViolationException("FINGERPRINT_ID_ALREADY_IN_USE", "El ID de huella " + fingerprintId + " ya está asignado a otro colaborador.");
+            }
+        }
+
+        profile.updateProfile(paymentType, agreedAmount, overtimeHourlyRate);
+        profile.setFingerprintId(fingerprintId);
+        if (fingerprintId != null) {
+            profile.recordFingerprintConsent(true);
+        }
         return staffProfileRepository.save(profile);
     }
 
@@ -127,6 +175,71 @@ public class StaffCommandServiceImpl implements StaffCommandService {
 
         eventPublisher.publishEvent(new AttendanceRecorded(profileId, record.getId(), record.getMethod().name(), false));
         return record;
+    }
+
+    @Override
+    @Transactional
+    public AttendanceRecord processFingerprintEvent(String deviceSerialNumber, Integer deviceUserId, LocalDateTime timestamp) {
+        java.util.Optional<StaffProfile> profileOpt = staffProfileRepository.findByFingerprintId(deviceUserId);
+        
+        if (profileOpt.isEmpty()) {
+            UnmappedFingerprintEvent event = new UnmappedFingerprintEvent(deviceSerialNumber, deviceUserId, timestamp);
+            unmappedFingerprintEventRepository.save(event);
+            eventPublisher.publishEvent(new UnmappedFingerprintEventOccurred(deviceSerialNumber, deviceUserId, timestamp));
+            return null;
+        }
+        
+        StaffProfile profile = profileOpt.get();
+        Long profileId = profile.getId();
+        
+        java.util.Optional<AttendanceRecord> lastRecordOpt = attendanceRecordRepository
+                .findFirstByStaffProfileIdOrderByCheckInAtDesc(profileId);
+                
+        if (lastRecordOpt.isPresent()) {
+            AttendanceRecord lastRecord = lastRecordOpt.get();
+            if (lastRecord.getCheckOutAt() == null) {
+                // Hay un turno activo. Verificamos el cooldown de 120 segundos desde el ingreso
+                long diffSeconds = java.time.Duration.between(lastRecord.getCheckInAt(), timestamp).toSeconds();
+                if (diffSeconds >= 0 && diffSeconds < 120) {
+                    // Ignoramos el doble marcado accidental y retornamos el registro sin alternar
+                    return lastRecord;
+                }
+                
+                if (timestamp.isBefore(lastRecord.getCheckInAt())) {
+                    timestamp = lastRecord.getCheckInAt().plusSeconds(1);
+                }
+                lastRecord.recordCheckOut(timestamp);
+                lastRecord = attendanceRecordRepository.save(lastRecord);
+                eventPublisher.publishEvent(new AttendanceRecorded(profileId, lastRecord.getId(), lastRecord.getMethod().name(), false));
+                return lastRecord;
+            } else {
+                // El turno anterior ya está cerrado. Verificamos el cooldown de 120 segundos desde la salida
+                long diffSeconds = java.time.Duration.between(lastRecord.getCheckOutAt(), timestamp).toSeconds();
+                if (diffSeconds >= 0 && diffSeconds < 120) {
+                    // Ignoramos el doble marcado accidental
+                    return lastRecord;
+                }
+                
+                if (!profile.isFingerprintConsent()) {
+                    profile.recordFingerprintConsent(true);
+                    staffProfileRepository.save(profile);
+                }
+                AttendanceRecord record = new AttendanceRecord(profileId, timestamp, AttendanceMethod.FINGERPRINT_HASH);
+                record = attendanceRecordRepository.save(record);
+                eventPublisher.publishEvent(new AttendanceRecorded(profileId, record.getId(), AttendanceMethod.FINGERPRINT_HASH.name(), true));
+                return record;
+            }
+        } else {
+            // Primer registro histórico para este colaborador
+            if (!profile.isFingerprintConsent()) {
+                profile.recordFingerprintConsent(true);
+                staffProfileRepository.save(profile);
+            }
+            AttendanceRecord record = new AttendanceRecord(profileId, timestamp, AttendanceMethod.FINGERPRINT_HASH);
+            record = attendanceRecordRepository.save(record);
+            eventPublisher.publishEvent(new AttendanceRecorded(profileId, record.getId(), AttendanceMethod.FINGERPRINT_HASH.name(), true));
+            return record;
+        }
     }
 
     @Override
@@ -184,5 +297,46 @@ public class StaffCommandServiceImpl implements StaffCommandService {
 
         eventPublisher.publishEvent(new OvertimeRegistered(profileId, overtime.getId(), hours, registeredBy));
         return overtime;
+    }
+
+    @Override
+    @Transactional
+    public AttendanceRecord resolveAttendance(Long recordId, LocalDateTime checkOutAt, String resolverUsername) {
+        AttendanceRecord record = attendanceRecordRepository.findById(recordId)
+                .orElseThrow(() -> new ResourceNotFoundException("ATTENDANCE_RECORD_NOT_FOUND", "Registro de asistencia no encontrado con ID: " + recordId));
+
+        if (!record.isUnresolved()) {
+            throw new BusinessRuleViolationException("RECORD_NOT_UNRESOLVED", "El registro de asistencia no está marcado como pendiente de resolución.");
+        }
+
+        if (checkOutAt == null || checkOutAt.isBefore(record.getCheckInAt())) {
+            throw new BusinessRuleViolationException("INVALID_CHECKOUT_TIME", "La hora de salida debe ser posterior a la hora de entrada.");
+        }
+
+        record.setCheckOutAt(checkOutAt);
+        record.setUnresolved(false);
+        record = attendanceRecordRepository.save(record);
+
+        // Registrar auditoría de la corrección
+        java.util.Map<String, Object> payload = java.util.Map.of(
+                "attendanceRecordId", recordId,
+                "staffProfileId", record.getStaffProfileId(),
+                "checkInAt", record.getCheckInAt().toString(),
+                "resolvedCheckOutAt", checkOutAt.toString(),
+                "resolver", resolverUsername != null ? resolverUsername : "system"
+        );
+
+        AuditEvent audit = new AuditEvent(
+                "AttendanceResolved",
+                "staff",
+                resolverUsername != null ? resolverUsername : "system",
+                null,
+                payload,
+                "Resolución manual de asistencia sin salida",
+                LocalDateTime.now()
+        );
+        auditEventRepository.save(audit);
+
+        return record;
     }
 }

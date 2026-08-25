@@ -11,11 +11,12 @@ import java.util.Map;
 public record CashRegisterMatched(
         Long cashRegisterId,
         BigDecimal amount,
+        Long restaurantId,
         LocalDateTime timestamp
 ) implements DomainEvent {
 
-    public CashRegisterMatched(Long cashRegisterId, BigDecimal amount) {
-        this(cashRegisterId, amount, LocalDateTime.now());
+    public CashRegisterMatched(Long cashRegisterId, BigDecimal amount, Long restaurantId) {
+        this(cashRegisterId, amount, restaurantId, LocalDateTime.now());
     }
 
     @Override
@@ -37,7 +38,8 @@ public record CashRegisterMatched(
     public Object payload() {
         return Map.of(
                 "cashRegisterId", cashRegisterId,
-                "amount", amount
+                "amount", amount,
+                "restaurantId", restaurantId
         );
     }
 }

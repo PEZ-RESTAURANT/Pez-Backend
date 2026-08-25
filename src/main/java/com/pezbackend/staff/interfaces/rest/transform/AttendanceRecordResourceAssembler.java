@@ -14,7 +14,8 @@ public class AttendanceRecordResourceAssembler {
                 record.getStaffProfileId(),
                 record.getCheckInAt().toString(),
                 record.getCheckOutAt() != null ? record.getCheckOutAt().toString() : null,
-                record.getMethod().name()
+                record.getMethod().name(),
+                record.isUnresolved()
         );
     }
 }

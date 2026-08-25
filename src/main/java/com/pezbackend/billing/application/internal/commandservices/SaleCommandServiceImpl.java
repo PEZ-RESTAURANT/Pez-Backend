@@ -23,6 +23,8 @@ import com.pezbackend.billing.domain.model.events.SaleVoidedEvent;
 import com.pezbackend.cashregister.domain.model.commands.AddCashMovementCommand;
 import com.pezbackend.cashregister.domain.model.valueobjects.CashMovementType;
 import com.pezbackend.cashregister.domain.model.valueobjects.CashMovementReason;
+import com.pezbackend.loyalty.domain.model.aggregates.Customer;
+import com.pezbackend.loyalty.infrastructure.persistence.jpa.repositories.CustomerRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -47,6 +49,7 @@ public class SaleCommandServiceImpl implements SaleCommandService {
     private final ProductRepository productRepository;
     private final UserRepository userRepository;
     private final RestaurantTableRepository restaurantTableRepository;
+    private final CustomerRepository customerRepository;
     private final ApplicationEventPublisher eventPublisher;
     private final com.pezbackend.billing.infrastructure.persistence.jpa.repositories.BillingSequenceRepository billingSequenceRepository;
 
@@ -71,12 +74,37 @@ public class SaleCommandServiceImpl implements SaleCommandService {
         Long staffId = userRepository.findByEmail(executor).map(u -> u.getId()).orElse(null);
 
         String customerName = command.customerName();
+        String docNum = command.customerDocumentNumber();
+        
+        java.util.Optional<Customer> customerOpt = (docNum != null && !docNum.isBlank() && !docNum.equals("00000000"))
+                ? customerRepository.findByDocumentNumber(docNum)
+                : java.util.Optional.empty();
+
         if (customerName == null || customerName.isBlank()) {
-            List<Sale> historicalSales = saleRepository.findByCustomerDocumentNumber(command.customerDocumentNumber());
-            if (!historicalSales.isEmpty()) {
-                customerName = historicalSales.get(0).getCustomerName();
-            } else {
+            if (customerOpt.isPresent()) {
+                customerName = customerOpt.get().getFullName();
+            } else if (docNum != null && !docNum.isBlank()) {
+                List<Sale> historicalSales = saleRepository.findByCustomerDocumentNumber(docNum);
+                if (!historicalSales.isEmpty()) {
+                    customerName = historicalSales.get(0).getCustomerName();
+                }
+            }
+            if (customerName == null || customerName.isBlank()) {
                 customerName = "Público General";
+            }
+        }
+
+        if (docNum != null && !docNum.isBlank() && !docNum.equals("00000000")) {
+            if (customerOpt.isPresent()) {
+                Customer customer = customerOpt.get();
+                if (customerName != null && !customerName.isBlank() && !customerName.equalsIgnoreCase("Público General")) {
+                    customer.setFullName(customerName);
+                    customerRepository.save(customer);
+                }
+            } else {
+                Customer newCustomer = new Customer(null, customerName, null, null, false);
+                newCustomer.setDocumentNumber(docNum);
+                customerRepository.save(newCustomer);
             }
         }
 

@@ -10,6 +10,9 @@ public record CustomerResource(
         String email,
         String birthday,
         String address,
+        String documentNumber,
+        String lastPaymentMethod,
+        boolean affiliated,
         boolean dataConsentAccepted,
         String dataConsentDate,
         int pointsBalance

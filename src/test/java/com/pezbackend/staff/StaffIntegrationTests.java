@@ -25,6 +25,7 @@ import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -44,6 +45,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest
 @AutoConfigureMockMvc
+@ActiveProfiles("test")
 public class StaffIntegrationTests {
 
     @Autowired
@@ -261,6 +263,6 @@ public class StaffIntegrationTests {
                 .andExpect(jsonPath("$.totalAdvances", is(200.00)))
                 .andExpect(jsonPath("$.totalDeductions", is(50.00)))
                 .andExpect(jsonPath("$.totalOvertimeHours", is(5.00)))
-                .andExpect(jsonPath("$.netPending", is(750.00))); // 1000 - 200 - 50 = 750
+                .andExpect(jsonPath("$.netPending", is(770.8335))); // 1000 - 200 - 50 + (5.0 * 4.1667) = 770.8335
     }
 }

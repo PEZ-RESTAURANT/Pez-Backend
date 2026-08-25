@@ -12,11 +12,12 @@ public record CashRegisterMismatched(
         Long cashRegisterId,
         BigDecimal expectedAmount,
         BigDecimal declaredAmount,
+        Long restaurantId,
         LocalDateTime timestamp
 ) implements DomainEvent {
 
-    public CashRegisterMismatched(Long cashRegisterId, BigDecimal expectedAmount, BigDecimal declaredAmount) {
-        this(cashRegisterId, expectedAmount, declaredAmount, LocalDateTime.now());
+    public CashRegisterMismatched(Long cashRegisterId, BigDecimal expectedAmount, BigDecimal declaredAmount, Long restaurantId) {
+        this(cashRegisterId, expectedAmount, declaredAmount, restaurantId, LocalDateTime.now());
     }
 
     @Override
@@ -39,7 +40,8 @@ public record CashRegisterMismatched(
         return Map.of(
                 "cashRegisterId", cashRegisterId,
                 "expectedAmount", expectedAmount,
-                "declaredAmount", declaredAmount
+                "declaredAmount", declaredAmount,
+                "restaurantId", restaurantId
         );
     }
 }

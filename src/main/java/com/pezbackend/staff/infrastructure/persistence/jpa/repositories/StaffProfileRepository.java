@@ -12,4 +12,5 @@ import java.util.Optional;
 @Repository
 public interface StaffProfileRepository extends JpaRepository<StaffProfile, Long> {
     Optional<StaffProfile> findByAccountId(Long accountId);
+    Optional<StaffProfile> findByFingerprintId(Integer fingerprintId);
 }

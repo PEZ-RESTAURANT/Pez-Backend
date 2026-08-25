@@ -39,8 +39,24 @@ public class LoyaltyCommandServiceImpl implements LoyaltyCommandService {
     @Override
     @Transactional
     public Customer registerCustomer(String phone, String fullName, String email, LocalDate birthday, String address, boolean dataConsentAccepted) {
-        if (customerRepository.findByPhone(phone).isPresent()) {
-            throw new BusinessRuleViolationException("CUSTOMER_ALREADY_EXISTS", "Un cliente con el número de teléfono " + phone + " ya está afiliado.");
+        if (!dataConsentAccepted) {
+            throw new BusinessRuleViolationException("DATA_CONSENT_REQUIRED", "El consentimiento de datos es obligatorio para afiliarse al programa de fidelización.");
+        }
+        java.util.Optional<Customer> existingOpt = customerRepository.findByPhone(phone);
+        if (existingOpt.isPresent()) {
+            Customer existing = existingOpt.get();
+            if (existing.isAffiliated()) {
+                throw new BusinessRuleViolationException("CUSTOMER_ALREADY_EXISTS", "Un cliente con el número de teléfono " + phone + " ya está afiliado.");
+            }
+            existing.setFullName(fullName);
+            if (email != null) existing.setEmail(email);
+            if (birthday != null) existing.setBirthday(birthday);
+            if (address != null) existing.setAddress(address);
+            existing.setAffiliated(dataConsentAccepted);
+            if (dataConsentAccepted) {
+                existing.setDataConsentDate(java.time.LocalDateTime.now());
+            }
+            return customerRepository.save(existing);
         }
 
         Customer customer = new Customer(phone, fullName, email, birthday, address, dataConsentAccepted);

@@ -10,5 +10,10 @@ public record PaymentSummary(
         BigDecimal totalAdvances,
         BigDecimal totalDeductions,
         BigDecimal totalOvertimeHours,
+        BigDecimal regularHourlyRate,
+        BigDecimal regularHours,
+        BigDecimal overtimeHourlyRate,
+        BigDecimal basePay,
+        BigDecimal overtimePay,
         BigDecimal netPending
 ) {}

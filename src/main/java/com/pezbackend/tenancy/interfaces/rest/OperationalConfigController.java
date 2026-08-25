@@ -31,7 +31,8 @@ public class OperationalConfigController {
                 config.getUnattendedThresholdMinutes(),
                 config.getWaitingDishesThresholdMinutes(),
                 config.getAnnulmentNotificationPref(),
-                config.getDailySummaryTime()
+                config.getDailySummaryTime(),
+                config.getUnresolvedAttendanceNotificationPref()
         ));
     }
 
@@ -47,7 +48,8 @@ public class OperationalConfigController {
                     resource.unattendedThresholdMinutes(),
                     resource.waitingDishesThresholdMinutes(),
                     resource.annulmentNotificationPref() != null ? resource.annulmentNotificationPref() : "INSTANT",
-                    resource.dailySummaryTime() != null ? resource.dailySummaryTime() : "22:00"
+                    resource.dailySummaryTime() != null ? resource.dailySummaryTime() : "22:00",
+                    resource.unresolvedAttendanceNotificationPref() != null ? resource.unresolvedAttendanceNotificationPref() : "BOTH"
             );
         } else {
             config = configs.get(0);
@@ -61,6 +63,9 @@ public class OperationalConfigController {
             if (resource.dailySummaryTime() != null) {
                 config.setDailySummaryTime(resource.dailySummaryTime());
             }
+            if (resource.unresolvedAttendanceNotificationPref() != null) {
+                config.setUnresolvedAttendanceNotificationPref(resource.unresolvedAttendanceNotificationPref());
+            }
         }
         config = operationalConfigRepository.save(config);
         return ResponseEntity.ok(new OperationalConfigResource(
@@ -69,7 +74,8 @@ public class OperationalConfigController {
                 config.getUnattendedThresholdMinutes(),
                 config.getWaitingDishesThresholdMinutes(),
                 config.getAnnulmentNotificationPref(),
-                config.getDailySummaryTime()
+                config.getDailySummaryTime(),
+                config.getUnresolvedAttendanceNotificationPref()
         ));
     }
 }

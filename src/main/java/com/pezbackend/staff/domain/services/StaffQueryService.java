@@ -23,6 +23,8 @@ public interface StaffQueryService {
 
     List<AttendanceRecord> getAttendanceByProfileId(Long profileId);
 
+    List<AttendanceRecord> getUnresolvedAttendance();
+
     List<PayrollAdjustment> getPayrollAdjustmentsByProfileId(Long profileId);
 
     List<Sanction> getSanctionsByProfileId(Long profileId);

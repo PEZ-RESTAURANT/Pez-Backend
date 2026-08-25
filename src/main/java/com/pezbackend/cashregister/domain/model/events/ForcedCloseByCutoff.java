@@ -10,11 +10,12 @@ import java.util.Map;
 public record ForcedCloseByCutoff(
         Long cashRegisterId,
         LocalDateTime closedAt,
+        Long restaurantId,
         LocalDateTime timestamp
 ) implements DomainEvent {
 
-    public ForcedCloseByCutoff(Long cashRegisterId, LocalDateTime closedAt) {
-        this(cashRegisterId, closedAt, LocalDateTime.now());
+    public ForcedCloseByCutoff(Long cashRegisterId, LocalDateTime closedAt, Long restaurantId) {
+        this(cashRegisterId, closedAt, restaurantId, LocalDateTime.now());
     }
 
     @Override
@@ -36,7 +37,8 @@ public record ForcedCloseByCutoff(
     public Object payload() {
         return Map.of(
                 "cashRegisterId", cashRegisterId,
-                "closedAt", closedAt
+                "closedAt", closedAt,
+                "restaurantId", restaurantId
         );
     }
 }

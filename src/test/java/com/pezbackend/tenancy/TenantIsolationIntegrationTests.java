@@ -17,6 +17,17 @@ import com.pezbackend.tenancy.interfaces.rest.resources.OnboardingResource;
 import com.pezbackend.tenancy.interfaces.rest.RestaurantController;
 import com.pezbackend.billing.infrastructure.persistence.jpa.repositories.PaymentMethodConfigRepository;
 import com.pezbackend.catalog.infrastructure.persistence.jpa.repositories.CategoryRepository;
+import com.pezbackend.staff.domain.model.aggregates.StaffProfile;
+import com.pezbackend.staff.domain.model.entities.AttendanceRecord;
+import com.pezbackend.staff.domain.model.valueobjects.StaffPaymentType;
+import com.pezbackend.staff.domain.model.valueobjects.AttendanceMethod;
+import com.pezbackend.staff.infrastructure.persistence.jpa.repositories.StaffProfileRepository;
+import com.pezbackend.staff.infrastructure.persistence.jpa.repositories.AttendanceRecordRepository;
+import com.pezbackend.staff.infrastructure.eventlisteners.StaffEventListener;
+import com.pezbackend.cashregister.domain.model.events.ForcedCloseByCutoff;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,8 +38,6 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -64,6 +73,15 @@ public class TenantIsolationIntegrationTests {
 
     @Autowired
     private com.pezbackend.iam.application.internal.outboundservices.tokens.TokenService tokenService;
+
+    @Autowired
+    private StaffProfileRepository staffProfileRepository;
+
+    @Autowired
+    private AttendanceRecordRepository attendanceRecordRepository;
+
+    @Autowired
+    private StaffEventListener staffEventListener;
 
     @BeforeEach
     public void setUp() {
@@ -235,5 +253,65 @@ public class TenantIsolationIntegrationTests {
             // Restore activeProfile to test to avoid affecting other tests
             org.springframework.test.util.ReflectionTestUtils.setField(restaurantController, "activeProfile", "test");
         }
+    }
+
+    @Test
+    public void testTenantIsolationForUnresolvedAttendanceAlerts() throws Exception {
+        // 1. Crear Tenant A mediante onboarding directo
+        OnboardingResource resourceA = new OnboardingResource("Tenant A", "30123456789", "infoA@tenanta.com", "999111222",
+                "adminA@tenanta.com", "passA", "Admin", "A", "TEST-INVITE-CODE");
+        String responseA = mockMvc.perform(post("/api/v1/restaurants/onboarding")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(resourceA)))
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString();
+        Long idA = objectMapper.readTree(responseA).get("id").asLong();
+
+        // 2. Crear Tenant B mediante onboarding directo
+        OnboardingResource resourceB = new OnboardingResource("Tenant B", "30987654321", "infoB@tenantb.com", "999333444",
+                "adminB@tenantb.com", "passB", "Admin", "B", "TEST-INVITE-CODE");
+        String responseB = mockMvc.perform(post("/api/v1/restaurants/onboarding")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(resourceB)))
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString();
+        Long idB = objectMapper.readTree(responseB).get("id").asLong();
+
+        User adminA = userRepository.findByEmail("adminA@tenanta.com")
+                .orElseThrow(() -> new AssertionError("Admin A not found"));
+        User adminB = userRepository.findByEmail("adminB@tenantb.com")
+                .orElseThrow(() -> new AssertionError("Admin B not found"));
+
+        // 3. Crear perfiles de personal y registros de asistencia sin salida para Tenant A y Tenant B
+        TenantContext.setCurrentTenantId(idA);
+        StaffProfile profileA = new StaffProfile(adminA.getId(), StaffPaymentType.HOURLY, new BigDecimal("15.00"));
+        profileA = staffProfileRepository.save(profileA);
+        AttendanceRecord attendanceA = new AttendanceRecord(profileA.getId(), LocalDateTime.now().minusHours(2), AttendanceMethod.MANUAL_BY_ADMIN);
+        attendanceA = attendanceRecordRepository.save(attendanceA);
+        TenantContext.clear();
+
+        TenantContext.setCurrentTenantId(idB);
+        StaffProfile profileB = new StaffProfile(adminB.getId(), StaffPaymentType.HOURLY, new BigDecimal("20.00"));
+        profileB = staffProfileRepository.save(profileB);
+        AttendanceRecord attendanceB = new AttendanceRecord(profileB.getId(), LocalDateTime.now().minusHours(3), AttendanceMethod.MANUAL_BY_ADMIN);
+        attendanceB = attendanceRecordRepository.save(attendanceB);
+        TenantContext.clear();
+
+        // 4. Invocar el StaffEventListener para Tenant A simulando el cierre de caja de Tenant A
+        staffEventListener.onForcedCloseByCutoff(new ForcedCloseByCutoff(1L, LocalDateTime.now(), idA));
+
+        // 5. Verificar que el registro de Tenant A se marcó como no resuelto (unresolved = true)
+        TenantContext.setCurrentTenantId(idA);
+        Optional<AttendanceRecord> updatedA = attendanceRecordRepository.findById(attendanceA.getId());
+        assertTrue(updatedA.isPresent());
+        assertTrue(updatedA.get().isUnresolved(), "La asistencia del Tenant A debe marcarse como no resuelta al cerrar caja en Tenant A");
+        TenantContext.clear();
+
+        // 6. Verificar que el registro de Tenant B NO se alteró (unresolved = false)
+        TenantContext.setCurrentTenantId(idB);
+        Optional<AttendanceRecord> updatedB = attendanceRecordRepository.findById(attendanceB.getId());
+        assertTrue(updatedB.isPresent());
+        assertFalse(updatedB.get().isUnresolved(), "La asistencia del Tenant B NO debe verse afectada por el cierre de caja en Tenant A");
+        TenantContext.clear();
     }
 }

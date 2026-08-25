@@ -14,4 +14,7 @@ import java.util.Optional;
 public interface AttendanceRecordRepository extends JpaRepository<AttendanceRecord, Long> {
     List<AttendanceRecord> findAllByStaffProfileId(Long staffProfileId);
     Optional<AttendanceRecord> findFirstByStaffProfileIdAndCheckOutAtIsNullOrderByCheckInAtDesc(Long staffProfileId);
+    Optional<AttendanceRecord> findFirstByStaffProfileIdOrderByCheckInAtDesc(Long staffProfileId);
+    List<AttendanceRecord> findAllByIsUnresolvedTrue();
+    List<AttendanceRecord> findAllByCheckOutAtIsNull();
 }

@@ -21,8 +21,7 @@ import java.time.LocalDateTime;
 @Filter(name = "tenantFilter", condition = "restaurant_id = :restaurantId")
 public class Customer extends AbstractTenantAggregateRoot<Customer> {
 
-    @NotNull
-    @Column(nullable = false, unique = true, length = 50)
+    @Column(unique = true, length = 50)
     private String phone;
 
     @NotNull
@@ -38,6 +37,12 @@ public class Customer extends AbstractTenantAggregateRoot<Customer> {
     @Column(length = 255)
     private String address;
 
+    @Column(name = "document_number", length = 50)
+    private String documentNumber;
+
+    @Column(name = "last_payment_method", length = 50)
+    private String lastPaymentMethod;
+
     @Column(nullable = false)
     private boolean dataConsentAccepted = false;
 
@@ -46,6 +51,14 @@ public class Customer extends AbstractTenantAggregateRoot<Customer> {
 
     @Column(nullable = false)
     private int pointsBalance = 0;
+
+    public boolean isAffiliated() {
+        return this.dataConsentAccepted;
+    }
+
+    public void setAffiliated(boolean affiliated) {
+        this.dataConsentAccepted = affiliated;
+    }
 
     /**
      * Constructor requerido por la especificación de JPA. No debe ser utilizado directamente.
@@ -56,15 +69,14 @@ public class Customer extends AbstractTenantAggregateRoot<Customer> {
      * Construye un nuevo cliente afiliado.
      */
     public Customer(String phone, String fullName, LocalDate birthday, String address, boolean dataConsentAccepted) {
-        if (!dataConsentAccepted) {
-            throw new BusinessRuleViolationException("DATA_CONSENT_REQUIRED", "El consentimiento de datos es obligatorio para afiliarse al programa de fidelización.");
-        }
         this.phone = phone;
         this.fullName = fullName;
         this.birthday = birthday;
         this.address = address;
-        this.dataConsentAccepted = true;
-        this.dataConsentDate = LocalDateTime.now();
+        this.dataConsentAccepted = dataConsentAccepted;
+        if (dataConsentAccepted) {
+            this.dataConsentDate = LocalDateTime.now();
+        }
         this.pointsBalance = 0;
     }
 

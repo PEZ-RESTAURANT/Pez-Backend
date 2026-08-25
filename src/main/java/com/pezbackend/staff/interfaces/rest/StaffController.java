@@ -59,7 +59,9 @@ public class StaffController {
         StaffProfile profile = commandService.createProfile(
                 resource.accountId(),
                 StaffPaymentType.valueOf(resource.paymentType()),
-                resource.agreedAmount()
+                resource.agreedAmount(),
+                resource.overtimeHourlyRate(),
+                resource.fingerprintId()
         );
         return ResponseEntity.ok(StaffProfileResourceAssembler.toResource(profile));
     }
@@ -70,7 +72,9 @@ public class StaffController {
         StaffProfile profile = commandService.updateProfile(
                 id,
                 StaffPaymentType.valueOf(resource.paymentType()),
-                resource.agreedAmount()
+                resource.agreedAmount(),
+                resource.overtimeHourlyRate(),
+                resource.fingerprintId()
         );
         return ResponseEntity.ok(StaffProfileResourceAssembler.toResource(profile));
     }
@@ -81,7 +85,9 @@ public class StaffController {
         StaffProfile profile = commandService.updateProfile(
                 resource.id(),
                 StaffPaymentType.valueOf(resource.paymentType()),
-                resource.agreedAmount()
+                resource.agreedAmount(),
+                resource.overtimeHourlyRate(),
+                resource.fingerprintId()
         );
         return ResponseEntity.ok(StaffProfileResourceAssembler.toResource(profile));
     }
@@ -130,6 +136,21 @@ public class StaffController {
                 resource.staffProfileId(),
                 checkOutTime
         );
+        return ResponseEntity.ok(AttendanceRecordResourceAssembler.toResource(record));
+    }
+
+    @PostMapping("/attendance/fingerprint-event")
+    @RequiresPermission("staff.register_attendance")
+    public ResponseEntity<AttendanceRecordResource> recordFingerprintEvent(@RequestBody FingerprintAttendanceEventResource resource) {
+        LocalDateTime timestamp = parseLocalDateTime(resource.timestamp());
+        AttendanceRecord record = commandService.processFingerprintEvent(
+                resource.deviceSerialNumber(),
+                resource.deviceUserId(),
+                timestamp
+        );
+        if (record == null) {
+            return ResponseEntity.accepted().build();
+        }
         return ResponseEntity.ok(AttendanceRecordResourceAssembler.toResource(record));
     }
 
@@ -222,5 +243,25 @@ public class StaffController {
     public ResponseEntity<PaymentSummaryResource> getPaymentSummary(@PathVariable Long id) {
         PaymentSummary summary = queryService.getPaymentSummary(id);
         return ResponseEntity.ok(PaymentSummaryResourceAssembler.toResource(summary));
+    }
+
+    @GetMapping("/attendance/unresolved")
+    @RequiresPermission("staff.manage_employees")
+    public ResponseEntity<List<AttendanceRecordResource>> getUnresolvedAttendance() {
+        List<AttendanceRecordResource> resources = queryService.getUnresolvedAttendance().stream()
+                .map(AttendanceRecordResourceAssembler::toResource)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(resources);
+    }
+
+    @PutMapping("/attendance/{id}/resolve")
+    @RequiresPermission("staff.manage_employees")
+    public ResponseEntity<AttendanceRecordResource> resolveAttendance(
+            @PathVariable Long id,
+            @RequestBody ResolveAttendanceResource resource
+    ) {
+        LocalDateTime checkOutTime = parseLocalDateTime(resource.checkOutAt());
+        AttendanceRecord resolved = commandService.resolveAttendance(id, checkOutTime, getCurrentUserEmail());
+        return ResponseEntity.ok(AttendanceRecordResourceAssembler.toResource(resolved));
     }
 }

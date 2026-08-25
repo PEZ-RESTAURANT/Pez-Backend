@@ -16,6 +16,9 @@ public class CustomerResourceAssembler {
                 customer.getEmail(),
                 customer.getBirthday() != null ? customer.getBirthday().toString() : null,
                 customer.getAddress(),
+                customer.getDocumentNumber(),
+                customer.getLastPaymentMethod(),
+                customer.isAffiliated(),
                 customer.isDataConsentAccepted(),
                 customer.getDataConsentDate() != null ? customer.getDataConsentDate().toString() : null,
                 customer.getPointsBalance()

@@ -6,5 +6,6 @@ package com.pezbackend.staff.domain.model.valueobjects;
 public enum StaffPaymentType {
     DAILY,
     BIWEEKLY,
-    MONTHLY
+    MONTHLY,
+    HOURLY
 }

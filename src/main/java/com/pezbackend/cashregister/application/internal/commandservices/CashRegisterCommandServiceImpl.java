@@ -132,9 +132,9 @@ public class CashRegisterCommandServiceImpl implements CashRegisterCommandServic
 
         // 4. Publicar evento correspondiente
         if (status.equals("MISMATCHED")) {
-            eventPublisher.publishEvent(new CashRegisterMismatched(cashRegister.getId(), expectedAmount, declaredAmount));
+            eventPublisher.publishEvent(new CashRegisterMismatched(cashRegister.getId(), expectedAmount, declaredAmount, cashRegister.getRestaurantId()));
         } else {
-            eventPublisher.publishEvent(new CashRegisterMatched(cashRegister.getId(), expectedAmount));
+            eventPublisher.publishEvent(new CashRegisterMatched(cashRegister.getId(), expectedAmount, cashRegister.getRestaurantId()));
         }
     }
 
@@ -153,6 +153,6 @@ public class CashRegisterCommandServiceImpl implements CashRegisterCommandServic
         cashRegisterRepository.save(cashRegister);
 
         // Publicar evento de cierre forzado
-        eventPublisher.publishEvent(new ForcedCloseByCutoff(cashRegister.getId(), cashRegister.getClosedAt()));
+        eventPublisher.publishEvent(new ForcedCloseByCutoff(cashRegister.getId(), cashRegister.getClosedAt(), cashRegister.getRestaurantId()));
     }
 }

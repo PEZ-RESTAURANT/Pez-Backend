@@ -6,5 +6,6 @@ public record OperationalConfigResource(
         Integer unattendedThresholdMinutes,
         Integer waitingDishesThresholdMinutes,
         String annulmentNotificationPref,
-        String dailySummaryTime
+        String dailySummaryTime,
+        String unresolvedAttendanceNotificationPref
 ) {}

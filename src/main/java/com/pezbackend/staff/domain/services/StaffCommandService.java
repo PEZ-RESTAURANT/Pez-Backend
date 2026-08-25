@@ -19,15 +19,21 @@ import java.time.LocalDateTime;
  */
 public interface StaffCommandService {
 
-    StaffProfile createProfile(Long accountId, StaffPaymentType paymentType, BigDecimal agreedAmount);
+    StaffProfile createProfile(Long accountId, StaffPaymentType paymentType, BigDecimal agreedAmount, Integer fingerprintId);
+    StaffProfile createProfile(Long accountId, StaffPaymentType paymentType, BigDecimal agreedAmount, BigDecimal overtimeHourlyRate, Integer fingerprintId);
 
-    StaffProfile updateProfile(Long profileId, StaffPaymentType paymentType, BigDecimal agreedAmount);
+    StaffProfile updateProfile(Long profileId, StaffPaymentType paymentType, BigDecimal agreedAmount, Integer fingerprintId);
+    StaffProfile updateProfile(Long profileId, StaffPaymentType paymentType, BigDecimal agreedAmount, BigDecimal overtimeHourlyRate, Integer fingerprintId);
 
     StaffProfile recordFingerprintConsent(Long profileId, boolean consent);
+
+    AttendanceRecord resolveAttendance(Long recordId, LocalDateTime checkOutAt, String resolverUsername);
 
     AttendanceRecord checkIn(Long profileId, AttendanceMethod method, LocalDateTime checkInAt);
 
     AttendanceRecord checkOut(Long profileId, LocalDateTime checkOutAt);
+
+    AttendanceRecord processFingerprintEvent(String deviceSerialNumber, Integer deviceUserId, LocalDateTime timestamp);
 
     PayrollAdjustment registerPayrollAdjustment(Long profileId, PayrollAdjustmentType type, BigDecimal amount, Long saleId, String registeredBy, LocalDate date);
 

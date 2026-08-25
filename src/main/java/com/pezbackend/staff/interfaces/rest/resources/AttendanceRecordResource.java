@@ -8,5 +8,6 @@ public record AttendanceRecordResource(
         Long staffProfileId,
         String checkInAt,
         String checkOutAt,
-        String method
+        String method,
+        boolean isUnresolved
 ) {}

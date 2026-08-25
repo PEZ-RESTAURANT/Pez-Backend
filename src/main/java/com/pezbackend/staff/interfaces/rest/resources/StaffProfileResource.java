@@ -10,6 +10,8 @@ public record StaffProfileResource(
         Long accountId,
         String paymentType,
         BigDecimal agreedAmount,
+        BigDecimal overtimeHourlyRate,
         boolean fingerprintConsent,
-        String fingerprintConsentDate
+        String fingerprintConsentDate,
+        Integer fingerprintId
 ) {}
