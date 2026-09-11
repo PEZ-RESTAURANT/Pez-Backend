@@ -186,6 +186,20 @@ public class TablesController {
         return ResponseEntity.noContent().build();
     }
 
+    @PostMapping("/unlock-all")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Void> unlockAllTables() {
+        var auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.getPrincipal() instanceof com.pezbackend.iam.infrastructure.authorization.sfs.model.UserDetailsImpl userDetails) {
+            Long restaurantId = com.pezbackend.shared.infrastructure.TenantContext.getCurrentTenantId();
+            if (restaurantId == null) {
+                restaurantId = userDetails.getRestaurantId();
+            }
+            tableLockManager.unlockAllTablesForWaiter(restaurantId, userDetails.getId());
+        }
+        return ResponseEntity.noContent().build();
+    }
+
     @GetMapping("/locks")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<java.util.Map<Long, com.pezbackend.realtime.domain.model.TableLock>> getActiveLocks() {

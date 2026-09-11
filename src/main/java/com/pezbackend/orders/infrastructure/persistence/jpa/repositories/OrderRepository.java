@@ -45,11 +45,11 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
      */
     List<Order> findAllByStatusOrderByCreatedAtAsc(OrderStatus status);
 
-    /**
-     * Recupera todas las comandas históricas o activas asociadas a una mesa.
-     *
-     * @param tableId ID de la mesa
-     * @return listado de comandas
-     */
     List<Order> findAllByTableId(Long tableId);
+
+    List<Order> findAllByTypeAndDeliveryCustomerPhoneAndStatusNot(
+            com.pezbackend.orders.domain.model.valueobjects.OrderType type,
+            String deliveryCustomerPhone,
+            OrderStatus status
+    );
 }

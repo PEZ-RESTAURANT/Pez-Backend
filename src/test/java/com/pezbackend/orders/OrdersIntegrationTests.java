@@ -289,4 +289,38 @@ public class OrdersIntegrationTests {
         assertThat(withNoteCount).isEqualTo(1);
         assertThat(withoutNoteCount).isEqualTo(2);
     }
+
+    @Test
+    public void testDuplicateDeliveryPhoneWarning() {
+        // 1. Crear primer pedido delivery con un número de teléfono
+        Order order1 = commandService.createOrder(
+                null, "DELIVERY", null,
+                "Juan Pérez", "999888777",
+                "Calle 123", null, "CASH",
+                false
+        );
+        assertThat(order1).isNotNull();
+        assertThat(order1.getDeliveryCustomerPhone()).isEqualTo("999888777");
+
+        // 2. Intentar crear segundo pedido delivery con el mismo número de teléfono -> Debe fallar con excepción
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> {
+            commandService.createOrder(
+                    null, "DELIVERY", null,
+                    "María López", "999888777",
+                    "Avenida 456", null, "CREDIT_CARD",
+                    false
+            );
+        }).isInstanceOf(com.pezbackend.shared.domain.exceptions.BusinessRuleViolationException.class)
+          .hasMessageContaining("Ya hay un delivery en curso con este número.");
+
+        // 3. Crear segundo pedido delivery ignorando la advertencia (ignoreDuplicatePhone = true) -> Debe permitirlo
+        Order order2 = commandService.createOrder(
+                null, "DELIVERY", null,
+                "María López", "999888777",
+                "Avenida 456", null, "CREDIT_CARD",
+                true
+        );
+        assertThat(order2).isNotNull();
+        assertThat(order2.getDeliveryCustomerPhone()).isEqualTo("999888777");
+    }
 }

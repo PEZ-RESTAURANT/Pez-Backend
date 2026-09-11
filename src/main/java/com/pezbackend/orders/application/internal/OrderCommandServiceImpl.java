@@ -21,6 +21,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.pezbackend.shared.infrastructure.persistence.jpa.repositories.AuditEventRepository;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -41,6 +42,7 @@ public class OrderCommandServiceImpl implements OrderCommandService {
     private final ProductRepository productRepository;
     private final CustomerRepository customerRepository;
     private final ApplicationEventPublisher eventPublisher;
+    private final AuditEventRepository auditEventRepository;
 
     @Override
     public RestaurantTable createTable(Integer number, Integer floor, String zoneTag, Integer positionX, Integer positionY) {
@@ -186,14 +188,14 @@ public class OrderCommandServiceImpl implements OrderCommandService {
 
     @Override
     public Order createOrder(Long tableId, String typeStr, Long customerId) {
-        return createOrder(tableId, typeStr, customerId, null, null, null, null, null);
+        return createOrder(tableId, typeStr, customerId, null, null, null, null, null, false);
     }
 
     @Override
     public Order createOrder(Long tableId, String typeStr, Long customerId,
                              String deliveryCustomerName, String deliveryCustomerPhone,
                              String deliveryAddress, String deliveryMapsLink,
-                             String declaredPaymentMethod) {
+                             String declaredPaymentMethod, Boolean ignoreDuplicatePhone) {
         OrderType type = OrderType.valueOf(typeStr.toUpperCase());
         
         if (type == OrderType.DINE_IN) {
@@ -258,6 +260,37 @@ public class OrderCommandServiceImpl implements OrderCommandService {
                 }
                 if (declaredPaymentMethod == null || declaredPaymentMethod.isBlank()) {
                     throw new BusinessRuleViolationException("DELIVERY_PAYMENT_METHOD_REQUIRED", "El método de pago declarado es obligatorio para pedidos DELIVERY.");
+                }
+
+                // Validar número duplicado en delivery activo
+                List<Order> activeDeliveries = orderRepository.findAllByTypeAndDeliveryCustomerPhoneAndStatusNot(
+                        OrderType.DELIVERY, deliveryCustomerPhone, OrderStatus.PAID
+                );
+                if (!activeDeliveries.isEmpty()) {
+                    if (ignoreDuplicatePhone == null || !ignoreDuplicatePhone) {
+                        throw new BusinessRuleViolationException("DUPLICATE_DELIVERY_PHONE", "Ya hay un delivery en curso con este número.");
+                    } else {
+                        // Trazar el bypass en eventos de auditoría
+                        var auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+                        String username = "system";
+                        if (auth != null && auth.getPrincipal() instanceof com.pezbackend.iam.infrastructure.authorization.sfs.model.UserDetailsImpl userDetails) {
+                            username = userDetails.getUsername();
+                        }
+                        com.pezbackend.shared.domain.model.AuditEvent auditEvent = new com.pezbackend.shared.domain.model.AuditEvent(
+                                "DuplicateDeliveryPhoneBypassed",
+                                "orders",
+                                username,
+                                null,
+                                java.util.Map.of(
+                                    "deliveryCustomerPhone", deliveryCustomerPhone,
+                                    "deliveryCustomerName", deliveryCustomerName,
+                                    "action", "Bypassed duplicate delivery phone warning"
+                                ),
+                                "Continuar con número duplicado",
+                                LocalDateTime.now()
+                        );
+                        auditEventRepository.save(auditEvent);
+                    }
                 }
 
                 // Guardar/Actualizar cliente de forma automática para autocompletado y obligaciones de registro

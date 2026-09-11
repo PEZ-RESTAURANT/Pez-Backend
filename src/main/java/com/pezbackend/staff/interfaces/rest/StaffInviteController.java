@@ -1,5 +1,6 @@
 package com.pezbackend.staff.interfaces.rest;
 
+import lombok.extern.slf4j.Slf4j;
 import com.pezbackend.iam.application.internal.commandservices.UserCommandServiceImpl;
 import com.pezbackend.iam.domain.model.aggregates.User;
 import com.pezbackend.iam.domain.model.commands.SignUpCommand;
@@ -33,6 +34,7 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/api/v1/staff/invites")
 @RequiredArgsConstructor
+@Slf4j
 public class StaffInviteController {
 
     private final StaffInviteRepository staffInviteRepository;
@@ -85,6 +87,16 @@ public class StaffInviteController {
         // Enviar notificación por correo
         String inviteUrl = frontendUrl + "/join/" + code;
         sendInviteEmail(email, roleStr, inviteUrl);
+
+        // Enviar notificación de respaldo al administrador autenticado
+        try {
+            var auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+            if (auth != null && auth.getPrincipal() instanceof com.pezbackend.iam.infrastructure.authorization.sfs.model.UserDetailsImpl userDetails) {
+                sendAdminInviteNotificationEmail(userDetails.getUsername(), email, roleStr);
+            }
+        } catch (Exception ex) {
+            log.warn("No se pudo enviar la notificación de respaldo al administrador: {}", ex.getMessage());
+        }
 
         return ResponseEntity.status(HttpStatus.CREATED).body(toResource(savedInvite));
     }
@@ -209,6 +221,24 @@ public class StaffInviteController {
             "alertText", "Este enlace de invitación expirará en 48 horas y solo puede ser utilizado una vez."
         );
         emailNotificationChannel.send(to, "Invitación para unirte al equipo de Al Toque", "email-template", model);
+    }
+
+    private void sendAdminInviteNotificationEmail(String adminEmail, String invitedEmail, String invitedRole) {
+        Map<String, Object> model = Map.of(
+            "title", "Invitación Generada",
+            "subtitle", "Respaldo de Registro de Personal",
+            "greeting", "Hola, Administrador:",
+            "paragraphs", List.of(
+                "Te notificamos que se ha generado un nuevo enlace de invitación para registrar personal en Al Toque.",
+                "Detalles del invitado:",
+                "• Correo: " + invitedEmail,
+                "• Rol asignado: " + invitedRole,
+                "• Fecha de creación: " + java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss"))
+            ),
+            "isSuccess", true,
+            "alertText", "Este correo es una copia de seguridad para tu control. El invitado ha recibido su correspondiente enlace para el registro."
+        );
+        emailNotificationChannel.send(adminEmail, "Notificación: Invitación de personal creada - Al Toque", "email-template", model);
     }
 
     private StaffInviteResource toResource(StaffInvite invite) {

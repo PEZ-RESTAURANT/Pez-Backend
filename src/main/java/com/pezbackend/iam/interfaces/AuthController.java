@@ -164,6 +164,105 @@ public class AuthController {
         return ResponseEntity.ok(response);
     }
 
+    public record VerifyEmailRequest(
+            @jakarta.validation.constraints.NotBlank(message = "El token es obligatorio.")
+            String token
+    ) {}
+
+    public record ResendVerificationRequest(
+            @jakarta.validation.constraints.NotBlank(message = "El correo electrónico es obligatorio.")
+            @jakarta.validation.constraints.Email(message = "Debe ser un correo electrónico válido.")
+            String email
+    ) {}
+
+    @PostMapping("/verify-email")
+    public ResponseEntity<Map<String, String>> verifyEmail(
+            @Valid @RequestBody VerifyEmailRequest request
+    ) {
+        String rawToken = request.token();
+        String tokenHash = hashToken(rawToken);
+        Optional<PasswordResetToken> tokenOpt = passwordResetTokenRepository.findByTokenHash(tokenHash);
+
+        if (tokenOpt.isEmpty()) {
+            return errorResponse("El enlace de verificación es inválido o ya ha sido utilizado.");
+        }
+
+        PasswordResetToken resetToken = tokenOpt.get();
+
+        if (resetToken.isUsed()) {
+            return errorResponse("Este enlace de verificación ya ha sido utilizado.");
+        }
+
+        if (resetToken.getExpiresAt().isBefore(LocalDateTime.now())) {
+            return errorResponse("El enlace de verificación ha expirado. Por favor, solicite uno nuevo.");
+        }
+
+        User user = resetToken.getUser();
+        user.setVerified(true);
+        userRepository.save(user);
+
+        resetToken.setUsed(true);
+        passwordResetTokenRepository.save(resetToken);
+
+        Map<String, String> response = new HashMap<>();
+        response.put("message", "Cuenta verificada exitosamente.");
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/resend-verification")
+    public ResponseEntity<Map<String, String>> resendVerification(
+            @Valid @RequestBody ResendVerificationRequest request
+    ) {
+        String email = request.email().trim().toLowerCase();
+        Optional<User> userOpt = userRepository.findByEmail(email);
+
+        if (userOpt.isEmpty()) {
+            Map<String, String> response = new HashMap<>();
+            response.put("message", "Si el correo electrónico existe en nuestro sistema y está pendiente de verificación, se enviará un nuevo enlace.");
+            return ResponseEntity.ok(response);
+        }
+
+        User user = userOpt.get();
+        if (user.isVerified()) {
+            return errorResponse("Esta cuenta ya está verificada. Por favor, inicie sesión normalmente.");
+        }
+
+        String rawToken = UUID.randomUUID().toString().replace("-", "") + 
+                          UUID.randomUUID().toString().replace("-", "");
+        String tokenHash = hashToken(rawToken);
+
+        PasswordResetToken verificationToken = new PasswordResetToken(
+                user,
+                tokenHash,
+                LocalDateTime.now().plusHours(24)
+        );
+        passwordResetTokenRepository.save(verificationToken);
+
+        String verifyUrl = frontendUrl + "/auth/verify-email?token=" + rawToken;
+        sendVerificationEmail(user.getEmail(), user.getFirstName(), verifyUrl);
+
+        Map<String, String> response = new HashMap<>();
+        response.put("message", "Se ha enviado un nuevo enlace de verificación a su correo electrónico.");
+        return ResponseEntity.ok(response);
+    }
+
+    private void sendVerificationEmail(String to, String firstName, String verifyUrl) {
+        Map<String, Object> model = Map.of(
+            "title", "Verificar tu cuenta de correo",
+            "subtitle", "Sistema de Gestión Al Toque",
+            "greeting", "Hola, " + firstName + ":",
+            "paragraphs", List.of(
+                "¡Gracias por registrar tu restaurante en Al Toque! Antes de comenzar, por favor confirma tu cuenta de correo electrónico.",
+                "Haz clic en el siguiente botón para verificar tu cuenta:"
+            ),
+            "buttonText", "Verificar Cuenta",
+            "buttonUrl", verifyUrl,
+            "isSuccess", true,
+            "alertText", "Este enlace de verificación es de un solo uso y expirará en 24 horas."
+        );
+        emailNotificationChannel.send(to, "Verifica tu cuenta de correo en Al Toque", "email-template", model);
+    }
+
     private ResponseEntity<Map<String, String>> errorResponse(String message) {
         Map<String, String> response = new HashMap<>();
         response.put("message", message);

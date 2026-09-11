@@ -13,7 +13,8 @@ public class LoyaltyConfigResourceAssembler {
                 config.getMinPurchaseAmountForPoints(),
                 config.getPointsPerCurrencyUnit(),
                 config.getReviewSatisfactionThreshold(),
-                config.getGoogleReviewUrl()
+                config.getGoogleReviewUrl(),
+                config.getQrCodeImage()
         );
     }
 }

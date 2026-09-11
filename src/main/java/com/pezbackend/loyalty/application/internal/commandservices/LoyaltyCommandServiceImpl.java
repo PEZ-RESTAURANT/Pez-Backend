@@ -119,7 +119,7 @@ public class LoyaltyCommandServiceImpl implements LoyaltyCommandService {
 
     @Override
     @Transactional
-    public LoyaltyConfig updateConfig(BigDecimal minPurchaseAmountForPoints, BigDecimal pointsPerCurrencyUnit, int reviewSatisfactionThreshold, String googleReviewUrl) {
+    public LoyaltyConfig updateConfig(BigDecimal minPurchaseAmountForPoints, BigDecimal pointsPerCurrencyUnit, int reviewSatisfactionThreshold, String googleReviewUrl, String qrCodeImage) {
         if (minPurchaseAmountForPoints == null || minPurchaseAmountForPoints.compareTo(BigDecimal.ZERO) < 0) {
             throw new BusinessRuleViolationException("INVALID_CONFIG", "El monto mínimo de compra no puede ser menor a cero.");
         }
@@ -134,12 +134,14 @@ public class LoyaltyCommandServiceImpl implements LoyaltyCommandService {
         LoyaltyConfig config;
         if (configs.isEmpty()) {
             config = new LoyaltyConfig(minPurchaseAmountForPoints, pointsPerCurrencyUnit, reviewSatisfactionThreshold, googleReviewUrl);
+            config.setQrCodeImage(qrCodeImage);
         } else {
             config = configs.get(0);
             config.setMinPurchaseAmountForPoints(minPurchaseAmountForPoints);
             config.setPointsPerCurrencyUnit(pointsPerCurrencyUnit);
             config.setReviewSatisfactionThreshold(reviewSatisfactionThreshold);
             config.setGoogleReviewUrl(googleReviewUrl);
+            config.setQrCodeImage(qrCodeImage);
         }
         return loyaltyConfigRepository.save(config);
     }

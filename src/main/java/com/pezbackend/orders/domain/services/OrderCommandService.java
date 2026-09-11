@@ -45,7 +45,7 @@ public interface OrderCommandService {
      * Crea un nuevo pedido (comanda) de mesa o para llevar/delivery.
      */
     Order createOrder(Long tableId, String typeStr, Long customerId);
-    Order createOrder(Long tableId, String typeStr, Long customerId, String deliveryCustomerName, String deliveryCustomerPhone, String deliveryAddress, String deliveryMapsLink, String declaredPaymentMethod);
+    Order createOrder(Long tableId, String typeStr, Long customerId, String deliveryCustomerName, String deliveryCustomerPhone, String deliveryAddress, String deliveryMapsLink, String declaredPaymentMethod, Boolean ignoreDuplicatePhone);
 
     /**
      * Comanda nuevos ítems (platos) a un pedido.

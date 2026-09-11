@@ -11,4 +11,6 @@ public interface UserCommandService {
     void handle(SignInCommand command);
 
     User handle(UpdateUserCommand command);
+
+    void changePassword(Long userId, String currentPassword, String newPassword);
 }

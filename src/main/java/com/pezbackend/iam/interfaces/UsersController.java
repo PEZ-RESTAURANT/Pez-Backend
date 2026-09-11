@@ -1,5 +1,10 @@
 package com.pezbackend.iam.interfaces;
 
+import com.pezbackend.iam.interfaces.rest.resources.ChangePasswordResource;
+import org.springframework.security.access.prepost.PreAuthorize;
+import java.util.Map;
+import java.util.HashMap;
+
 import com.pezbackend.iam.application.internal.commandservices.UserCommandServiceImpl;
 import com.pezbackend.iam.application.internal.queryservices.UserQueryServiceImpl;
 import com.pezbackend.iam.domain.model.aggregates.User;
@@ -130,6 +135,12 @@ public class UsersController {
             LOGGER.info("User authenticated successfully: {}", signInResource.email());
             return ResponseEntity.ok(response);
                     
+        } catch (com.pezbackend.shared.domain.exceptions.BusinessRuleViolationException e) {
+            LOGGER.warn("Signin failed for email {}: {}", signInResource.email(), e.getMessage());
+            Map<String, Object> error = new HashMap<>();
+            error.put("code", e.getErrorCode());
+            error.put("message", e.getMessage());
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(error);
         } catch (InvalidCredentialsException e) {
             LOGGER.warn("Signin failed for email {}: {}", signInResource.email(), e.getMessage());
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
@@ -146,6 +157,25 @@ public class UsersController {
             LOGGER.error("Unexpected error during signin for email {}: {}", signInResource.email(), e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("An unexpected error occurred during authentication");
+        }
+    }
+
+    @PostMapping("/change-password")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<?> changePassword(@Valid @RequestBody ChangePasswordResource resource) {
+        try {
+            var auth = SecurityContextHolder.getContext().getAuthentication();
+            if (auth == null || !(auth.getPrincipal() instanceof UserDetailsImpl userDetails)) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "Usuario no autenticado."));
+            }
+
+            userCommandService.changePassword(userDetails.getId(), resource.currentPassword(), resource.newPassword());
+            return ResponseEntity.ok(Map.of("message", "Contraseña cambiada con éxito. Las sesiones en otros dispositivos han sido invalidadas."));
+        } catch (com.pezbackend.shared.domain.exceptions.BusinessRuleViolationException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", e.getMessage()));
+        } catch (Exception e) {
+            LOGGER.error("Unexpected error during password change: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("message", "Ocurrió un error inesperado al cambiar la contraseña."));
         }
     }
 

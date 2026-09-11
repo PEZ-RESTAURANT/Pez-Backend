@@ -12,3 +12,8 @@ spring.mail.password=tu_contraseña_de_aplicacion_aqui
 spring.mail.properties.mail.smtp.auth=true
 spring.mail.properties.mail.smtp.starttls.enable=true
 spring.mail.from=tu_correo_gmail@gmail.com
+
+# DNI/RUC Lookup API Configuration (apis.net.pe)
+# Regístrate en https://apis.net.pe/ para obtener tu token Bearer gratuito
+lookup.api.token=tu_token_de_apis_net_pe_aqui
+lookup.api.url=https://api.apis.net.pe/v2

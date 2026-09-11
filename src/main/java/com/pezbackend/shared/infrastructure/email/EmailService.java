@@ -7,6 +7,7 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
+import org.springframework.scheduling.annotation.Async;
 import jakarta.mail.internet.MimeMessage;
 
 @Service
@@ -47,6 +48,7 @@ public class EmailService implements CommandLineRunner {
         }
     }
 
+    @Async
     public void sendEmail(String to, String subject, String contentHtml) {
         if (smtpUsername == null || smtpUsername.isBlank() || smtpHost == null || smtpHost.isBlank() || "localhost".equalsIgnoreCase(smtpHost)) {
             log.info("\n" +

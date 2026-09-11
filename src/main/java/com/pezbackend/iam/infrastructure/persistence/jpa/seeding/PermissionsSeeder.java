@@ -101,7 +101,7 @@ public class PermissionsSeeder {
             new PermissionSeed("analytics.manage_config", "analytics", "Gestionar la configuración del módulo de analítica", true, false, false, false),
             new PermissionSeed("audit.view", "audit", "Visualizar historial y traza de eventos de auditoría", true, false, false, false),
             new PermissionSeed("permissions.manage", "permissions", "Administrar permisos y overrides de usuarios", true, false, false, false),
-            new PermissionSeed("iam.manage_accounts", "iam", "Administrar cuentas de usuario del personal", true, false, false, false),
+            new PermissionSeed("iam.manage_accounts", "iam", "Administrar cuentas de usuario del personal", true, true, false, false),
 
             // --- Fase 10 Extensions ---
             new PermissionSeed("orders.merge_tables", "orders", "Unir o fusionar mesas del salón", true, true, false, false),

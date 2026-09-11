@@ -100,6 +100,11 @@ public class BillingCashRegisterIntegrationTests {
     private AuditEventRepository auditEventRepository;
 
     @Autowired
+    private com.pezbackend.tenancy.infrastructure.persistence.jpa.repositories.RestaurantRepository restaurantRepository;
+
+    private com.pezbackend.tenancy.domain.model.aggregates.Restaurant testRestaurant;
+
+    @Autowired
     private com.pezbackend.orders.infrastructure.persistence.jpa.repositories.OrderRepository orderRepository;
 
     @Autowired
@@ -156,6 +161,10 @@ public class BillingCashRegisterIntegrationTests {
         orderRepository.deleteAll();
         restaurantTableRepository.deleteAll();
         productRepository.deleteAll();
+
+        // Crear restaurant para pruebas
+        testRestaurant = new com.pezbackend.tenancy.domain.model.aggregates.Restaurant("Test Restaurant", "12345678901", "test@res.com", "999888777", "123 Test St");
+        testRestaurant = restaurantRepository.save(testRestaurant);
 
         // Sembrar roles y usuarios de seguridad
         Role adminRole = roleRepository.findByName(Roles.ADMIN)
@@ -311,57 +320,62 @@ public class BillingCashRegisterIntegrationTests {
     @Test
     @org.springframework.transaction.annotation.Transactional
     public void testForcedCloseBySchedulerWithoutMovements() {
-        // 1. Crear caja registradora directamente en base de datos
-        CashRegister oldRegister = new CashRegister(new BigDecimal("300.00"));
-        oldRegister = cashRegisterRepository.save(oldRegister);
-
-        // Utilizar JdbcTemplate para cambiar el createdAt a ayer (evitando auditoría de JPA)
-        jdbcTemplate.update("UPDATE cash_register SET created_at = ? WHERE id = ?",
-                java.sql.Timestamp.valueOf(LocalDateTime.now().minusDays(1)),
-                oldRegister.getId());
-
-        // Limpiar el contexto de persistencia de JPA para que el scheduler reciba el createdAt actualizado desde la BD
-        entityManager.clear();
-
-        // Configurar por reflexión el cutoff para que sea menor a la hora actual del test (ej: 5 minutos antes)
+        com.pezbackend.shared.infrastructure.TenantContext.setCurrentTenantId(testRestaurant.getId());
         try {
-            LocalDateTime testNow = LocalDateTime.now();
-            int h = testNow.getHour();
-            int m = testNow.getMinute() - 5;
-            if (m < 0) {
-                if (h > 0) {
-                    h--;
-                    m = 55;
-                } else {
-                    h = 0;
-                    m = 0;
+            // 1. Crear caja registradora directamente en base de datos
+            CashRegister oldRegister = new CashRegister(new BigDecimal("300.00"));
+            oldRegister = cashRegisterRepository.save(oldRegister);
+
+            // Utilizar JdbcTemplate para cambiar el createdAt a ayer (evitando auditoría de JPA)
+            jdbcTemplate.update("UPDATE cash_register SET created_at = ? WHERE id = ?",
+                    java.sql.Timestamp.valueOf(LocalDateTime.now().minusDays(1)),
+                    oldRegister.getId());
+
+            // Limpiar el contexto de persistencia de JPA para que el scheduler reciba el createdAt actualizado desde la BD
+            entityManager.clear();
+
+            // Configurar por reflexión el cutoff para que sea menor a la hora actual del test (ej: 5 minutos antes)
+            try {
+                LocalDateTime testNow = LocalDateTime.now();
+                int h = testNow.getHour();
+                int m = testNow.getMinute() - 5;
+                if (m < 0) {
+                    if (h > 0) {
+                        h--;
+                        m = 55;
+                    } else {
+                        h = 0;
+                        m = 0;
+                    }
                 }
+
+                java.lang.reflect.Field hourField = CashRegisterScheduler.class.getDeclaredField("cutoffHour");
+                hourField.setAccessible(true);
+                hourField.set(cashRegisterScheduler, h);
+
+                java.lang.reflect.Field minuteField = CashRegisterScheduler.class.getDeclaredField("cutoffMinute");
+                minuteField.setAccessible(true);
+                minuteField.set(cashRegisterScheduler, m);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
             }
 
-            java.lang.reflect.Field hourField = CashRegisterScheduler.class.getDeclaredField("cutoffHour");
-            hourField.setAccessible(true);
-            hourField.set(cashRegisterScheduler, h);
+            // 2. Invocar manualmente el método del scheduler
+            eventCollector.clear();
+            cashRegisterScheduler.closeExpiredCashRegisters();
 
-            java.lang.reflect.Field minuteField = CashRegisterScheduler.class.getDeclaredField("cutoffMinute");
-            minuteField.setAccessible(true);
-            minuteField.set(cashRegisterScheduler, m);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+            // 3. Validar que se cerró automáticamente sin movimientos agregados
+            CashRegister closedRegister = cashRegisterRepository.findById(oldRegister.getId()).orElseThrow();
+            assertThat(closedRegister.getStatus()).isEqualTo(CashRegisterStatus.CLOSED);
+            assertThat(closedRegister.getCurrentBalance()).isEqualByComparingTo("300.00");
+            assertThat(closedRegister.getMovements()).isEmpty(); // No dummy movements added!
+
+            // Verificar evento ForcedCloseByCutoff
+            assertThat(eventCollector.getEvents().stream()
+                    .anyMatch(e -> e.eventType().equals("ForcedCloseByCutoff"))).isTrue();
+        } finally {
+            com.pezbackend.shared.infrastructure.TenantContext.clear();
         }
-
-        // 2. Invocar manualmente el método del scheduler
-        eventCollector.clear();
-        cashRegisterScheduler.closeExpiredCashRegisters();
-
-        // 3. Validar que se cerró automáticamente sin movimientos agregados
-        CashRegister closedRegister = cashRegisterRepository.findById(oldRegister.getId()).orElseThrow();
-        assertThat(closedRegister.getStatus()).isEqualTo(CashRegisterStatus.CLOSED);
-        assertThat(closedRegister.getCurrentBalance()).isEqualByComparingTo("300.00");
-        assertThat(closedRegister.getMovements()).isEmpty(); // No dummy movements added!
-
-        // Verificar evento ForcedCloseByCutoff
-        assertThat(eventCollector.getEvents().stream()
-                .anyMatch(e -> e.eventType().equals("ForcedCloseByCutoff"))).isTrue();
     }
 
     @Test

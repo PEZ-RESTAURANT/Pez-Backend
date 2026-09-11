@@ -9,5 +9,6 @@ public record LoyaltyConfigResource(
         BigDecimal minPurchaseAmountForPoints,
         BigDecimal pointsPerCurrencyUnit,
         int reviewSatisfactionThreshold,
-        String googleReviewUrl
+        String googleReviewUrl,
+        String qrCodeImage
 ) {}

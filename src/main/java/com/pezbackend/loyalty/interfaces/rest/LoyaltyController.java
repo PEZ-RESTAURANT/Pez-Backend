@@ -129,7 +129,8 @@ public class LoyaltyController {
                 resource.minPurchaseAmountForPoints(),
                 resource.pointsPerCurrencyUnit(),
                 resource.reviewSatisfactionThreshold(),
-                resource.googleReviewUrl()
+                resource.googleReviewUrl(),
+                resource.qrCodeImage()
         );
         return ResponseEntity.ok(LoyaltyConfigResourceAssembler.toResource(config));
     }

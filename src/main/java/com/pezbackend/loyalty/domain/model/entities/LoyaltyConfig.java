@@ -4,6 +4,7 @@ import org.hibernate.annotations.Filter;
 import com.pezbackend.shared.domain.model.entities.AuditableModel;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.Lob;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
@@ -37,6 +38,9 @@ public class LoyaltyConfig extends AbstractTenantEntity {
 
     @Column(length = 255)
     private String googleReviewUrl;
+
+    @Column(name = "qr_code_image", columnDefinition = "LONGTEXT")
+    private String qrCodeImage;
 
     /**
      * Constructor requerido por la especificación de JPA. No debe ser utilizado directamente.

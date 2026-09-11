@@ -99,7 +99,8 @@ public class OrdersController {
                 resource.deliveryCustomerPhone(),
                 resource.deliveryAddress(),
                 resource.deliveryMapsLink(),
-                resource.declaredPaymentMethod()
+                resource.declaredPaymentMethod(),
+                resource.ignoreDuplicatePhone()
         );
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(OrderResourceFromEntityAssembler.toResourceFromEntity(order));

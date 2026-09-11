@@ -17,5 +17,6 @@ public record CreateOrderResource(
         String deliveryCustomerPhone,
         String deliveryAddress,
         String deliveryMapsLink,
-        String declaredPaymentMethod
+        String declaredPaymentMethod,
+        Boolean ignoreDuplicatePhone
 ) {}

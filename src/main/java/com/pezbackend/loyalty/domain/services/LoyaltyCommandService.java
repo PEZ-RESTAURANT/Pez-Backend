@@ -21,7 +21,7 @@ public interface LoyaltyCommandService {
 
     PointsTransaction redeemPoints(Long customerId, int points, LocalDate date);
 
-    LoyaltyConfig updateConfig(BigDecimal minPurchaseAmountForPoints, BigDecimal pointsPerCurrencyUnit, int reviewSatisfactionThreshold, String googleReviewUrl);
+    LoyaltyConfig updateConfig(BigDecimal minPurchaseAmountForPoints, BigDecimal pointsPerCurrencyUnit, int reviewSatisfactionThreshold, String googleReviewUrl, String qrCodeImage);
 
     void sendManualPromotion(Long customerId, String subject, String message);
 }

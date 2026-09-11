@@ -76,6 +76,22 @@ public class TableLockManager {
     }
 
     /**
+     * Libera todas las mesas bloqueadas por un mozo específico (ej. al cerrar sesión o desconexión).
+     */
+    public void unlockAllTablesForWaiter(Long restaurantId, Long waiterId) {
+        Map<Long, TableLock> restaurantLocks = locks.get(restaurantId);
+        if (restaurantLocks == null) return;
+
+        restaurantLocks.forEach((tableId, lock) -> {
+            if (lock.waiterId().equals(waiterId)) {
+                restaurantLocks.remove(tableId);
+                log.info("Mesa {} desbloqueada automáticamente por cierre de sesión del mozo ID {} (Tenant {})", tableId, waiterId, restaurantId);
+                broadcastLockState(restaurantId, "TableUnlocked", Map.of("tableId", tableId));
+            }
+        });
+    }
+
+    /**
      * Libera de forma forzada un bloqueo de mesa sin validar el propietario (ej. acción de admin/cajero).
      */
     public void forceUnlockTable(Long restaurantId, Long tableId) {

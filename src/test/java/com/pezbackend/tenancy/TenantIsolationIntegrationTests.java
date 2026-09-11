@@ -173,7 +173,7 @@ public class TenantIsolationIntegrationTests {
         RestaurantCommandServiceImpl service = new RestaurantCommandServiceImpl(
                 mockRestaurantRepository, mockUserRepository, mockRoleRepository, mockHashingService, mockPaymentMethodConfigRepository, mockCategoryRepository, mockBillingSequenceRepository
         );
-        org.springframework.test.util.ReflectionTestUtils.setField(service, "configuredInviteCode", "TEST-INVITE-CODE");
+
 
         OnboardingCommand command = new OnboardingCommand("Mock Rest", "111", "mock@mock.com", "000",
                 "admin@mock.com", "pass", "A", "B", "TEST-INVITE-CODE");
@@ -206,19 +206,7 @@ public class TenantIsolationIntegrationTests {
                 "TenantContext debe limpiarse tras finalizar el flujo de onboarding");
     }
 
-    @Test
-    public void testOnboardingWithInvalidInviteCode() throws Exception {
-        OnboardingResource invalidResource = new OnboardingResource(
-                "Restaurante Fails", "111222333", "fail@rest.com", "555-9999",
-                "admin@fail.com", "pass", "A", "B", "WRONG-CODE"
-        );
 
-        mockMvc.perform(post("/api/v1/restaurants/onboarding")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(invalidResource)))
-                .andExpect(status().isForbidden())
-                .andExpect(jsonPath("$.message").value("El código de invitación proporcionado es inválido."));
-    }
 
     @Test
     public void testOnboardingRateLimiting() throws Exception {

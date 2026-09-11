@@ -7,6 +7,7 @@ import org.springframework.stereotype.Component;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 
+import org.springframework.scheduling.annotation.Async;
 import java.util.Map;
 
 /**
@@ -21,6 +22,7 @@ public class EmailNotificationChannel implements NotificationChannel {
     private final TemplateEngine templateEngine;
 
     @Override
+    @Async
     public void send(String recipient, String subject, String templateName, Map<String, Object> templateModel) {
         try {
             Context context = new Context();
